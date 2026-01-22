@@ -1,3 +1,5 @@
+import HomePage from './pages/HomePage';
+import AppRoutes from './routes/AppRoutes';
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
@@ -15,17 +17,17 @@ import Header from './components/layout/Header';
 
 function App() {
   const [count, setCount] = useState(0)
-
   return (
     <>
+      <AppRoutes />
       <Router>
         <Header />
         <div className='container'>
           <Routes>
-            <Route path='/login' element={<Login />} />
+
             <Route path='/forgot-password' element={<ForgotPassword />} />
             <Route path='/reset-password' element={<ResetPassword />} />
-            <Route path='/register' element={<Register />} />
+
             <Route path='/verify-email' element={<VerifyEmail />} />
 
             {/* Public Home */}
@@ -37,6 +39,7 @@ function App() {
                 </div>
               </div>
             } />
+
 
             {/* CUSTOMER Routes */}
             <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']} />}>
@@ -54,11 +57,18 @@ function App() {
               <Route path='/admin/dashboard' element={<AdminDashboard />} />
               <Route path='/admin/users' element={<h2>Manage Users (Placeholder)</h2>} />
             </Route>
+
           </Routes>
         </div>
       </Router>
     </>
-  )
+
+  );
 }
 
-export default App
+export default App;
+
+{/* <div>
+  <HomePage />
+  <AppRoutes />
+</div> */}
