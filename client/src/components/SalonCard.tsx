@@ -1,7 +1,7 @@
 // client/src/components/SalonCard.tsx
 import React from 'react';
 import { Salon } from '../types';
-import './SalonCard.css';
+import '../assets/css/SalonCard.css';
 import { FiMapPin } from 'react-icons/fi';
 import { FaStar } from 'react-icons/fa';
 

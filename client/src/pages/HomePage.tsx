@@ -1,21 +1,23 @@
-import { NavLink, Link } from 'react-router-dom';
-import React from 'react';
-import './HomePage.css';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import '../assets/css/HomePage.css';
 import SalonCard from '../components/SalonCard';
 import { Salon } from '../types'
-import { FiSearch, FiScissors, FiClock, FiTrendingUp } from 'react-icons/fi';
+import { FiSearch, FiScissors } from 'react-icons/fi';
 import { HiSparkles } from 'react-icons/hi';
 import { FaSpa, FaFire } from 'react-icons/fa';
 import { GiFingernail, GiLipstick } from 'react-icons/gi';
 import { TbMassage } from 'react-icons/tb';
 import { MdFaceRetouchingNatural } from 'react-icons/md';
 import { GoPerson } from "react-icons/go";
-// import axiosClient from '../lib/axios';
+import HeaderHomePage from '../components/layout/HeaderHomePage';
 
 
 const HomePage: React.FC = () => {
 
-
+    // Get user from localStorage
+    const userString = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    const user = userString ? JSON.parse(userString) : null;
 
     // 1. Dữ liệu Categories 
     const categories = [
@@ -75,19 +77,40 @@ const HomePage: React.FC = () => {
                 </Link>
 
                 <nav className="nav-links">
-                    <NavLink to="/" className="active">Home</NavLink>
+                    <NavLink to="/">Home</NavLink>
                     <NavLink to="/search">Search</NavLink>
                     <NavLink to="/lookbook">Lookbook</NavLink>
                     <NavLink to="/analysis">AI Analysis</NavLink>
                 </nav>
 
                 <div className="auth-actions">
-                    <Link to="/sign-in" className="btn-text" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <GoPerson color='#666' /> Sign In
-                    </Link>
-                    <Link to="/sign-up" className="btn-primary" style={{ textDecoration: 'none' }}>
-                        Sign Up
-                    </Link>
+                    {user ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#666' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <GoPerson color='#666' />
+                                <span>{user.email}</span>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem('user');
+                                    window.location.href = '/';
+                                }}
+                                className="btn-primary"
+                                style={{ textDecoration: 'none', cursor: 'pointer' }}
+                            >
+                                Logout
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <Link to="/login" className="btn-text" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <GoPerson color='#666' /> Sign In
+                            </Link>
+                            <Link to="/register" className="btn-primary" style={{ textDecoration: 'none' }}>
+                                Sign Up
+                            </Link>
+                        </>
+                    )}
                 </div>
             </header>
 
