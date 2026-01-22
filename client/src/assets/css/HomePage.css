@@ -21,6 +21,19 @@
     z-index: 100;
 }
 
+.auth-actions .btn-primary {
+    background-color: #0d9488 !important;
+    color: white !important;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+
 .logo {
     font-size: 22px;
     font-weight: 800;
@@ -73,9 +86,6 @@
     transition: 0.2s;
 }
 
-.btn-primary:hover {
-    background-color: #0f766e;
-}
 
 
 /* --- SECTION --- */
