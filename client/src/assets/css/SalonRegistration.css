@@ -1,0 +1,215 @@
+.registration-container {
+    display: flex;
+    justify-content: center;
+    padding: 50px 20px;
+    background-color: #f8f9fa;
+    min-height: 80vh;
+}
+
+.registration-box {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 100%;
+}
+
+.registration-box h2 {
+    text-align: center;
+    color: #0d9488;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #0d9488;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: #0d9488;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.submit-btn:hover {
+    background-color: #0d9488;
+}
+
+/* Container chính */
+.file-upload-wrapper {
+    width: 100%;
+    max-width: 600px;
+    /* Giới hạn độ rộng để form cân đối */
+    margin: 0 auto;
+}
+
+/* Khung ảnh khi đã có hình */
+.image-frame-box {
+    display: block;
+    width: 100%;
+    height: 200px;
+    /* Độ cao cố định cho khung ảnh */
+    border-radius: 16px;
+    overflow: hidden;
+    /* Cắt bỏ phần ảnh tràn */
+    border: 2px solid #0d9488;
+    /* Viền màu thương hiệu */
+    cursor: pointer;
+    background-color: #f1f5f9;
+}
+
+.image-frame-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* ẢNH VỪA KHÍT KHUNG, KHÔNG BỊ KHOẢNG TRẮNG */
+    transition: transform 0.3s ease;
+}
+
+.image-frame-box:hover img {
+    transform: scale(1.05);
+    /* Hiệu ứng zoom nhẹ khi hover */
+}
+
+/* Phần chữ bên dưới khung */
+.file-meta-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Căn giữa tất cả chữ */
+    margin-top: 15px;
+    gap: 8px;
+    /* Khoảng cách đều giữa tên file và link change */
+}
+
+.file-name-text {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+    max-width: 90%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Nếu tên file quá dài sẽ hiện ... */
+}
+
+.change-link {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0d9488;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.change-link:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+}
+
+/* Khung dropzone chính */
+.file-upload-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Căn giữa ngang */
+    justify-content: center;
+    /* Căn giữa dọc */
+    width: 100%;
+    min-height: 200px;
+    border: 2px dashed #0d9488;
+    /* Màu xanh đồng bộ với button */
+    border-radius: 16px;
+    background-color: #f8fafc;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 20px;
+}
+
+.file-upload-dropzone:hover {
+    background-color: #f0fdfa;
+    border-color: #0f766e;
+}
+
+/* Container bọc các thành phần bên trong */
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    /* Khoảng cách đều giữa Icon - Dòng chữ chính - Dòng chữ phụ */
+    text-align: center;
+}
+
+/* Icon upload */
+.upload-icon {
+    color: #0d9488;
+    background: #f0fdfa;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    /* Làm icon nằm trong vòng tròn cho sang */
+    margin-bottom: 8px;
+}
+
+/* Dòng chữ Click to upload */
+.upload-text {
+    font-size: 16px;
+    color: #334155;
+    margin: 0;
+    /* Xóa margin mặc định để gap của cha xử lý */
+}
+
+.upload-text b {
+    color: #0d9488;
+    font-weight: 700;
+}
+
+/* Dòng chữ nhỏ (PNG, JPG...) */
+.upload-subtext {
+    font-size: 13px;
+    color: #94a3b8;
+    margin: 0;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 15px;
+    /* Tăng khoảng cách để đẩy label xa khung ảnh */
+    font-weight: 600;
+    color: #0d9488;
+}
