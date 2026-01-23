@@ -12,12 +12,16 @@ import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
 import SalonRegistration from '../pages/salon/SalonRegistration';
 import ServiceManagement from '../pages/salon/ServiceManagement';
+import BlogDetail from '../pages/blog/BlogDetail';
+import PostForm from '../pages/blog/PostForm';
+import BlogManagement from '../pages/blog/BlogManagement';
 
 const AppRoutes = () => {
     return (
         <Routes>
             {/* --- NHÓM PUBLIC --- */}
             <Route path="/" element={<HomePage />} />
+            <Route path="/blog/:id" element={<BlogDetail />} />
 
             {/* MENU */}
             <Route path="/search" element={<HeaderHome />} />
@@ -38,7 +42,6 @@ const AppRoutes = () => {
             <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']} />}>
                 <Route path='/users/profile' element={<h2>User Profile (Placeholder)</h2>} />
                 <Route path="/salon/register" element={<SalonRegistration />} />
-
             </Route>
 
             {/* Role: SALON_OWNER */}
@@ -52,6 +55,13 @@ const AppRoutes = () => {
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                 <Route path='/admin/dashboard' element={<AdminDashboard />} />
                 <Route path='/admin/users' element={<h2>Manage Users (Placeholder)</h2>} />
+            </Route>
+
+            {/* Blog Management - All authenticated users */}
+            <Route element={<ProtectedRoute allowedRoles={['CUSTOMER', 'SALON_OWNER', 'ADMIN']} />}>
+                <Route path='/blog/my-blogs' element={<BlogManagement />} />
+                <Route path='/blog/create' element={<PostForm />} />
+                <Route path='/blog/:id/edit' element={<PostForm />} />
             </Route>
 
             {/* 404 - NOT FOUND */}

@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useLogout } from '../../features/auth/hooks/useLogout';
+import { FiBookOpen } from 'react-icons/fi';
 
 const Header = () => {
     const navigate = useNavigate();
@@ -27,6 +28,10 @@ const Header = () => {
                             {user.role === 'CUSTOMER' && (
                                 <Link to="/users/profile" className="header-link">My Profile</Link>
                             )}
+
+                            <Link to="/blog/my-blogs" className="header-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                <FiBookOpen /> My Blogs
+                            </Link>
 
                             <span className="header-user-info">
                                 Hi, {user.fullName.split(' ')[0]} ({user.role})

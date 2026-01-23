@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { HiSparkles } from 'react-icons/hi';
 import { GoBriefcase, GoPerson } from 'react-icons/go';
+import { FiBookOpen } from 'react-icons/fi';
 import '../../assets/css/HeaderHome.css';
 
 const HeaderHome = () => {
@@ -123,6 +124,10 @@ const HeaderHome = () => {
 
                                     <Link to="/profile" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                         <GoPerson /> Profile
+                                    </Link>
+
+                                    <Link to="/blog/my-blogs" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                        <FiBookOpen /> My Blogs
                                     </Link>
 
                                     {/* --- LOGIC HIỂN THỊ QUAN TRỌNG --- */}

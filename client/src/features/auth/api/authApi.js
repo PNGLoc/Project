@@ -12,7 +12,14 @@ const authApi = {
     login: async (credentials) => {
         const response = await axiosClient.post('/api/auth/login', credentials);
         if (response.data) {
-            localStorage.setItem('user', JSON.stringify(response.data));
+            // Persist token separately for axios interceptor
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token);
+            }
+
+            // Persist user profile (without relying on token being inside)
+            const { token, ...user } = response.data;
+            localStorage.setItem('user', JSON.stringify(user));
         }
         return response.data;
     },
@@ -26,6 +33,7 @@ const authApi = {
     },
     logout: () => {
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
     },
 };
 
