@@ -17,8 +17,6 @@ const LoginForm = () => {
             // Redirect based on Role
             if (userData.role === 'ADMIN') {
                 navigate('/admin/dashboard');
-            } else if (userData.role === 'SALON_OWNER') {
-                navigate('/salon/dashboard');
             } else {
                 navigate('/');
             }

@@ -8,97 +8,44 @@
     background-color: #fff;
 }
 
-/* --- HEADER --- */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 40px;
-    border-bottom: 1px solid #eee;
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 100;
-}
-
-.auth-actions .btn-primary {
-    background-color: #0d9488 !important;
-    color: white !important;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.2s ease;
-}
 
 
-.logo {
-    font-size: 22px;
-    font-weight: 800;
-    color: #0d9488;
-    /* Màu xanh chủ đạo */
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
 
-.nav-links {
-    display: flex;
-    gap: 30px;
-}
 
-.nav-links a {
-    text-decoration: none;
-    color: #666;
-    font-weight: 500;
-    transition: 0.3s;
-}
 
-.nav-links a:hover,
-.nav-links a.active {
-    color: #0d9488;
-}
 
-.auth-actions {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
 
-.btn-text {
-    background: none;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    color: #666;
-}
 
-.btn-primary {
-    background-color: #0d9488;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
-}
+
+
 
 
 
 /* --- SECTION --- */
 .hero-section {
-    background: linear-gradient(to bottom, #f0fdfa, #ffffff);
-    padding: 60px 20px;
+    background: linear-gradient(135deg,
+            #e0f2f1 0%,
+            /* Xanh Teal nhạt rõ rệt ở góc */
+            #f0f9f9 15%,
+            /* Bắt đầu chuyển tiếp sớm hơn */
+            #ffffff 25%,
+            /* Điểm trắng xuất hiện sớm để chặn độ lan của xanh */
+            #fff1f2 55%,
+            /* Sắc hồng nhạt chiếm chủ đạo ở giữa */
+            #fff7ed 80%,
+            /* Cam đào bắt đầu lan tỏa */
+            #ffedd5 100%
+            /* Cam đào đậm dần ở góc phải dưới */
+        );
+
+    padding: 100px 20px;
     text-align: center;
 }
 
 .hero-content h1 {
-    font-size: 3rem;
+    font-size: 4rem;
     margin-bottom: 15px;
-    line-height: 1.2;
+    line-height: 1.1;
 }
 
 .highlight {

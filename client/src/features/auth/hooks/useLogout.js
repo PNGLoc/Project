@@ -6,7 +6,7 @@ export const useLogout = () => {
 
     const logout = () => {
         authApi.logout();
-        navigate('/login');
+        navigate('/');
     };
 
     return { logout };
