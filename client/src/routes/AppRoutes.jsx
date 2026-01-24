@@ -15,7 +15,11 @@ import BlogDetail from '../pages/blog/BlogDetail';
 import PostForm from '../pages/blog/PostForm';
 import BlogManagement from '../pages/blog/BlogManagement';
 import StaffRegistration from '../pages/salon/StaffRegistration';
+
+// --- IMPORT ĐÃ ĐƯỢC GỘP TỪ 2 NHÁNH & THÊM MỚI ---
 import ProfilePage from '../pages/users/ProfilePage';
+import StaffList from "../pages/salon/StaffList";
+import StaffDetail from "../pages/salon/StaffDetail"; // Import trang Detail vừa tách
 
 const AppRoutes = () => {
     return (
@@ -49,10 +53,14 @@ const AppRoutes = () => {
 
             {/* Role: SALON_OWNER */}
             <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>
-                <Route path="/salon" element={<SalonDashboard />}>
-                    <Route path="staff/add" element={<StaffRegistration />} />
-                    <Route path="dashboard" element={<SalonDashboard />} />
-                </Route>
+                <Route path="/salon/dashboard" element={<SalonDashboard />} />
+                
+                {/* Quản lý nhân viên */}
+                <Route path="/salon/staff/add" element={<StaffRegistration />} />
+                <Route path="/salon/staff-list" element={<StaffList />} />
+                
+                {/* Route chi tiết nhân viên (MỚI THÊM) */}
+                <Route path="/salon/staff/:id" element={<StaffDetail />} />
             </Route>
 
             {/* Role: ADMIN */}

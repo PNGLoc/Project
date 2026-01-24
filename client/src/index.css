@@ -100,12 +100,16 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
+  /* Allow inner content to scroll when it grows taller than the viewport */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 2rem 1rem;
   z-index: 0;
   /* Keep it at base level */
 }

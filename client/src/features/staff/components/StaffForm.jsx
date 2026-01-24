@@ -15,122 +15,200 @@ const StaffForm = () => {
     const { fullName, email, phone, password, confirmPassword } = formData;
 
     const navigate = useNavigate();
-    const { registerStaff, isLoading, error, success } = useRegisterStaff();
+    const { registerStaff, isLoading, error } = useRegisterStaff();
     const [localError, setLocalError] = useState('');
 
     const onChange = (e) => {
-        setFormData((prevState) => ({
-            ...prevState,
-            [e.target.name]: e.target.value,
-        }));
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setLocalError(''); // Xóa lỗi khi người dùng bắt đầu sửa
     };
 
     const onSubmit = async (e) => {
         e.preventDefault();
         setLocalError('');
 
-        // Validation giống hệt RegisterForm
+        // Validate Full Name
+        if (!fullName.trim()) {
+            setLocalError('Full name is required.');
+            return;
+        }
+
+        // Validate Email
+        if (!email.trim()) {
+            setLocalError('Email address is required.');
+            return;
+        }
+
+        // Validate Password
+        if (!password) {
+            setLocalError('Password is required.');
+            return;
+        }
+
+        if (password.length < 6) {
+            setLocalError('Password must be at least 6 characters long.');
+            return;
+        }
+
+        // Validate Confirm Password
         if (password !== confirmPassword) {
-            setLocalError('Mật khẩu không khớp');
+            setLocalError('Passwords do not match.');
             return;
         }
 
-        const phoneRegex = /^0\d{9}$/;
-        if (!phoneRegex.test(phone)) {
-            setLocalError('Số điện thoại phải có 10 chữ số và bắt đầu bằng 0');
-            return;
-        }
-
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-        if (!passwordRegex.test(password)) {
-            setLocalError('Mật khẩu cần ít nhất 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt');
+        // Validate Phone (optional nhưng nếu nhập thì phải đúng định dạng VN: bắt đầu bằng 0, 10 số)
+        if (phone && !/^0\d{9}$/.test(phone.trim())) {
+            setLocalError('Phone number must start with 0 and contain exactly 10 digits (e.g. 0901234567).');
             return;
         }
 
         try {
-            await registerStaff({ fullName, email, phone, password });
-            // Thành công → thông báo và quay về dashboard
-            setTimeout(() => {
-                navigate('/salon/dashboard'); // hoặc '/salon/staff' nếu có trang danh sách
-            }, 1500);
+            await registerStaff({
+                fullName: fullName.trim(),
+                email: email.trim(),
+                phone: phone.trim(),
+                password
+            });
+
+            alert('Staff added successfully! Login credentials have been sent to their email.');
+            navigate('/salon/staff-list');
         } catch (err) {
-            // Error đã được xử lý trong hook
+            // Error từ server sẽ được hook xử lý và trả về trong `error`
+            // Không cần làm gì thêm ở đây
         }
     };
 
+    const displayError = error || localError;
+
     return (
         <form onSubmit={onSubmit}>
-            {(error || localError) && <div className="error-message">{error || localError}</div>}
-            {success && <div className="success-message">{success}</div>}
+            {/* Hiển thị lỗi */}
+            {displayError && (
+                <div style={{
+                    background: '#fee2e2',
+                    color: '#991b1b',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    marginBottom: '20px',
+                    fontSize: '14px',
+                    border: '1px solid #fecaca'
+                }}>
+                    {displayError}
+                </div>
+            )}
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '16px' }}>
                 <input
                     type="text"
-                    className="form-control"
-                    id="fullName"
                     name="fullName"
                     value={fullName}
-                    placeholder="Họ và tên nhân viên"
                     onChange={onChange}
+                    placeholder="Full Name"
                     required
+                    className="form-control"
+                    style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '16px'
+                    }}
                 />
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '16px' }}>
                 <input
                     type="email"
-                    className="form-control"
-                    id="email"
                     name="email"
                     value={email}
-                    placeholder="Email nhân viên"
                     onChange={onChange}
+                    placeholder="Email Address"
                     required
+                    className="form-control"
+                    style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '16px'
+                    }}
                 />
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '16px' }}>
                 <input
-                    type="text"
-                    className="form-control"
-                    id="phone"
+                    type="tel"
                     name="phone"
                     value={phone}
-                    placeholder="Số điện thoại"
                     onChange={onChange}
-                    required
+                    placeholder="Phone Number (optional, e.g. 0901234567)"
+                    className="form-control"
+                    style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '16px'
+                    }}
                 />
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '16px' }}>
                 <input
                     type="password"
-                    className="form-control"
-                    id="password"
                     name="password"
                     value={password}
-                    placeholder="Mật khẩu"
                     onChange={onChange}
+                    placeholder="Password"
                     required
+                    className="form-control"
+                    style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '16px'
+                    }}
                 />
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '24px' }}>
                 <input
                     type="password"
-                    className="form-control"
-                    id="confirmPassword"
                     name="confirmPassword"
                     value={confirmPassword}
-                    placeholder="Xác nhận mật khẩu"
                     onChange={onChange}
+                    placeholder="Confirm Password"
                     required
+                    className="form-control"
+                    style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '16px'
+                    }}
                 />
             </div>
 
             <div className="form-group">
-                <button type="submit" className="btn" disabled={isLoading}>
-                    {isLoading ? 'Đang thêm nhân viên...' : 'Thêm nhân viên'}
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    style={{
+                        width: '100%',
+                        padding: '14px',
+                        background: '#000',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        cursor: isLoading ? 'not-allowed' : 'pointer',
+                        opacity: isLoading ? 0.7 : 1
+                    }}
+                >
+                    {isLoading ? 'Adding Staff...' : 'Add Staff'}
                 </button>
             </div>
         </form>
