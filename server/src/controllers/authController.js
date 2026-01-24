@@ -2,11 +2,12 @@ import User from '../models/User.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
+import Salon from '../models/Salon.js';
 
 // Generate JWT
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d',
+        expiresIn: '1h',
     });
 };
 
@@ -49,8 +50,8 @@ export const register = async (req, res) => {
 
         // Generate 6-digit OTP
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-        // OTP expires in 10 minutes
-        const otpExpires = Date.now() + 10 * 60 * 1000;
+        // OTP expires in 3 minutes
+        const otpExpires = Date.now() + 3 * 60 * 1000;
 
         // Create user
         const user = await User.create({
@@ -67,8 +68,8 @@ export const register = async (req, res) => {
             await sendEmail(
                 email,
                 'Account Verification OTP',
-                `Your verification code is: ${otpCode}. It expires in 10 minutes.`,
-                `<h3>Your verification code is: <b>${otpCode}</b></h3><p>It expires in 10 minutes.</p>`
+                `Your verification code is: ${otpCode}. It expires in 3 minutes.`,
+                `<h3>Your verification code is: <b>${otpCode}</b></h3><p>It expires in 3 minutes.</p>`
             );
 
             console.log(`[EMAIL SEND] OTP sent to ${email}: ${otpCode}`);
@@ -160,6 +161,10 @@ export const login = async (req, res) => {
             return res.status(403).json({ message: 'Account is disabled. Please contact admin.' });
         }
 
+        // --- CHÈN THÊM ĐOẠN NÀY ĐỂ GIỮ TRẠNG THÁI CHỜ DUYỆT ---
+        const salon = await Salon.findOne({ ownerId: user._id });
+        // ---------------------------------------------------
+
         res.json({
             _id: user.id,
             fullName: user.fullName,
@@ -167,6 +172,8 @@ export const login = async (req, res) => {
             role: user.role,
             avatar: user.avatar,
             token: generateToken(user._id),
+            // Trả thêm salonId về để lưu vào localStorage
+            salonId: salon ? salon._id : null
         });
 
     } catch (error) {
@@ -189,8 +196,8 @@ export const forgotPassword = async (req, res) => {
 
         // Generate 6-digit OTP
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-        // OTP expires in 10 minutes
-        const resetExpires = Date.now() + 10 * 60 * 1000;
+        // OTP expires in 3 minute
+        const resetExpires = Date.now() + 3 * 60 * 1000;
 
         // Save to DB
         user.resetPasswordToken = otpCode;
@@ -201,8 +208,8 @@ export const forgotPassword = async (req, res) => {
         await sendEmail(
             email,
             'Password Reset OTP',
-            `Your password reset code is: ${otpCode}. It expires in 10 minutes.`,
-            `<h3>Your password reset code is: <b>${otpCode}</b></h3><p>It expires in 10 minutes.</p>`
+            `Your password reset code is: ${otpCode}. It expires in 3 minutes.`,
+            `<h3>Your password reset code is: <b>${otpCode}</b></h3><p>It expires in 3 minutes.</p>`
         );
 
         res.status(200).json({ message: 'OTP sent to email' });

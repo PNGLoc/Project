@@ -11,7 +11,6 @@ import SalonDashboard from '../pages/salon/SalonDashboard';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
 import SalonRegistration from '../pages/salon/SalonRegistration';
-import ServiceManagement from '../pages/salon/ServiceManagement';
 import BlogDetail from '../pages/blog/BlogDetail';
 import PostForm from '../pages/blog/PostForm';
 import BlogManagement from '../pages/blog/BlogManagement';
@@ -24,6 +23,7 @@ const AppRoutes = () => {
             {/* --- NHÓM PUBLIC --- */}
             <Route path="/" element={<HomePage />} />
             <Route path="/blog/:id" element={<BlogDetail />} />
+            {/* <Route path="/salons" element={<AllSalons />} /> */}
 
             {/* MENU */}
             <Route path="/search" element={<HeaderHome />} />
