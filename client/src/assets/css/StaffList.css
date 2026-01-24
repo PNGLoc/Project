@@ -1,0 +1,239 @@
+/* StaffList.css - UI hiện đại cho Staff Management */
+
+.staff-management-container {
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 80vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.staff-management-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.staff-management-subtitle {
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.staff-search-add-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.staff-search-input {
+  padding: 12px 16px;
+  flex: 1;
+  max-width: 400px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+.staff-add-button {
+  padding: 12px 24px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.staff-table thead {
+  background: #f8f9fa;
+}
+
+.staff-table th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+}
+
+.staff-table td {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.staff-row-inactive {
+  opacity: 0.5;
+  background: #f9f9f9;
+}
+
+.staff-status-badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.staff-status-active {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.staff-status-inactive {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.staff-skills-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.staff-skill-tag {
+  background: #e9ecef;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #495057;
+}
+
+.staff-actions {
+  text-align: center;
+}
+
+.staff-btn-edit {
+  margin-right: 10px;
+  padding: 8px 16px;
+  background: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.staff-btn-delete {
+  padding: 8px 16px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  min-width: 90px;
+}
+
+.staff-btn-restore {
+  padding: 8px 16px;
+  background: #198754;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  min-width: 90px;
+}
+
+/* Modal */
+.staff-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.staff-modal-content {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  width: 520px;
+  max-width: 90%;
+}
+
+.staff-modal-title {
+  margin: 0 0 24px 0;
+  font-size: 24px;
+}
+
+.staff-error-alert {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8d7da;
+  color: #842029;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.staff-form-group {
+  margin-bottom: 16px;
+}
+
+.staff-form-label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.staff-form-label-required {
+  color: red;
+}
+
+.staff-input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+}
+
+.staff-input-disabled {
+  background: #f8f9fa;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.staff-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.staff-btn-cancel {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.staff-btn-save {
+  padding: 10px 20px;
+  background: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.staff-back-link {
+  margin-top: 40px;
+  display: inline-block;
+  color: #0d6efd;
+  text-decoration: none;
+  font-size: 15px;
+}

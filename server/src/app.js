@@ -11,6 +11,7 @@ import salonRoutes from './routes/salonRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import staffRoutes from './routes/staffRoutes.js';
+
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
