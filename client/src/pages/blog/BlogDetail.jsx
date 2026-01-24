@@ -37,8 +37,8 @@ const BlogDetail = () => {
         return (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#d32f2f' }}>
                 <h2>Blog not found</h2>
-                <button onClick={() => navigate('/blog/my-blogs')} style={{ cursor: 'pointer' }}>
-                    ← Back to My Blog/News
+                <button onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+                    ← Back to Home
                 </button>
             </div>
         );
@@ -62,7 +62,7 @@ const BlogDetail = () => {
 
             <div className="blog-detail-container">
                 <button
-                    onClick={() => navigate('/blog/my-blogs')}
+                    onClick={() => navigate('/')}
                     style={{
                         padding: '8px 16px',
                         background: '#f0f0f0',
@@ -73,7 +73,7 @@ const BlogDetail = () => {
                         fontWeight: '600',
                     }}
                 >
-                    ← Back to My Blog/News
+                    ← Back to Home
                 </button>
 
                 <article className="blog-detail-card">
