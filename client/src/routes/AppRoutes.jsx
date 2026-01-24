@@ -16,6 +16,7 @@ import BlogDetail from '../pages/blog/BlogDetail';
 import PostForm from '../pages/blog/PostForm';
 import BlogManagement from '../pages/blog/BlogManagement';
 import StaffRegistration from '../pages/salon/StaffRegistration';
+import ProfilePage from '../pages/users/ProfilePage';
 
 const AppRoutes = () => {
     return (
@@ -41,7 +42,8 @@ const AppRoutes = () => {
 
             {/* Role: CUSTOMER */}
             <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']} />}>
-                <Route path='/users/profile' element={<h2>User Profile (Placeholder)</h2>} />
+                <Route path='/users/profile' element={<ProfilePage />} />
+                <Route path='/profile' element={<ProfilePage />} />
                 <Route path="/salon/register" element={<SalonRegistration />} />
             </Route>
 
