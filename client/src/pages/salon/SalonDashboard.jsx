@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Outlet, useMatch } from 'react-router-dom';
 import HeaderHome from '../../components/layout/HeaderHome';
 import ServiceManagement from './ServiceManagement';
 import '../../assets/css/SalonDashboard.css';
@@ -6,6 +7,7 @@ import '../../assets/css/SalonDashboard.css';
 const SalonDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const user = JSON.parse(localStorage.getItem('user'));
+    const isStaffRoute = useMatch('/salon/staff/*');
 
     return (
         <div className="salon-full-layout">
@@ -44,16 +46,22 @@ const SalonDashboard = () => {
                 </header>
 
                 <div className="content-render-area">
-                    {activeTab === 'overview' && (
-                        <div className="overview-container">
-                            <div className="placeholder-card" style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <p>No Data</p>
-                            </div>
-                        </div>
+                    {isStaffRoute ? (
+                        <Outlet />
+                    ) : (
+                        <>
+                            {activeTab === 'overview' && (
+                                <div className="overview-container">
+                                    <div className="placeholder-card" style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <p>No Data</p>
+                                    </div>
+                                </div>
+                            )}
+
+
+                            {activeTab === 'services' && <ServiceManagement />}
+                        </>
                     )}
-
-
-                    {activeTab === 'services' && <ServiceManagement />}
                 </div>
             </main>
         </div>

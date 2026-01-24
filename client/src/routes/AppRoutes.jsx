@@ -15,6 +15,7 @@ import ServiceManagement from '../pages/salon/ServiceManagement';
 import BlogDetail from '../pages/blog/BlogDetail';
 import PostForm from '../pages/blog/PostForm';
 import BlogManagement from '../pages/blog/BlogManagement';
+import StaffRegistration from '../pages/salon/StaffRegistration';
 
 const AppRoutes = () => {
     return (
@@ -47,6 +48,7 @@ const AppRoutes = () => {
             {/* Role: SALON_OWNER */}
             <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>
                 <Route path="/salon" element={<SalonDashboard />}>
+                    <Route path="staff/add" element={<StaffRegistration />} />
                     <Route path="dashboard" element={<SalonDashboard />} />
                 </Route>
             </Route>
