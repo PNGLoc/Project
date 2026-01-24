@@ -31,6 +31,22 @@ const authApi = {
         const response = await axiosClient.post('/api/auth/reset-password', data);
         return response.data;
     },
+        getProfile: async () => {
+        const response = await axiosClient.get('/api/auth/profile');
+        return response.data;
+    },
+    updateProfile: async (userData) => {
+        const response = await axiosClient.put('/api/auth/profile', userData);
+        if (response.data && response.data.token) {
+            // Update local storage with new user info but keep the token if not returned (though controller returns it)
+            localStorage.setItem('user', JSON.stringify(response.data));
+        }
+        return response.data;
+    },
+    changePassword: async (passwordData) => {
+        const response = await axiosClient.put('/api/auth/change-password', passwordData);
+        return response.data;
+    },
     logout: () => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');

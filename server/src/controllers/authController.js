@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 // Generate JWT
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '1h',
+        expiresIn: '30d',
     });
 };
 
@@ -241,6 +241,101 @@ export const resetPassword = async (req, res) => {
 
     } catch (error) {
         console.error('[RESET PASSWORD ERROR]', error);
+        res.status(500).json({ message: 'Server error: ' + error.message });
+    }
+};
+
+// @desc    Get user profile
+// @route   GET /api/auth/profile
+// @access  Private
+export const getUserProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (user) {
+            res.json({
+                _id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                avatar: user.avatar,
+                bio: user.bio,
+                dateOfBirth: user.dateOfBirth,
+                createdAt: user.createdAt,
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+export const updateUserProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        if (user) {
+            user.fullName = req.body.fullName || user.fullName;
+            user.phone = req.body.phone || user.phone;
+            user.bio = req.body.bio !== undefined ? req.body.bio : user.bio;
+            if (req.body.dateOfBirth) {
+                user.dateOfBirth = req.body.dateOfBirth;
+            }
+            if (req.body.avatar) {
+                user.avatar = req.body.avatar;
+            }
+
+            const updatedUser = await user.save();
+
+            res.json({
+                _id: updatedUser._id,
+                fullName: updatedUser.fullName,
+                email: updatedUser.email,
+                phone: updatedUser.phone,
+                role: updatedUser.role,
+                avatar: updatedUser.avatar,
+                bio: updatedUser.bio,
+                dateOfBirth: updatedUser.dateOfBirth,
+                createdAt: updatedUser.createdAt,
+                token: generateToken(updatedUser._id),
+                message: 'Profile updated successfully',
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error: ' + error.message });
+    }
+};
+
+// @desc    Change password
+// @route   PUT /api/auth/change-password
+// @access  Private
+export const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.user.id).select('+password');
+
+        if (user && (await user.matchPassword(currentPassword))) {
+            user.password = newPassword;
+            await user.save();
+            res.json({ message: 'Password changed successfully' });
+        } else {
+            res.status(401).json({ message: 'Invalid current password' });
+        }
+    } catch (error) {
+        console.error(error);
+        // Return 400 for validation errors (like weak password)
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: error.message });
+        }
         res.status(500).json({ message: 'Server error: ' + error.message });
     }
 };
