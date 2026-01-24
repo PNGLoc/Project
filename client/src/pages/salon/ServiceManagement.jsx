@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import '../../assets/css/SalonDashboard.css';
 
+// Quản lý dịch vụ (Service Management) cho Salon Owner
+
 const ServiceManagement = () => {
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
