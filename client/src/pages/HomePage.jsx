@@ -49,9 +49,8 @@ const HomePage = () => {
 
 
     return (
-        <div className="home-container">
-            {/* --- PHẦN 1: HEADER --- */}
-            <HeaderHome />
+        <>
+            {/* Header and home-container moved to MainLayout */}
 
             {/* --- PHẦN 2: BANNER (Tìm kiếm) --- */}
             <section className="hero-section">
@@ -125,7 +124,7 @@ const HomePage = () => {
                 )}
             </div>
 
-        </div>
+        </>
     );
 };
 

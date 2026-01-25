@@ -155,231 +155,234 @@ const ProfilePage = () => {
     if (loading) return <div className="container" style={{ paddingTop: '30px' }}>Loading...</div>;
 
     return (
-        <div className="container" style={{ alignItems: 'center', paddingTop: '20px', minHeight: 'calc(100vh - 80px)', flexDirection: 'column' }}>
+        <>
+            {/* Header and home-container moved to MainLayout */}
+            <div className="container" style={{ alignItems: 'center', paddingTop: '20px', minHeight: 'calc(100vh - 80px)', flexDirection: 'column' }}>
 
-            {/* Back to Home Button */}
-            <div style={{ width: '100%', maxWidth: '1000px', marginBottom: '1rem' }}>
-                <Link to="/" className="btn" style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '8px',
-                    background: 'transparent', color: 'var(--text-muted)',
-                    border: '1px solid var(--border-color)', padding: '8px 16px',
-                    width: 'auto'
-                }}>
-                    <FaArrowLeft /> Back to Home
-                </Link>
-            </div>
+                {/* Back to Home Button */}
+                <div style={{ width: '100%', maxWidth: '1000px', marginBottom: '1rem' }}>
+                    <Link to="/" className="btn" style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                        background: 'transparent', color: 'var(--text-muted)',
+                        border: '1px solid var(--border-color)', padding: '8px 16px',
+                        width: 'auto'
+                    }}>
+                        <FaArrowLeft /> Back to Home
+                    </Link>
+                </div>
 
-            <div className="profile-wrapper" style={{ display: 'flex', width: '100%', maxWidth: '1000px', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <div className="profile-wrapper" style={{ display: 'flex', width: '100%', maxWidth: '1000px', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
-                {/* Sidebar / Tabs */}
-                <div className="profile-sidebar" style={{ flex: '1', minWidth: '250px', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: 'var(--shadow-md)', height: 'fit-content' }}>
-                    <div className="profile-menu">
-                        <button
-                            onClick={() => setActiveTab('basic')}
-                            style={{
-                                width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'basic' ? 'var(--bg-secondary)' : 'transparent',
-                                textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
-                                color: activeTab === 'basic' ? 'var(--primary-color)' : 'var(--text-main)',
-                                fontWeight: activeTab === 'basic' ? '600' : '400',
-                                display: 'flex', alignItems: 'center', gap: '10px'
-                            }}
-                        >
-                            <FaUser /> Basic Info
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('detail')}
-                            style={{
-                                width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'detail' ? 'var(--bg-secondary)' : 'transparent',
-                                textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
-                                color: activeTab === 'detail' ? 'var(--primary-color)' : 'var(--text-main)',
-                                fontWeight: activeTab === 'detail' ? '600' : '400',
-                                display: 'flex', alignItems: 'center', gap: '10px'
-                            }}
-                        >
-                            <FaIdCard /> Profile Detail
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('update')}
-                            style={{
-                                width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'update' ? 'var(--bg-secondary)' : 'transparent',
-                                textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
-                                color: activeTab === 'update' ? 'var(--primary-color)' : 'var(--text-main)',
-                                fontWeight: activeTab === 'update' ? '600' : '400',
-                                display: 'flex', alignItems: 'center', gap: '10px'
-                            }}
-                        >
-                            <FaEdit /> Update Profile
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('security')}
-                            style={{
-                                width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'security' ? 'var(--bg-secondary)' : 'transparent',
-                                textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
-                                color: activeTab === 'security' ? 'var(--primary-color)' : 'var(--text-main)',
-                                fontWeight: activeTab === 'security' ? '600' : '400',
-                                display: 'flex', alignItems: 'center', gap: '10px'
-                            }}
-                        >
-                            <FaLock /> Security
-                        </button>
+                    {/* Sidebar / Tabs */}
+                    <div className="profile-sidebar" style={{ flex: '1', minWidth: '250px', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: 'var(--shadow-md)', height: 'fit-content' }}>
+                        <div className="profile-menu">
+                            <button
+                                onClick={() => setActiveTab('basic')}
+                                style={{
+                                    width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'basic' ? 'var(--bg-secondary)' : 'transparent',
+                                    textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
+                                    color: activeTab === 'basic' ? 'var(--primary-color)' : 'var(--text-main)',
+                                    fontWeight: activeTab === 'basic' ? '600' : '400',
+                                    display: 'flex', alignItems: 'center', gap: '10px'
+                                }}
+                            >
+                                <FaUser /> Basic Info
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('detail')}
+                                style={{
+                                    width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'detail' ? 'var(--bg-secondary)' : 'transparent',
+                                    textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
+                                    color: activeTab === 'detail' ? 'var(--primary-color)' : 'var(--text-main)',
+                                    fontWeight: activeTab === 'detail' ? '600' : '400',
+                                    display: 'flex', alignItems: 'center', gap: '10px'
+                                }}
+                            >
+                                <FaIdCard /> Profile Detail
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('update')}
+                                style={{
+                                    width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'update' ? 'var(--bg-secondary)' : 'transparent',
+                                    textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
+                                    color: activeTab === 'update' ? 'var(--primary-color)' : 'var(--text-main)',
+                                    fontWeight: activeTab === 'update' ? '600' : '400',
+                                    display: 'flex', alignItems: 'center', gap: '10px'
+                                }}
+                            >
+                                <FaEdit /> Update Profile
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('security')}
+                                style={{
+                                    width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'security' ? 'var(--bg-secondary)' : 'transparent',
+                                    textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
+                                    color: activeTab === 'security' ? 'var(--primary-color)' : 'var(--text-main)',
+                                    fontWeight: activeTab === 'security' ? '600' : '400',
+                                    display: 'flex', alignItems: 'center', gap: '10px'
+                                }}
+                            >
+                                <FaLock /> Security
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="profile-content" style={{ flex: '3', minWidth: '300px', background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: 'var(--shadow-md)', minHeight: '600px' }}>
+                        {message.text && (
+                            <div className={message.type === 'error' ? 'error-message' : 'success-message'}>
+                                {message.text}
+                            </div>
+                        )}
+
+                        {/* 1. Basic Info Tab */}
+                        {activeTab === 'basic' && (
+                            <div style={{ textAlign: 'center' }}>
+                                <h2 style={{ marginBottom: '2rem', color: 'var(--primary-color)', textAlign: 'left' }}>Basic Information</h2>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                    <img
+                                        src={user?.avatar || 'https://via.placeholder.com/150'}
+                                        alt="Profile"
+                                        style={{ width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--primary-color)', padding: '3px' }}
+                                    />
+                                    <h2 style={{ fontSize: '1.8rem', fontWeight: '700' }}>{user?.fullName}</h2>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>{user?.email}</p>
+                                    <span style={{
+                                        fontSize: '0.9rem', padding: '4px 12px', borderRadius: '20px',
+                                        background: 'var(--bg-secondary)', color: 'var(--primary-color)', fontWeight: '600', textTransform: 'uppercase'
+                                    }}>
+                                        {user?.role}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 2. Profile Detail Tab */}
+                        {activeTab === 'detail' && (
+                            <div>
+                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Full Profile Details</h2>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem', fontSize: '1rem' }}>
+                                    <div style={{ color: 'var(--text-muted)' }}>Full Name:</div>
+                                    <div style={{ fontWeight: '500' }}>{user?.fullName}</div>
+
+                                    <div style={{ color: 'var(--text-muted)' }}>Email:</div>
+                                    <div style={{ fontWeight: '500' }}>{user?.email}</div>
+
+                                    <div style={{ color: 'var(--text-muted)' }}>Phone:</div>
+                                    <div style={{ fontWeight: '500' }}>{user?.phone || 'Not set'}</div>
+
+                                    <div style={{ color: 'var(--text-muted)' }}>Date of Birth:</div>
+                                    <div style={{ fontWeight: '500' }}>
+                                        {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString('vi-VN') : 'Not set'}
+                                    </div>
+
+                                    <div style={{ color: 'var(--text-muted)' }}>Account Created:</div>
+                                    <div style={{ fontWeight: '500' }}>{new Date(user?.createdAt).toLocaleDateString('vi-VN')}</div>
+
+                                    <div style={{ color: 'var(--text-muted)' }}>Bio:</div>
+                                    <div style={{ fontWeight: '500', lineHeight: '1.6' }}>{user?.bio || 'No bio yet...'}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 3. Update Profile Tab (With Date Picker, No Avatar) */}
+                        {activeTab === 'update' && (
+                            <div>
+                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Update Information</h2>
+                                <form onSubmit={handleUpdateProfile}>
+                                    <div className="form-group">
+                                        <label>Full Name</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            style={errors.fullName ? { border: '1px solid red' } : {}}
+                                            value={formData.fullName}
+                                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                        />
+                                        {errors.fullName && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.fullName}</span>}
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Phone Number</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            style={errors.phone ? { border: '1px solid red' } : {}}
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                        />
+                                        {errors.phone && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.phone}</span>}
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Date of Birth</label>
+                                        <input
+                                            type="date"
+                                            className="form-control"
+                                            style={errors.dateOfBirth ? { border: '1px solid red' } : {}}
+                                            value={formData.dateOfBirth}
+                                            onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                                        />
+                                        {errors.dateOfBirth && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.dateOfBirth}</span>}
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Bio</label>
+                                        <textarea
+                                            className="form-control"
+                                            rows="4"
+                                            style={Object.assign({ fontFamily: 'inherit' }, errors.bio ? { border: '1px solid red' } : {})}
+                                            value={formData.bio}
+                                            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                        ></textarea>
+                                        {errors.bio && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.bio}</span>}
+                                    </div>
+                                    <button type="submit" className="btn" style={{ maxWidth: '200px' }}>Save Changes</button>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* 4. Security Tab */}
+                        {activeTab === 'security' && (
+                            <div>
+                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Change Password</h2>
+                                <form onSubmit={handleChangePassword}>
+                                    <div className="form-group">
+                                        <label>Current Password</label>
+                                        <input
+                                            type="password"
+                                            className="form-control"
+                                            value={passwordData.currentPassword}
+                                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>New Password</label>
+                                        <input
+                                            type="password"
+                                            className="form-control"
+                                            value={passwordData.newPassword}
+                                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                            required
+                                            minLength="8"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Confirm New Password</label>
+                                        <input
+                                            type="password"
+                                            className="form-control"
+                                            value={passwordData.confirmPassword}
+                                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <button type="submit" className="btn" style={{ maxWidth: '200px' }}>Update Password</button>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 </div>
-
-                {/* Main Content */}
-                <div className="profile-content" style={{ flex: '3', minWidth: '300px', background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: 'var(--shadow-md)', minHeight: '600px' }}>
-                    {message.text && (
-                        <div className={message.type === 'error' ? 'error-message' : 'success-message'}>
-                            {message.text}
-                        </div>
-                    )}
-
-                    {/* 1. Basic Info Tab */}
-                    {activeTab === 'basic' && (
-                        <div style={{ textAlign: 'center' }}>
-                            <h2 style={{ marginBottom: '2rem', color: 'var(--primary-color)', textAlign: 'left' }}>Basic Information</h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                                <img
-                                    src={user?.avatar || 'https://via.placeholder.com/150'}
-                                    alt="Profile"
-                                    style={{ width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--primary-color)', padding: '3px' }}
-                                />
-                                <h2 style={{ fontSize: '1.8rem', fontWeight: '700' }}>{user?.fullName}</h2>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>{user?.email}</p>
-                                <span style={{
-                                    fontSize: '0.9rem', padding: '4px 12px', borderRadius: '20px',
-                                    background: 'var(--bg-secondary)', color: 'var(--primary-color)', fontWeight: '600', textTransform: 'uppercase'
-                                }}>
-                                    {user?.role}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 2. Profile Detail Tab */}
-                    {activeTab === 'detail' && (
-                        <div>
-                            <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Full Profile Details</h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem', fontSize: '1rem' }}>
-                                <div style={{ color: 'var(--text-muted)' }}>Full Name:</div>
-                                <div style={{ fontWeight: '500' }}>{user?.fullName}</div>
-
-                                <div style={{ color: 'var(--text-muted)' }}>Email:</div>
-                                <div style={{ fontWeight: '500' }}>{user?.email}</div>
-
-                                <div style={{ color: 'var(--text-muted)' }}>Phone:</div>
-                                <div style={{ fontWeight: '500' }}>{user?.phone || 'Not set'}</div>
-
-                                <div style={{ color: 'var(--text-muted)' }}>Date of Birth:</div>
-                                <div style={{ fontWeight: '500' }}>
-                                    {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString('vi-VN') : 'Not set'}
-                                </div>
-
-                                <div style={{ color: 'var(--text-muted)' }}>Account Created:</div>
-                                <div style={{ fontWeight: '500' }}>{new Date(user?.createdAt).toLocaleDateString('vi-VN')}</div>
-
-                                <div style={{ color: 'var(--text-muted)' }}>Bio:</div>
-                                <div style={{ fontWeight: '500', lineHeight: '1.6' }}>{user?.bio || 'No bio yet...'}</div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 3. Update Profile Tab (With Date Picker, No Avatar) */}
-                    {activeTab === 'update' && (
-                        <div>
-                            <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Update Information</h2>
-                            <form onSubmit={handleUpdateProfile}>
-                                <div className="form-group">
-                                    <label>Full Name</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        style={errors.fullName ? { border: '1px solid red' } : {}}
-                                        value={formData.fullName}
-                                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                    />
-                                    {errors.fullName && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.fullName}</span>}
-                                </div>
-                                <div className="form-group">
-                                    <label>Phone Number</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        style={errors.phone ? { border: '1px solid red' } : {}}
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    />
-                                    {errors.phone && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.phone}</span>}
-                                </div>
-                                <div className="form-group">
-                                    <label>Date of Birth</label>
-                                    <input
-                                        type="date"
-                                        className="form-control"
-                                        style={errors.dateOfBirth ? { border: '1px solid red' } : {}}
-                                        value={formData.dateOfBirth}
-                                        onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                                    />
-                                    {errors.dateOfBirth && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.dateOfBirth}</span>}
-                                </div>
-                                <div className="form-group">
-                                    <label>Bio</label>
-                                    <textarea
-                                        className="form-control"
-                                        rows="4"
-                                        style={Object.assign({ fontFamily: 'inherit' }, errors.bio ? { border: '1px solid red' } : {})}
-                                        value={formData.bio}
-                                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                    ></textarea>
-                                    {errors.bio && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.bio}</span>}
-                                </div>
-                                <button type="submit" className="btn" style={{ maxWidth: '200px' }}>Save Changes</button>
-                            </form>
-                        </div>
-                    )}
-
-                    {/* 4. Security Tab */}
-                    {activeTab === 'security' && (
-                        <div>
-                            <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Change Password</h2>
-                            <form onSubmit={handleChangePassword}>
-                                <div className="form-group">
-                                    <label>Current Password</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        value={passwordData.currentPassword}
-                                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>New Password</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        value={passwordData.newPassword}
-                                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                        required
-                                        minLength="8"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Confirm New Password</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        value={passwordData.confirmPassword}
-                                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className="btn" style={{ maxWidth: '200px' }}>Update Password</button>
-                            </form>
-                        </div>
-                    )}
-                </div>
             </div>
-        </div>
+        </>
     );
 };
 

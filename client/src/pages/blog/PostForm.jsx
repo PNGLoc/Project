@@ -241,7 +241,7 @@ const PostForm = () => {
 
     return (
         <>
-            <HeaderHome />
+            {/* Header and home-container moved to MainLayout */}
 
             <div className="post-form-container">
                 <div className="post-form-card">

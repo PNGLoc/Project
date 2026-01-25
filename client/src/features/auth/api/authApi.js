@@ -31,7 +31,7 @@ const authApi = {
         const response = await axiosClient.post('/api/auth/reset-password', data);
         return response.data;
     },
-        getProfile: async () => {
+    getProfile: async () => {
         const response = await axiosClient.get('/api/auth/profile');
         return response.data;
     },

@@ -11,7 +11,6 @@ const SalonDashboard = () => {
 
     return (
         <div className="salon-full-layout">
-            <HeaderHome />
 
             <main className="salon-main-wrapper">
                 <header className="dashboard-top-bar">

@@ -16,7 +16,7 @@ const PendingApplications = () => {
         try {
             const userStr = localStorage.getItem('user');
             const user = userStr ? JSON.parse(userStr) : null;
-            const token = user?.token;
+            const token = localStorage.getItem('token');
 
             if (!token) {
                 setLoading(false);
@@ -29,6 +29,10 @@ const PendingApplications = () => {
             setSalons(res.data);
         } catch (error) {
             console.error("Error fetching list:", error);
+            if (error.response?.status === 401) {
+                alert("Session expired. Please login again.");
+                window.location.href = '/login';
+            }
         } finally {
             setLoading(false);
         }
@@ -38,7 +42,7 @@ const PendingApplications = () => {
         if (!window.confirm("Are you sure you want to approve this Salon?")) return;
         const userStr = localStorage.getItem('user');
         const user = userStr ? JSON.parse(userStr) : null;
-        const token = user?.token;
+        const token = localStorage.getItem('token');
 
         if (!token) { alert("Please login again!"); return; }
         setProcessingId(id);
@@ -61,7 +65,7 @@ const PendingApplications = () => {
         if (!window.confirm("This action will permanently delete the application. Continue?")) return;
         const userStr = localStorage.getItem('user');
         const user = userStr ? JSON.parse(userStr) : null;
-        const token = user?.token;
+        const token = localStorage.getItem('token');
 
         if (!token) { alert("Please login again!"); return; }
         setProcessingId(id);

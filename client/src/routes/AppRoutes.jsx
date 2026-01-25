@@ -17,43 +17,57 @@ import BlogManagement from '../pages/blog/BlogManagement';
 import StaffRegistration from '../pages/salon/StaffRegistration';
 import ProfilePage from '../pages/users/ProfilePage';
 
+import MainLayout from '../components/layout/MainLayout';
+
 const AppRoutes = () => {
     return (
         <Routes>
-            {/* --- NHÓM PUBLIC --- */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/blog/:id" element={<BlogDetail />} />
-            {/* <Route path="/salons" element={<AllSalons />} /> */}
+            {/* NHÓM SỬ DỤNG HEADER CHUNG */}
+            <Route element={<MainLayout />}>
+                {/* --- NHÓM PUBLIC --- */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/blog/:id" element={<BlogDetail />} />
+                {/* <Route path="/salons" element={<AllSalons />} /> */}
 
-            {/* MENU */}
-            <Route path="/search" element={<HeaderHome />} />
-            <Route path="/lookbook" element={<HeaderHome />} />
-            <Route path="/ai-analysis" element={<HeaderHome />} />
-            <Route path="/category/:type" element={<HeaderHome />} />
+                {/* MENU */}
+                <Route path="/search" element={<div>All Salons </div>} />
+                <Route path="/lookbook" element={<div>Lookbook Page (</div>} />
+                <Route path="/ai-analysis" element={<div>AI Analysis Page </div>} />
+                <Route path="/category/:type" element={<div>Category Page </div>} />
 
-            {/* --- AUTH ROUTES --- */}
+                {/* --- NHÓM PROTECTED (Phân quyền) --- */}
+
+                {/* Role: ALL AUTHENTICATED */}
+                <Route element={<ProtectedRoute allowedRoles={['CUSTOMER', 'SALON_OWNER', 'STAFF', 'ADMIN']} />}>
+                    <Route path='/users/profile' element={<ProfilePage />} />
+                    <Route path='/profile' element={<ProfilePage />} />
+                    {/* Blog Management */}
+                    <Route path='/blog/my-blogs' element={<BlogManagement />} />
+                    <Route path='/blog/create' element={<PostForm />} />
+                    <Route path='/blog/:id/edit' element={<PostForm />} />
+                </Route>
+
+                {/* Role: CUSTOMER */}
+                <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']} />}>
+                    <Route path="/salon/register" element={<SalonRegistration />} />
+                </Route>
+                {/* Role: SALON_OWNER */}
+                <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>
+                    <Route path="/salon" element={<SalonDashboard />}>
+                        <Route path="staff/add" element={<StaffRegistration />} />
+                        <Route path="dashboard" element={<SalonDashboard />} />
+                    </Route>
+                </Route>
+            </Route>
+
+            {/* --- AUTH ROUTES (Không dùng Header chung) --- */}
             <Route path='/login' element={<Login />} />
             <Route path='/forgot-password' element={<ForgotPassword />} />
             <Route path='/reset-password' element={<ResetPassword />} />
             <Route path='/register' element={<Register />} />
             <Route path='/verify-email' element={<VerifyEmail />} />
 
-            {/* --- NHÓM PROTECTED (Phân quyền) --- */}
 
-            {/* Role: CUSTOMER */}
-            <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']} />}>
-                <Route path='/users/profile' element={<ProfilePage />} />
-                <Route path='/profile' element={<ProfilePage />} />
-                <Route path="/salon/register" element={<SalonRegistration />} />
-            </Route>
-
-            {/* Role: SALON_OWNER */}
-            <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>
-                <Route path="/salon" element={<SalonDashboard />}>
-                    <Route path="staff/add" element={<StaffRegistration />} />
-                    <Route path="dashboard" element={<SalonDashboard />} />
-                </Route>
-            </Route>
 
             {/* Role: ADMIN */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
@@ -61,12 +75,7 @@ const AppRoutes = () => {
                 <Route path='/admin/users' element={<h2>Manage Users (Placeholder)</h2>} />
             </Route>
 
-            {/* Blog Management - All authenticated users */}
-            <Route element={<ProtectedRoute allowedRoles={['CUSTOMER', 'SALON_OWNER', 'ADMIN']} />}>
-                <Route path='/blog/my-blogs' element={<BlogManagement />} />
-                <Route path='/blog/create' element={<PostForm />} />
-                <Route path='/blog/:id/edit' element={<PostForm />} />
-            </Route>
+
 
             {/* 404 - NOT FOUND */}
             <Route path="*" element={<div>404 - Không tìm thấy trang</div>} />
