@@ -23,5 +23,22 @@ export const useVerify = () => {
         }
     };
 
-    return { verify, isLoading, error, success };
+    const resendOtp = async (email) => {
+        setIsLoading(true);
+        setError(null);
+        setSuccess(null);
+        try {
+            const response = await authApi.resendOtp({ email });
+            setSuccess(response.message);
+            return response;
+        } catch (err) {
+            const message = err.response?.data?.message || err.message || 'Resend failed';
+            setError(message);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return { verify, resendOtp, isLoading, error, success };
 };

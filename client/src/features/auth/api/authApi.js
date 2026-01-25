@@ -47,6 +47,10 @@ const authApi = {
         const response = await axiosClient.put('/api/auth/change-password', passwordData);
         return response.data;
     },
+    resendOtp: async (emailData) => {
+        const response = await axiosClient.post('/api/auth/resend-otp', emailData);
+        return response.data;
+    },
     logout: () => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');

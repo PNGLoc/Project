@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema({
         minlength: [8, 'Password must be at least 8 characters'],
         validate: {
             validator: function (v) {
+                // If it's already a bcrypt hash, return true
+                if (v && v.startsWith('$2b$')) return true;
                 // At least one uppercase, one lowercase, one number, and one special character
                 return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v);
             },
@@ -46,7 +48,7 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-        bio: {
+    bio: {
         type: String,
         maxLength: [500, 'Bio cannot exceed 500 characters'],
         default: '',
@@ -72,7 +74,7 @@ const userSchema = new mongoose.Schema({
 
 // Encrypt password using bcrypt
 userSchema.pre('save', async function () {
-    if (!this.isModified('password')) {
+    if (!this.isModified('password') || this.password.startsWith('$2b$')) {
         return;
     }
     const salt = await bcrypt.genSalt(10);
