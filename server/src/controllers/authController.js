@@ -1,7 +1,9 @@
 import User from '../models/User.js';
+import PendingUser from '../models/PendingUser.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import Salon from '../models/Salon.js';
 
 // Generate JWT
@@ -34,6 +36,7 @@ const sendEmail = async (to, subject, text, html) => {
     await transporter.sendMail(mailOptions);
 };
 
+
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
@@ -41,11 +44,16 @@ export const register = async (req, res) => {
     try {
         const { fullName, email, password, phone } = req.body;
 
-        // Check if user exists
+        // 1. Check if user already exists in main User collection
         const userExists = await User.findOne({ email });
-
         if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: 'User with this email already exists' });
+        }
+
+        // 2. Check if phone exists (for verified users in main collection)
+        const phoneExists = await User.findOne({ phone });
+        if (phoneExists) {
+            return res.status(400).json({ message: 'Phone number already in use' });
         }
 
         // Generate 6-digit OTP
@@ -53,37 +61,49 @@ export const register = async (req, res) => {
         // OTP expires in 3 minutes
         const otpExpires = Date.now() + 3 * 60 * 1000;
 
-        // Create user
-        const user = await User.create({
-            fullName,
+        // 3. Save to PendingUser (temporary storage)
+        let pendingUser = await PendingUser.findOne({ email });
+
+        if (pendingUser) {
+            // Update existing pending registration
+            pendingUser.fullName = fullName;
+            pendingUser.password = password; // Pre-save hook not on this model, will hash below if needed or hash manually
+            pendingUser.phone = phone;
+            pendingUser.verificationToken = otpCode;
+            pendingUser.otpExpires = otpExpires;
+        } else {
+            // Create new pending registration
+            pendingUser = new PendingUser({
+                fullName,
+                email,
+                password,
+                phone,
+                verificationToken: otpCode,
+                otpExpires,
+            });
+        }
+
+        // Hash password for PendingUser since it doesn't have the pre-save hook of User model
+        const salt = await bcrypt.genSalt(10);
+        pendingUser.password = await bcrypt.hash(password, salt);
+
+        await pendingUser.save();
+
+        // Send email
+        await sendEmail(
             email,
-            password,
-            phone,
-            verificationToken: otpCode,
-            otpExpires,
+            'Account Verification OTP',
+            `Your verification code is: ${otpCode}. It expires in 3 minutes.`,
+            `<h3>Your verification code is: <b>${otpCode}</b></h3><p>It expires in 3 minutes.</p>`
+        );
+
+        console.log(`[REGISTRATION PENDING] OTP sent to ${email}: ${otpCode}`);
+
+        res.status(201).json({
+            message: 'Registration initiated. Please check email for OTP.',
+            email: email
         });
 
-        if (user) {
-            // Send email
-            await sendEmail(
-                email,
-                'Account Verification OTP',
-                `Your verification code is: ${otpCode}. It expires in 3 minutes.`,
-                `<h3>Your verification code is: <b>${otpCode}</b></h3><p>It expires in 3 minutes.</p>`
-            );
-
-            console.log(`[EMAIL SEND] OTP sent to ${email}: ${otpCode}`);
-
-            res.status(201).json({
-                _id: user.id,
-                fullName: user.fullName,
-                email: user.email,
-                role: user.role,
-                message: 'User registered. Please check email for OTP.',
-            });
-        } else {
-            res.status(400).json({ message: 'Invalid user data' });
-        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error: ' + error.message });
@@ -99,31 +119,42 @@ export const verifyEmail = async (req, res) => {
             return res.status(400).json({ message: 'Please provide email and OTP' });
         }
 
-        const user = await User.findOne({ email });
+        // 1. Find the pending registration
+        const pendingUser = await PendingUser.findOne({ email });
 
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        if (!pendingUser) {
+            return res.status(404).json({ message: 'Registration not found or expired. Please register again.' });
         }
 
-        if (user.isVerified) {
-            return res.status(400).json({ message: 'User already verified' });
-        }
-
-        if (user.verificationToken !== otp) {
+        // 2. Validate OTP
+        if (pendingUser.verificationToken !== otp) {
             return res.status(400).json({ message: 'Invalid OTP' });
         }
 
-        if (user.otpExpires < Date.now()) {
+        if (pendingUser.otpExpires < Date.now()) {
             return res.status(400).json({ message: 'OTP expired' });
         }
 
-        // Verify user
-        user.isVerified = true;
-        user.verificationToken = undefined;
-        user.otpExpires = undefined;
-        await user.save();
+        // 3. Create real User in User collection
+        const user = await User.create({
+            fullName: pendingUser.fullName,
+            email: pendingUser.email,
+            password: pendingUser.password, // This is already hashed from register step
+            phone: pendingUser.phone,
+            isVerified: true,
+        });
 
-        res.status(200).json({ message: 'Email verified successfully. You can now login.' });
+        // 4. Delete pending registration
+        await PendingUser.deleteOne({ _id: pendingUser._id });
+
+        res.status(200).json({
+            message: 'Email verified successfully. You can now login.',
+            user: {
+                id: user._id,
+                email: user.email,
+                fullName: user.fullName
+            }
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
@@ -141,14 +172,14 @@ export const login = async (req, res) => {
         const user = await User.findOne({ email }).select('+password');
 
         if (!user) {
-            return res.status(401).json({ message: 'Email not found' });
+            return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         // Check if password matches
         const isMatch = await user.matchPassword(password);
 
         if (!isMatch) {
-            return res.status(401).json({ message: 'Incorrect password' });
+            return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         // Check if verified
@@ -344,5 +375,54 @@ export const changePassword = async (req, res) => {
             return res.status(400).json({ message: error.message });
         }
         res.status(500).json({ message: 'Server error: ' + error.message });
+    }
+};
+
+// @desc    Resend OTP
+// @route   POST /api/auth/resend-otp
+// @access  Public
+export const resendOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Please provide email' });
+        }
+
+        // Check if user is already verified in main collection
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            return res.status(400).json({ message: 'Account already verified' });
+        }
+
+        const pendingUser = await PendingUser.findOne({ email });
+
+        if (!pendingUser) {
+            return res.status(404).json({ message: 'Registration not found. Please register again.' });
+        }
+
+        // Generate new 6-digit OTP
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        // OTP expires in 3 minutes
+        const otpExpires = Date.now() + 3 * 60 * 1000;
+
+        pendingUser.verificationToken = otpCode;
+        pendingUser.otpExpires = otpExpires;
+        await pendingUser.save();
+
+        // Send email
+        await sendEmail(
+            email,
+            'New Account Verification OTP',
+            `Your new verification code is: ${otpCode}. It expires in 3 minutes.`,
+            `<h3>Your new verification code is: <b>${otpCode}</b></h3><p>It expires in 3 minutes.</p>`
+        );
+
+        console.log(`[EMAIL RESEND] New OTP sent to ${email}: ${otpCode}`);
+
+        res.status(200).json({ message: 'New OTP sent to email' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
     }
 };

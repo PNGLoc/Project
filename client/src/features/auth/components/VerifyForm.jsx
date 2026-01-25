@@ -9,7 +9,7 @@ const VerifyForm = () => {
     const [email, setEmail] = useState(location.state ? location.state.email : '');
     const [otp, setOtp] = useState('');
 
-    const { verify, isLoading, error, success } = useVerify();
+    const { verify, resendOtp, isLoading, error, success } = useVerify();
 
     const onSubmit = async (e) => {
         e.preventDefault();
@@ -55,6 +55,26 @@ const VerifyForm = () => {
                 <button type="submit" className="btn" disabled={isLoading}>
                     {isLoading ? 'Verifying...' : 'Verify Account'}
                 </button>
+            </div>
+            <div className="form-group" style={{ textAlign: 'center', marginTop: '10px' }}>
+                <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                    Didn't receive the code?{' '}
+                    <button
+                        type="button"
+                        onClick={() => resendOtp(email)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#0d9488',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            padding: '0'
+                        }}
+                        disabled={isLoading}
+                    >
+                        Resend OTP
+                    </button>
+                </p>
             </div>
         </form>
     );
