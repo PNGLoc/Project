@@ -24,6 +24,11 @@ const postSchema = new mongoose.Schema({
         ref: 'Salon',
         default: [],
     },
+    taggedStaffIds: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'Staff',
+        default: [],
+    },
     linkedServiceId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Service',
@@ -35,5 +40,6 @@ const postSchema = new mongoose.Schema({
 postSchema.index({ authorType: 1, createdAt: -1 });
 postSchema.index({ authorId: 1, createdAt: -1 });
 postSchema.index({ taggedSalonIds: 1, createdAt: -1 });
+postSchema.index({ taggedStaffIds: 1, createdAt: -1 });
 
 export default mongoose.model('Post', postSchema);

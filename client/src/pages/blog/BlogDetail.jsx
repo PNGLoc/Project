@@ -82,7 +82,17 @@ const BlogDetail = () => {
                         <h1>{blog.content.substring(0, 100)}</h1>
                         <div className="blog-detail-meta">
                             <span>📅 {formatDate(blog.createdAt)}</span>
-                            <span>👤 {blog.author?.fullName || blog.author?.name || 'Unknown'}</span>
+                            <span>
+                                👤{' '}
+                                <a
+                                    href="#"
+                                    className="blog-link"
+                                    onClick={(e) => e.preventDefault()}
+                                    title="Profile coming soon"
+                                >
+                                    {blog.author?.fullName || blog.author?.name || 'Unknown'}
+                                </a>
+                            </span>
                             <span>📝 {blog.authorType}</span>
                         </div>
                     </div>
@@ -115,7 +125,34 @@ const BlogDetail = () => {
                             <div className="service-card-inline">
                                 {blog.taggedSalonIds.map((s) => (
                                     <div key={s._id || s} style={{ marginBottom: 8 }}>
-                                        <strong>{s.name || s}</strong>
+                                        <a
+                                            href="#"
+                                            className="blog-link"
+                                            onClick={(e) => e.preventDefault()}
+                                            title="Profile coming soon"
+                                        >
+                                            <strong>{s.name || s}</strong>
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {blog.taggedStaffIds && blog.taggedStaffIds.length > 0 && (
+                        <div className="blog-service-link">
+                            <h3>👥 Tagged staff:</h3>
+                            <div className="service-card-inline">
+                                {blog.taggedStaffIds.map((s) => (
+                                    <div key={s._id || s} style={{ marginBottom: 8 }}>
+                                        <a
+                                            href="#"
+                                            className="blog-link"
+                                            onClick={(e) => e.preventDefault()}
+                                            title="Profile coming soon"
+                                        >
+                                            <strong>{s?.userId?.fullName || s?.fullName || s}</strong>
+                                        </a>
                                     </div>
                                 ))}
                             </div>
