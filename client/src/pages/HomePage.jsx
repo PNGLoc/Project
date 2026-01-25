@@ -10,6 +10,7 @@ import { MdFaceRetouchingNatural } from 'react-icons/md';
 import HeaderHome from "../components/layout/HeaderHome";
 import axios from 'axios';
 import { HiSparkles } from 'react-icons/hi';
+import BlogSection from '../components/home/BlogSection';
 
 const HomePage = () => {
 

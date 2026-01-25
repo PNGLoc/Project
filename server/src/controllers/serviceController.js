@@ -6,14 +6,28 @@ import { getMySalon } from './salonController.js';
 // @route   GET /api/services/owner
 export const getMyServices = async (req, res) => {
     try {
-        const mySalon = await getMySalon(req.user._id);
-        if (!mySalon) return res.status(404).json({ message: "Không tìm thấy Salon" });
+        // Tìm tất cả Salon của user này phòng trường hợp có dữ liệu cũ/trùng hoặc ID thay đổi
+        const mySalons = await Salon.find({ ownerId: req.user._id });
 
-        // Tìm dịch vụ theo salonId (ID của thực thể Salon)
-        const services = await Service.find({ salonId: mySalon._id });
-        res.json(services);
+        if (!mySalons || mySalons.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Bạn chưa đăng ký Salon nào hoặc Salon chưa được liên kết với tài khoản này."
+            });
+        }
+
+        const salonIds = mySalons.map(s => s._id);
+
+        // Tìm tất cả dịch vụ thuộc về bất kỳ Salon nào mà User này sở hữu
+        const services = await Service.find({ salonId: { $in: salonIds } });
+
+        res.json({
+            success: true,
+            count: services.length,
+            data: services
+        });
     } catch (error) {
-        res.status(500).json({ message: "Lỗi khi lấy danh sách: " + error.message });
+        res.status(500).json({ success: false, message: "Lỗi khi lấy danh sách: " + error.message });
     }
 };
 
@@ -38,9 +52,12 @@ export const createService = async (req, res) => {
         });
 
         const createdService = await service.save();
-        res.status(201).json(createdService);
+        res.status(201).json({
+            success: true,
+            data: createdService
+        });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -57,10 +74,13 @@ export const updateService = async (req, res) => {
             { new: true, runValidators: true }
         );
 
-        if (!service) return res.status(404).json({ message: "Không tìm thấy dịch vụ hoặc bạn không có quyền" });
-        res.json(service);
+        if (!service) return res.status(404).json({ success: false, message: "Không tìm thấy dịch vụ hoặc bạn không có quyền" });
+        res.json({
+            success: true,
+            data: service
+        });
     } catch (error) {
-        res.status(400).json({ message: "Cập nhật thất bại", error: error.message });
+        res.status(400).json({ success: false, message: "Cập nhật thất bại", error: error.message });
     }
 };
 

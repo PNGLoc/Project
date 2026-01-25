@@ -26,11 +26,18 @@ const ServiceManagement = () => {
     const fetchServices = useCallback(async () => {
         try {
             setLoading(true);
-            // axiosClient đã có base URL và tự động gán token
             const res = await axiosClient.get('/api/services/owner');
-            setServices(Array.isArray(res.data) ? res.data : []);
+            // Chấp nhận cả định dạng mảng trực tiếp (đề phòng chưa update server) và định dạng { data: [...] }
+            const data = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+            setServices(data);
         } catch (error) {
             console.error("Lỗi tải danh sách:", error);
+            if (error.response?.status === 401) {
+                alert("Phiên đăng nhập đã hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.");
+            } else {
+                const msg = error.response?.data?.message || "Không thể tải danh sách dịch vụ. Vui lòng kiểm tra lại Salon của bạn.";
+                alert("Lỗi: " + msg);
+            }
         } finally {
             setLoading(false);
         }
