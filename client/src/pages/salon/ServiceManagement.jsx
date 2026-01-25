@@ -3,6 +3,8 @@ import { FiEdit } from 'react-icons/fi';
 import axiosClient from '../../lib/axios';
 import '../../assets/css/SalonDashboard.css';
 
+// Quản lý dịch vụ (Service Management) cho Salon Owner
+
 const ServiceManagement = () => {
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
