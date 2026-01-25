@@ -55,4 +55,16 @@ salonSchema.index({ ownerId: 1 }, { unique: false });
 // Index địa lý để hỗ trợ tìm Salon gần đây
 salonSchema.index({ location: "2dsphere" });
 
+salonSchema.post('save', async function (doc) {
+    try {
+        // Tự động tìm thằng User chủ sở hữu và gắn ID của cái Salon này vào
+        await mongoose.model('User').findByIdAndUpdate(doc.ownerId, {
+            salonId: doc._id
+        });
+        console.log("Đã cập nhật salonId cho User thành công!");
+    } catch (err) {
+        console.error("Lỗi cập nhật salonId cho User:", err);
+    }
+});
+
 export default mongoose.model('Salon', salonSchema);

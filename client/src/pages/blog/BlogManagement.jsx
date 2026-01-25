@@ -76,7 +76,7 @@ const BlogManagement = () => {
 
     return (
         <>
-            <HeaderHome />
+            {/* Header and home-container moved to MainLayout */}
 
             <div className="blog-management-container">
                 <div className="blog-management-header">

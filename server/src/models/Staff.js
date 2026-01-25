@@ -18,7 +18,7 @@ const StaffSchema = new mongoose.Schema({
         required: true,
     },
     // === THÊM PHẦN KỸ NĂNG TRỰC TIẾP VÀO STAFF ===
- skills: [{
+    skills: [{
         name: {
             type: String,
             required: true,
@@ -34,9 +34,9 @@ const StaffSchema = new mongoose.Schema({
         }
     }],
     schedule: [{
-        day: { 
-            type: Number, 
-            min: 1, 
+        day: {
+            type: Number,
+            min: 1,
             max: 7
         },
         shifts: [String]
@@ -45,8 +45,8 @@ const StaffSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
     },
-}, { 
-    timestamps: true 
+}, {
+    timestamps: true
 });
 
 export default mongoose.model('Staff', StaffSchema);

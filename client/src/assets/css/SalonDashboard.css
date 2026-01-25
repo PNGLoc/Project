@@ -225,21 +225,53 @@
 }
 
 /* Nút thao tác Edit/Delete */
-.action-buttons .btn-edit,
-.action-buttons .btn-delete {
-    background: none;
-    border: none;
+/* .action-buttons container for alignment */
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Nút thao tác Edit: Chữ đen (giống Service Name), không nền */
+.btn-edit-service {
+    display: flex;
+    align-items: center;
+    background: none !important;
+    border: none !important;
     font-weight: 600;
     cursor: pointer;
-    margin-left: 15px;
+    color: #1e293b !important;
+    /* Màu đen giống Service Name */
+    font-size: 14px;
+    padding: 8px 0 !important;
+    transition: opacity 0.2s;
+    box-shadow: none !important;
 }
 
-.btn-edit {
-    color: #00897b;
+.btn-edit-service:hover {
+    opacity: 0.7;
+    background: none !important;
 }
 
-.btn-delete {
-    color: #ef4444;
+/* Nút thao tác Hire (btn-hire-service): Giống nút Add New Service */
+.btn-hire-service {
+    background-color: #00897b !important;
+    /* Màu xanh của Add New Service */
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 10px !important;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 137, 123, 0.2) !important;
+    transition: all 0.2s;
+    margin-left: 5px;
+}
+
+.btn-hire-service:hover {
+    background-color: #00796b !important;
+    transform: translateY(-1px);
 }
 
 
@@ -431,93 +463,64 @@
 
 
 
-/* Container chính đẩy sang trái */
-.status-selection-group {
-    display: flex;
-    justify-content: flex-start;
-    /* Đẩy toàn bộ sang trái */
-    align-items: center;
-    margin-top: 20px;
-    padding: 0 5px;
+/* --- Toggle Switch CSS (Beautiful Checkbox) --- */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    margin-right: 10px;
 }
 
-/* Container của checkbox và text */
-.checkbox-container {
-    display: flex;
-    align-items: center;
-    /* Căn giữa checkbox và chữ theo chiều dọc */
-    cursor: pointer;
-    font-size: 15px;
-    user-select: none;
-    gap: 10px;
-    /* Khoảng cách giữa ô tick và chữ */
-}
-
-/* Ẩn checkbox mặc định của trình duyệt */
-.checkbox-container input {
-    position: absolute;
+.switch input {
     opacity: 0;
-    cursor: pointer;
-    height: 0;
     width: 0;
+    height: 0;
 }
 
-/* Tạo ô checkbox custom */
-.checkmark {
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
     height: 20px;
     width: 20px;
-    background-color: #eee;
-    border-radius: 4px;
-    border: 2px solid #ddd;
-    position: relative;
-    transition: all 0.2s ease;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Khi di chuột vào */
-.checkbox-container:hover input~.checkmark {
-    background-color: #ccc;
+/* Checked state */
+input:checked+.slider {
+    background-color: #0d9488;
 }
 
-/* Màu nền khi được tick */
-.checkbox-container input:checked~.checkmark {
-    background-color: #008080;
-    /* Màu xanh đậm của Salon */
-    border-color: #008080;
+input:checked+.slider:before {
+    transform: translateX(24px);
 }
 
-/* Tạo dấu tích (v) bên trong */
-.checkmark:after {
-    content: "";
-    position: absolute;
-    display: none;
+/* Rounded sliders */
+.slider.round {
+    border-radius: 34px;
 }
 
-/* Hiện dấu tích khi checked */
-.checkbox-container input:checked~.checkmark:after {
-    display: block;
+.slider.round:before {
+    border-radius: 50%;
 }
 
-/* Style dấu tích (v) */
-.checkmark:after {
-    left: 6px;
-    top: 2px;
-    width: 5px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-
-/* Style cho chữ trạng thái */
-.status-text {
-    font-weight: 500;
-    transition: color 0.2s;
-}
-
-.status-text.active {
-    color: #008080;
-}
-
-.status-text.hidden {
-    color: #666;
+.status-toggle {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
 }

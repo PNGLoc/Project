@@ -69,7 +69,7 @@ const SalonRegistration = () => {
             // 1. Lấy token từ localStorage
             const userStr = localStorage.getItem('user');
             const user = userStr ? JSON.parse(userStr) : null;
-            const token = user?.token;
+            const token = localStorage.getItem('token');
 
             if (!token) {
                 alert("Session expired. Please login again.");
@@ -120,6 +120,9 @@ const SalonRegistration = () => {
             // Xử lý lỗi trùng lặp (Duplicate Key)
             if (error.response?.data?.error === "DUPLICATE_OWNER" || error.response?.status === 400) {
                 alert(error.response?.data?.message || "You have already registered a salon.");
+            } else if (error.response?.status === 401) {
+                alert("Session expired. Please login again.");
+                navigate('/login');
             } else {
                 const serverMessage = error.response?.data?.message || "An error occurred. Please try again later.";
                 alert(serverMessage);
@@ -130,9 +133,8 @@ const SalonRegistration = () => {
     };
 
     return (
-        <div className="home-container">
-            {/* Header */}
-            <HeaderHome />
+        <>
+            {/* Header and home-container moved to MainLayout */}
 
             <div className="registration-container">
                 <div className="registration-box">
@@ -225,7 +227,7 @@ const SalonRegistration = () => {
                     </form>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

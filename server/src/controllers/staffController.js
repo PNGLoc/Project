@@ -75,7 +75,7 @@ export const createStaff = async (req, res) => {
         const staff = await Staff.findOneAndUpdate(
             { userId: user._id },
             {
-               salonId: salon._id,
+                salonId: salon._id,
                 userId: user._id,
                 fullName: fullName.trim(),
                 skills: [], // mảng rỗng, sẽ cập nhật sau
@@ -253,14 +253,14 @@ export const deleteStaff = async (req, res) => {
 
         // Cập nhật bảng User (Để chặn/cho phép đăng nhập)
         // isActive: false ở bảng User sẽ khiến middleware auth chặn lại
-        await User.findByIdAndUpdate(staff.userId, { 
-            isActive: newStatus 
+        await User.findByIdAndUpdate(staff.userId, {
+            isActive: newStatus
         });
 
         res.json({
             success: true,
-            message: newStatus 
-                ? 'Đã kích hoạt lại nhân viên thành công' 
+            message: newStatus
+                ? 'Đã kích hoạt lại nhân viên thành công'
                 : 'Đã vô hiệu hóa nhân viên (Dữ liệu lịch sử vẫn được giữ)',
             data: { _id: staff._id, isActive: newStatus }
         });

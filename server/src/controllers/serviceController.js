@@ -1,15 +1,33 @@
 import Service from '../models/Service.js';
-import mongoose from 'mongoose';
+import Salon from '../models/Salon.js'; // Đảm bảo import model Salon
+import { getMySalon } from './salonController.js';
 
-// @desc    Lấy danh sách dịch vụ của chủ salon (Mảng sẽ hết rỗng)
+// @desc    Lấy danh sách dịch vụ của chủ salon
 // @route   GET /api/services/owner
 export const getMyServices = async (req, res) => {
     try {
-        // Mongoose sẽ tự hiểu req.user._id là ObjectId để so sánh với DB
-        const services = await Service.find({ salonId: req.user._id });
-        res.json(services);
+        // Tìm tất cả Salon của user này phòng trường hợp có dữ liệu cũ/trùng hoặc ID thay đổi
+        const mySalons = await Salon.find({ ownerId: req.user._id });
+
+        if (!mySalons || mySalons.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Bạn chưa đăng ký Salon nào hoặc Salon chưa được liên kết với tài khoản này."
+            });
+        }
+
+        const salonIds = mySalons.map(s => s._id);
+
+        // Tìm tất cả dịch vụ thuộc về bất kỳ Salon nào mà User này sở hữu
+        const services = await Service.find({ salonId: { $in: salonIds } });
+
+        res.json({
+            success: true,
+            count: services.length,
+            data: services
+        });
     } catch (error) {
-        res.status(500).json({ message: "Lỗi khi lấy danh sách: " + error.message });
+        res.status(500).json({ success: false, message: "Lỗi khi lấy danh sách: " + error.message });
     }
 };
 
@@ -18,20 +36,28 @@ export const getMyServices = async (req, res) => {
 export const createService = async (req, res) => {
     try {
         const { name, price, duration, description } = req.body;
+        const mySalon = await getMySalon(req.user._id);
+
+        if (!mySalon) {
+            return res.status(404).json({ message: "Bạn phải tạo thông tin Salon trước!" });
+        }
+
         const service = new Service({
             name,
             price: Number(price),
             duration: Number(duration),
             description,
-            isActive: true,
-            salonId: new mongoose.Types.ObjectId(req.user._id) // QUAN TRỌNG: Phải là ObjectId
+            salonId: mySalon._id, // Gán ID của Salon
+            isActive: true
         });
 
         const createdService = await service.save();
-        res.status(201).json(createdService);
+        res.status(201).json({
+            success: true,
+            data: createdService
+        });
     } catch (error) {
-        console.error("Lỗi tạo dịch vụ:", error);
-        res.status(400).json({ message: "Dữ liệu không hợp lệ", error: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -39,16 +65,22 @@ export const createService = async (req, res) => {
 // @route   PUT /api/services/:id
 export const updateService = async (req, res) => {
     try {
+        const mySalon = await getMySalon(req.user._id);
+        if (!mySalon) return res.status(404).json({ message: "Không tìm thấy Salon" });
+
         const service = await Service.findOneAndUpdate(
-            { _id: req.params.id, salonId: req.user._id }, // Bảo mật: Chỉ chủ sở hữu mới sửa được
+            { _id: req.params.id, salonId: mySalon._id }, // Kiểm tra đúng ID dịch vụ thuộc Salon này
             req.body,
             { new: true, runValidators: true }
         );
 
-        if (!service) return res.status(404).json({ message: "Không tìm thấy dịch vụ" });
-        res.json(service);
+        if (!service) return res.status(404).json({ success: false, message: "Không tìm thấy dịch vụ hoặc bạn không có quyền" });
+        res.json({
+            success: true,
+            data: service
+        });
     } catch (error) {
-        res.status(400).json({ message: "Cập nhật thất bại", error: error.message });
+        res.status(400).json({ success: false, message: "Cập nhật thất bại", error: error.message });
     }
 };
 
@@ -56,8 +88,11 @@ export const updateService = async (req, res) => {
 // @route   PATCH /api/services/:id/hide
 export const hideService = async (req, res) => {
     try {
+        const mySalon = await getMySalon(req.user._id);
+        if (!mySalon) return res.status(404).json({ message: "Không tìm thấy Salon" });
+
         const service = await Service.findOneAndUpdate(
-            { _id: req.params.id, salonId: req.user._id },
+            { _id: req.params.id, salonId: mySalon._id },
             { isActive: false },
             { new: true }
         );

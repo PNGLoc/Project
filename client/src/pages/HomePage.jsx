@@ -50,9 +50,8 @@ const HomePage = () => {
 
 
     return (
-        <div className="home-container">
-            {/* --- PHẦN 1: HEADER --- */}
-            <HeaderHome />
+        <>
+            {/* Header and home-container moved to MainLayout */}
 
             {/* --- PHẦN 2: BANNER (Tìm kiếm) --- */}
             <section className="hero-section">
@@ -104,7 +103,6 @@ const HomePage = () => {
             <div className="section-container">
                 <div className="section-header">
                     <h2 className="section-title">Top Rated Salon</h2>
-                    <Link to="/search" className="view-all">View All &rarr;</Link>
                 </div>
 
                 {loading ? (
@@ -116,7 +114,7 @@ const HomePage = () => {
                             // 2. Cắt lấy 4 phần tử đầu tiên
                             salons
                                 .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-                                .slice(0, 4)
+                                .slice(0, 3)
                                 .map((salon) => (
                                     <SalonCard
                                         key={salon._id}
@@ -130,7 +128,7 @@ const HomePage = () => {
                 )}
             </div>
 
-        </div>
+        </>
     );
 };
 
