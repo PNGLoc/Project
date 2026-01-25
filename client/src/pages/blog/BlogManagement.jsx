@@ -14,7 +14,6 @@ const BlogManagement = () => {
     const [blogs, setBlogs] = useState([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [sortBy, setSortBy] = useState('createdAt');
     const [order, setOrder] = useState('desc');
     const [searchQ, setSearchQ] = useState('');
     const [activeQuery, setActiveQuery] = useState('');
@@ -30,7 +29,6 @@ const BlogManagement = () => {
                 q: activeQuery || undefined,
                 page,
                 limit: 10,
-                sortBy,
                 order,
             });
             console.log('📚 Blogs loaded:', data);
@@ -43,7 +41,7 @@ const BlogManagement = () => {
 
     useEffect(() => {
         loadMyBlogs();
-    }, [page, sortBy, order, activeQuery, getPostsByAuthor]);
+    }, [page, order, activeQuery, getPostsByAuthor]);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -122,19 +120,6 @@ const BlogManagement = () => {
                     </div>
 
                     <div className="myblogs-filters">
-                        <div className="myblogs-filter">
-                            <label>Sort</label>
-                            <select
-                                value={sortBy}
-                                onChange={(e) => {
-                                    setSortBy(e.target.value);
-                                    setPage(1);
-                                }}
-                            >
-                                <option value="createdAt">Date</option>
-                            </select>
-                        </div>
-
                         <div className="myblogs-filter">
                             <label>Order</label>
                             <select

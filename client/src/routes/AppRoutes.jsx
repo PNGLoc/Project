@@ -54,11 +54,11 @@ const AppRoutes = () => {
             {/* Role: SALON_OWNER */}
             <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>
                 <Route path="/salon/dashboard" element={<SalonDashboard />} />
-                
+
                 {/* Quản lý nhân viên */}
                 <Route path="/salon/staff/add" element={<StaffRegistration />} />
                 <Route path="/salon/staff-list" element={<StaffList />} />
-                
+
 
             </Route>
 
@@ -69,7 +69,7 @@ const AppRoutes = () => {
             </Route>
 
             {/* Blog Management - All authenticated users */}
-            <Route element={<ProtectedRoute allowedRoles={['CUSTOMER', 'SALON_OWNER', 'ADMIN']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['CUSTOMER', 'SALON_OWNER', 'ADMIN', 'STAFF']} />}>
                 <Route path='/blog/my-blogs' element={<BlogManagement />} />
                 <Route path='/blog/create' element={<PostForm />} />
                 <Route path='/blog/:id/edit' element={<PostForm />} />
