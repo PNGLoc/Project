@@ -1,21 +1,34 @@
-// src/pages/salon/StaffRegistration.jsx
+// client/src/pages/salon/StaffRegistration.jsx
+import { Link } from 'react-router-dom';
 import AuthLayout from '../../features/auth/components/AuthLayout';
 import StaffForm from '../../features/staff/components/StaffForm';
-import { Link } from 'react-router-dom';
+import HeaderHome from '../../components/layout/HeaderHome'; // ← Thêm Header
 
 function StaffRegistration() {
     return (
-        <AuthLayout
-            title="THÊM NHÂN VIÊN"
-            subtitle="Tạo tài khoản cho nhân viên salon của bạn"
-        >
-            <StaffForm />
-            <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                <p style={{ color: '#6b7280' }}>
-                    <Link to="/salon/dashboard">← Quay lại Dashboard</Link>
-                </p>
+        <>
+            <HeaderHome /> {/* Thêm header giống các trang salon khác */}
+
+            <div style={{ padding: '40px 20px', maxWidth: '600px', margin: '0 auto' }}>
+                <AuthLayout
+                    title="ADD NEW STAFF"
+                    subtitle="Create an account for your salon staff member"
+                >
+                    <StaffForm />
+
+                    <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                        <p style={{ color: '#6b7280', fontSize: '16px' }}>
+                            <Link 
+                                to="/salon/dashboard" 
+                                style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: '500' }}
+                            >
+                                ← Back to Dashboard
+                            </Link>
+                        </p>
+                    </div>
+                </AuthLayout>
             </div>
-        </AuthLayout>
+        </>
     );
 }
 

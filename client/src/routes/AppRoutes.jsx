@@ -15,7 +15,10 @@ import BlogDetail from '../pages/blog/BlogDetail';
 import PostForm from '../pages/blog/PostForm';
 import BlogManagement from '../pages/blog/BlogManagement';
 import StaffRegistration from '../pages/salon/StaffRegistration';
+
+// --- IMPORT ĐÃ ĐƯỢC GỘP TỪ 2 NHÁNH & THÊM MỚI ---
 import ProfilePage from '../pages/users/ProfilePage';
+import StaffList from "../pages/salon/StaffList";
 
 import MainLayout from '../components/layout/MainLayout';
 

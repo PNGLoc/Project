@@ -2,6 +2,7 @@ import Post from '../models/Post.js';
 import Service from '../models/Service.js';
 import Salon from '../models/Salon.js';
 import User from '../models/User.js';
+import Staff from '../models/Staff.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -20,6 +21,18 @@ const assetUrlToFsPath = (assetUrl) => {
     return path.join(CLIENT_PUBLIC_PATH, 'assets', rel.replace(/^assets\//, ''));
 };
 
+const resolveAuthor = async (post) => {
+    if (post.authorType === 'Salon') {
+        let salon = await Salon.findById(post.authorId).select('name images phone address').lean();
+        if (!salon) {
+            salon = await Salon.findOne({ ownerId: post.authorId }).select('name images phone address').lean();
+        }
+        return salon;
+    }
+
+    return await User.findById(post.authorId).select('fullName avatar email phone').lean();
+};
+
 // Ensure directories exist
 [POSTS_TEMP_DIR, POSTS_FINAL_DIR].forEach(dir => {
     if (!fs.existsSync(dir)) {
@@ -31,7 +44,7 @@ const assetUrlToFsPath = (assetUrl) => {
 export const createPost = async (req, res) => {
     try {
         const { content, linkedServiceId } = req.body;
-        let { taggedSalonIds } = req.body;
+        let { taggedSalonIds, taggedStaffIds } = req.body;
         const { _id: userId, role } = req.user;
 
         // Determine authorType based on role
@@ -45,6 +58,14 @@ export const createPost = async (req, res) => {
         }
         if (!Array.isArray(taggedSalonIds)) {
             taggedSalonIds = [];
+        }
+
+        // Normalize taggedStaffIds: allow single id or array
+        if (typeof taggedStaffIds === 'string' && taggedStaffIds.trim().length > 0) {
+            taggedStaffIds = [taggedStaffIds];
+        }
+        if (!Array.isArray(taggedStaffIds)) {
+            taggedStaffIds = [];
         }
 
         // Role-based rules
@@ -64,8 +85,8 @@ export const createPost = async (req, res) => {
             if (linkedServiceId) {
                 return res.status(400).json({ message: 'Admin posts cannot include linkedServiceId' });
             }
-            if (taggedSalonIds.length < 1) {
-                return res.status(400).json({ message: 'Admin posts must tag at least 1 salon' });
+            if (taggedStaffIds.length > 0) {
+                return res.status(400).json({ message: 'Admin posts cannot tag staff' });
             }
         } else {
             // Customer: optional images, must tag exactly 1 salon (check-in), cannot link service
@@ -75,6 +96,9 @@ export const createPost = async (req, res) => {
             if (taggedSalonIds.length !== 1) {
                 return res.status(400).json({ message: 'Customer posts must tag exactly 1 salon' });
             }
+            if (taggedStaffIds.length > 0) {
+                return res.status(400).json({ message: 'Customer posts cannot tag staff' });
+            }
         }
 
         // Validate tagged salons exist
@@ -82,6 +106,18 @@ export const createPost = async (req, res) => {
             const count = await Salon.countDocuments({ _id: { $in: taggedSalonIds } });
             if (count !== taggedSalonIds.length) {
                 return res.status(404).json({ message: 'One or more tagged salons not found' });
+            }
+        }
+
+        // Validate tagged staff (only salon owner can tag staff of their salon)
+        if (role === 'SALON_OWNER' && taggedStaffIds.length > 0) {
+            const salon = await Salon.findOne({ ownerId: userId });
+            if (!salon) {
+                return res.status(404).json({ message: 'Salon not found for owner' });
+            }
+            const count = await Staff.countDocuments({ _id: { $in: taggedStaffIds }, salonId: salon._id });
+            if (count !== taggedStaffIds.length) {
+                return res.status(404).json({ message: 'One or more tagged staff not found in your salon' });
             }
         }
 
@@ -105,6 +141,7 @@ export const createPost = async (req, res) => {
             content: content || '',
             images,
             taggedSalonIds,
+            taggedStaffIds,
             linkedServiceId: linkedServiceId || null,
         });
 
@@ -161,16 +198,16 @@ export const getPosts = async (req, res) => {
             .limit(parseInt(limit))
             .populate('linkedServiceId', 'name price duration image')
             .populate('taggedSalonIds', 'name images')
+            .populate({
+                path: 'taggedStaffIds',
+                select: 'fullName userId',
+                populate: { path: 'userId', select: 'fullName avatar email phone' },
+            })
             .lean();
 
         // Fetch author details (User or Salon)
         const postsWithAuthors = await Promise.all(posts.map(async (post) => {
-            let author = null;
-            if (post.authorType === 'Salon') {
-                author = await Salon.findById(post.authorId).select('name images').lean();
-            } else {
-                author = await User.findById(post.authorId).select('fullName avatar').lean();
-            }
+            const author = await resolveAuthor(post);
             return { ...post, author };
         }));
 
@@ -193,19 +230,19 @@ export const getPostById = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id)
             .populate('linkedServiceId', 'name price duration image salonId')
-            .populate('taggedSalonIds', 'name images phone address');
+            .populate('taggedSalonIds', 'name images phone address')
+            .populate({
+                path: 'taggedStaffIds',
+                select: 'fullName userId',
+                populate: { path: 'userId', select: 'fullName avatar email phone' },
+            });
 
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
 
         // Fetch author details
-        let author = null;
-        if (post.authorType === 'Salon') {
-            author = await Salon.findById(post.authorId).select('name images phone address').lean();
-        } else {
-            author = await User.findById(post.authorId).select('fullName avatar email phone').lean();
-        }
+        const author = await resolveAuthor(post);
 
         res.json({ ...post.toObject(), author });
     } catch (error) {
@@ -223,12 +260,21 @@ export const updatePost = async (req, res) => {
         }
 
         // Check authorization: only author can update
-        if (post.authorId.toString() !== req.user._id.toString()) {
+        if (post.authorType === 'Salon') {
+            const salon = await Salon.findOne({ ownerId: req.user._id });
+            const authorIdStr = post.authorId.toString();
+            const ownerIdStr = req.user._id.toString();
+            const salonIdStr = salon?._id?.toString();
+
+            if (authorIdStr !== ownerIdStr && authorIdStr !== salonIdStr) {
+                return res.status(403).json({ message: 'Not authorized to update this post' });
+            }
+        } else if (post.authorId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to update this post' });
         }
 
         const { content, linkedServiceId, existingImagesJson } = req.body;
-        let { taggedSalonIds } = req.body;
+        let { taggedSalonIds, taggedStaffIds } = req.body;
 
         if (content !== undefined) post.content = content;
 
@@ -238,6 +284,14 @@ export const updatePost = async (req, res) => {
         }
         if (taggedSalonIds !== undefined && !Array.isArray(taggedSalonIds)) {
             taggedSalonIds = [];
+        }
+
+        // Normalize taggedStaffIds: allow single id or array
+        if (typeof taggedStaffIds === 'string' && taggedStaffIds.trim().length > 0) {
+            taggedStaffIds = [taggedStaffIds];
+        }
+        if (taggedStaffIds !== undefined && !Array.isArray(taggedStaffIds)) {
+            taggedStaffIds = [];
         }
 
         // Enforce role-based rules on update
@@ -252,8 +306,8 @@ export const updatePost = async (req, res) => {
             if (linkedServiceId) {
                 return res.status(400).json({ message: 'Admin posts cannot include linkedServiceId' });
             }
-            if (taggedSalonIds !== undefined && taggedSalonIds.length < 1) {
-                return res.status(400).json({ message: 'Admin posts must tag at least 1 salon' });
+            if (taggedStaffIds !== undefined && taggedStaffIds.length > 0) {
+                return res.status(400).json({ message: 'Admin posts cannot tag staff' });
             }
         } else {
             if (linkedServiceId) {
@@ -261,6 +315,9 @@ export const updatePost = async (req, res) => {
             }
             if (taggedSalonIds !== undefined && taggedSalonIds.length !== 1) {
                 return res.status(400).json({ message: 'Customer posts must tag exactly 1 salon' });
+            }
+            if (taggedStaffIds !== undefined && taggedStaffIds.length > 0) {
+                return res.status(400).json({ message: 'Customer posts cannot tag staff' });
             }
         }
 
@@ -272,6 +329,20 @@ export const updatePost = async (req, res) => {
                 }
             }
             post.taggedSalonIds = taggedSalonIds;
+        }
+
+        if (taggedStaffIds !== undefined) {
+            if (req.user.role === 'SALON_OWNER' && taggedStaffIds.length > 0) {
+                const salon = await Salon.findOne({ ownerId: req.user._id });
+                if (!salon) {
+                    return res.status(404).json({ message: 'Salon not found for owner' });
+                }
+                const count = await Staff.countDocuments({ _id: { $in: taggedStaffIds }, salonId: salon._id });
+                if (count !== taggedStaffIds.length) {
+                    return res.status(404).json({ message: 'One or more tagged staff not found in your salon' });
+                }
+            }
+            post.taggedStaffIds = taggedStaffIds;
         }
 
         // Update linkedServiceId if provided
@@ -334,7 +405,12 @@ export const updatePost = async (req, res) => {
 
         const updatedPost = await Post.findById(post._id)
             .populate('linkedServiceId', 'name price duration image')
-            .populate('taggedSalonIds', 'name images');
+            .populate('taggedSalonIds', 'name images')
+            .populate({
+                path: 'taggedStaffIds',
+                select: 'fullName userId',
+                populate: { path: 'userId', select: 'fullName avatar email phone' },
+            });
 
         res.json(updatedPost);
     } catch (error) {
@@ -361,7 +437,16 @@ export const deletePost = async (req, res) => {
         }
 
         // Check authorization: only author can delete
-        if (post.authorId.toString() !== req.user._id.toString()) {
+        if (post.authorType === 'Salon') {
+            const salon = await Salon.findOne({ ownerId: req.user._id });
+            const authorIdStr = post.authorId.toString();
+            const ownerIdStr = req.user._id.toString();
+            const salonIdStr = salon?._id?.toString();
+
+            if (authorIdStr !== ownerIdStr && authorIdStr !== salonIdStr) {
+                return res.status(403).json({ message: 'Not authorized to delete this post' });
+            }
+        } else if (post.authorId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to delete this post' });
         }
 
@@ -409,6 +494,11 @@ export const getPostsByAuthor = async (req, res) => {
             .limit(parseInt(limit))
             .populate('linkedServiceId', 'name price duration image')
             .populate('taggedSalonIds', 'name images')
+            .populate({
+                path: 'taggedStaffIds',
+                select: 'fullName userId',
+                populate: { path: 'userId', select: 'fullName avatar email phone' },
+            })
             .lean();
 
         res.json({
@@ -448,6 +538,11 @@ export const searchPosts = async (req, res) => {
             .limit(parseInt(limit))
             .populate('linkedServiceId', 'name price duration image')
             .populate('taggedSalonIds', 'name images')
+            .populate({
+                path: 'taggedStaffIds',
+                select: 'fullName userId',
+                populate: { path: 'userId', select: 'fullName avatar email phone' },
+            })
             .lean();
 
         res.json({

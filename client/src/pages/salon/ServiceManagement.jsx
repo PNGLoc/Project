@@ -61,7 +61,7 @@ const ServiceManagement = () => {
 
         // Kiểm tra tên không chứa số (Validation)
         if (/\d/.test(formData.name)) {
-            alert("Servicename cannot contain numbers.");
+            alert("Service name cannot contain numbers");
             return;
         }
 

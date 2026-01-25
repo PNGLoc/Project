@@ -33,7 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/salons', salonRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/posts', postRoutes);
-app.use('/api/staffs', staffRoutes); 
+app.use('/api/staffs', staffRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

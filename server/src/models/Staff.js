@@ -11,34 +11,42 @@ const StaffSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
-        unique: true, // 1 user chỉ làm staff cho 1 salon
+        unique: true,
     },
     fullName: {
         type: String,
         required: true,
     },
+    // === THÊM PHẦN KỸ NĂNG TRỰC TIẾP VÀO STAFF ===
     skills: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Service',
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        description: {
+            type: String,
+            trim: true
+        },
+        isActive: {
+            type: Boolean,
+            default: true
+        }
     }],
     schedule: [{
-        day: { 
-            type: Number, 
-            min: 1, 
-            max: 7 // 1: Thứ 2, 7: Chủ nhật
+        day: {
+            type: Number,
+            min: 1,
+            max: 7
         },
-        shifts: [String] // VD: ["08:00-12:00", "14:00-18:00"]
+        shifts: [String]
     }],
     isActive: {
         type: Boolean,
         default: true,
     },
-    // Các field thêm nếu muốn giữ lại (không bắt buộc theo spec)
-    // experienceYears: { type: Number, default: 0 },
-    // description: String,
-    // rating: { type: Number, default: 5.0 },
-}, { 
-    timestamps: true 
+}, {
+    timestamps: true
 });
 
 export default mongoose.model('Staff', StaffSchema);

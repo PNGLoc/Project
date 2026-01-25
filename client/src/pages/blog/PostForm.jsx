@@ -17,7 +17,7 @@ const PostForm = () => {
     const userRole = currentUser?.role;
     const isAdmin = userRole === 'ADMIN';
     const isSalon = userRole === 'SALON_OWNER';
-    const isCustomer = userRole === 'CUSTOMER';
+    const isCustomer = userRole === 'CUSTOMER' || userRole === 'STAFF';
 
     const [formData, setFormData] = useState({
         content: '',
@@ -26,6 +26,10 @@ const PostForm = () => {
 
     const [salons, setSalons] = useState([]);
     const [taggedSalonIds, setTaggedSalonIds] = useState([]);
+
+    const [staffs, setStaffs] = useState([]);
+    const [taggedStaffIds, setTaggedStaffIds] = useState([]);
+    const [staffSearch, setStaffSearch] = useState('');
 
     const [services, setServices] = useState([]);
     const [salonSearch, setSalonSearch] = useState('');
@@ -49,6 +53,8 @@ const PostForm = () => {
             });
             const loadedTagged = (post.taggedSalonIds || []).map((s) => (typeof s === 'string' ? s : s?._id)).filter(Boolean);
             setTaggedSalonIds(loadedTagged);
+            const loadedStaff = (post.taggedStaffIds || []).map((s) => (typeof s === 'string' ? s : s?._id)).filter(Boolean);
+            setTaggedStaffIds(loadedStaff);
             setLinkedService(post.linkedServiceId);
             setExistingImages(Array.isArray(post.images) ? post.images : []);
             setImages([]);
@@ -79,6 +85,16 @@ const PostForm = () => {
         }
     };
 
+    const loadMyStaffs = async () => {
+        try {
+            const res = await axiosClient.get('/api/staffs');
+            const list = Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+            setStaffs(list.filter((s) => s.isActive !== false));
+        } catch (err) {
+            console.error('Failed to load staffs:', err);
+        }
+    };
+
     useEffect(() => {
         if (postId) {
             loadPost();
@@ -94,6 +110,7 @@ const PostForm = () => {
     useEffect(() => {
         if (isSalon) {
             loadMyServices();
+            loadMyStaffs();
         }
     }, [isSalon]);
 
@@ -102,6 +119,15 @@ const PostForm = () => {
         if (!q) return salons;
         return salons.filter((s) => (s.name || '').toLowerCase().includes(q));
     }, [salonSearch, salons]);
+
+    const filteredStaffs = useMemo(() => {
+        const q = staffSearch.trim().toLowerCase();
+        if (!q) return staffs;
+        return staffs.filter((s) => {
+            const name = s?.userId?.fullName || s?.fullName || '';
+            return name.toLowerCase().includes(q);
+        });
+    }, [staffSearch, staffs]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -186,10 +212,7 @@ const PostForm = () => {
             }
 
             if (isAdmin) {
-                if (!taggedSalonIds || taggedSalonIds.length < 1) {
-                    setMessage({ type: 'error', text: 'Please tag at least 1 salon' });
-                    return;
-                }
+                // Admin can optionally tag salons
             }
 
             if (isCustomer) {
@@ -208,6 +231,12 @@ const PostForm = () => {
             if ((isAdmin || isCustomer) && taggedSalonIds && taggedSalonIds.length > 0) {
                 taggedSalonIds.forEach((id) => {
                     submitData.append('taggedSalonIds', id);
+                });
+            }
+
+            if (isSalon && taggedStaffIds && taggedStaffIds.length > 0) {
+                taggedStaffIds.forEach((id) => {
+                    submitData.append('taggedStaffIds', id);
                 });
             }
 
@@ -368,8 +397,8 @@ const PostForm = () => {
                         {/* CUSTOMER/Admin: Tag salons */}
                         {(isAdmin || isCustomer) && (
                             <div className="form-group">
-                                <label className="required">
-                                    {isCustomer ? 'Check-in Salon (Required)' : 'Tag Salons (Required)'}
+                                <label className={isCustomer ? 'required' : ''}>
+                                    {isCustomer ? 'Check-in Salon (Required)' : 'Tag Salons (Optional)'}
                                 </label>
 
                                 {salons.length === 0 ? (
@@ -404,32 +433,44 @@ const PostForm = () => {
                                                 maxHeight: 220,
                                                 overflow: 'auto',
                                                 background: '#fff',
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                                                gap: 8,
                                             }}
                                         >
                                             {filteredSalons.map((s) => {
                                                 const checked = taggedSalonIds.includes(s._id);
                                                 return (
-                                                    <label
+                                                    <div
                                                         key={s._id}
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 8,
-                                                            padding: '6px 4px',
-                                                            cursor: 'pointer',
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        onClick={() => {
+                                                            setTaggedSalonIds((prev) =>
+                                                                checked ? prev.filter((id) => id !== s._id) : [...prev, s._id]
+                                                            );
                                                         }}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={checked}
-                                                            onChange={() => {
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
                                                                 setTaggedSalonIds((prev) =>
                                                                     checked ? prev.filter((id) => id !== s._id) : [...prev, s._id]
                                                                 );
-                                                            }}
-                                                        />
-                                                        <span>{s.name}</span>
-                                                    </label>
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            borderRadius: 10,
+                                                            border: checked ? '2px solid #0d9488' : '1px solid #e5e7eb',
+                                                            background: checked ? '#ecfdf5' : '#fff',
+                                                            cursor: 'pointer',
+                                                            fontWeight: 600,
+                                                            color: '#0f172a',
+                                                        }}
+                                                        title={checked ? 'Click to untag' : 'Click to tag'}
+                                                    >
+                                                        {s.name}
+                                                    </div>
                                                 );
                                             })}
                                         </div>
@@ -464,8 +505,107 @@ const PostForm = () => {
                                 <div style={{ color: '#777', fontSize: 12, marginTop: 6 }}>
                                     {isCustomer
                                         ? 'Customer: tag exactly 1 salon (check-in).'
-                                        : 'Admin: select one or more salons for PR/toplist.'}
+                                        : 'Admin: tagging salons is optional.'}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* SALON: Tag staff */}
+                        {isSalon && (
+                            <div className="form-group">
+                                <label>Tag Staff (Optional)</label>
+
+                                {staffs.length === 0 ? (
+                                    <div style={{ color: '#777', fontSize: 14 }}>No staff found to tag.</div>
+                                ) : (
+                                    <div>
+                                        <input
+                                            type="text"
+                                            placeholder="Search staff to tag..."
+                                            value={staffSearch}
+                                            onChange={(e) => setStaffSearch(e.target.value)}
+                                        />
+
+                                        <div
+                                            style={{
+                                                marginTop: 8,
+                                                border: '1px solid #ddd',
+                                                borderRadius: 8,
+                                                padding: 10,
+                                                maxHeight: 220,
+                                                overflow: 'auto',
+                                                background: '#fff',
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                                                gap: 8,
+                                            }}
+                                        >
+                                            {filteredStaffs.map((s) => {
+                                                const id = s._id;
+                                                const name = s?.userId?.fullName || s?.fullName || 'Staff';
+                                                const checked = taggedStaffIds.includes(id);
+                                                return (
+                                                    <div
+                                                        key={id}
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        onClick={() => {
+                                                            setTaggedStaffIds((prev) =>
+                                                                checked ? prev.filter((x) => x !== id) : [...prev, id]
+                                                            );
+                                                        }}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
+                                                                setTaggedStaffIds((prev) =>
+                                                                    checked ? prev.filter((x) => x !== id) : [...prev, id]
+                                                                );
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            borderRadius: 10,
+                                                            border: checked ? '2px solid #0d9488' : '1px solid #e5e7eb',
+                                                            background: checked ? '#ecfdf5' : '#fff',
+                                                            cursor: 'pointer',
+                                                            fontWeight: 600,
+                                                            color: '#0f172a',
+                                                        }}
+                                                        title={checked ? 'Click to untag' : 'Click to tag'}
+                                                    >
+                                                        {name}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {taggedStaffIds.length > 0 && (
+                                            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                                {taggedStaffIds.map((id) => {
+                                                    const staff = staffs.find((s) => s._id === id);
+                                                    const name = staff?.userId?.fullName || staff?.fullName || id;
+                                                    return (
+                                                        <button
+                                                            key={id}
+                                                            type="button"
+                                                            onClick={() => setTaggedStaffIds((prev) => prev.filter((x) => x !== id))}
+                                                            style={{
+                                                                border: '1px solid #ddd',
+                                                                background: '#f7f7f7',
+                                                                padding: '6px 10px',
+                                                                borderRadius: 999,
+                                                                cursor: 'pointer',
+                                                            }}
+                                                            title="Remove"
+                                                        >
+                                                            {name} ✕
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
 

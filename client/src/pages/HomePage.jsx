@@ -71,6 +71,9 @@ const HomePage = () => {
                 </div>
             </section>
 
+            {/* --- PHẦN 2.5: BLOG/NEWS --- */}
+            <BlogSection />
+
             {/* --- PHẦN 3: CATEGORY --- */}
             <section className="section-container">
                 <div className="section-header">
