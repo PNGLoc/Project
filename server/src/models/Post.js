@@ -29,6 +29,12 @@ const postSchema = new mongoose.Schema({
         ref: 'Staff',
         default: [],
     },
+    linkedServiceIds: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'Service',
+        default: [],
+    },
+    // Legacy single-service field (keep for backward compatibility)
     linkedServiceId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Service',

@@ -21,7 +21,7 @@ const PostForm = () => {
 
     const [formData, setFormData] = useState({
         content: '',
-        linkedServiceId: '',
+        linkedServiceIds: [],
     });
 
     const [salons, setSalons] = useState([]);
@@ -32,6 +32,7 @@ const PostForm = () => {
     const [staffSearch, setStaffSearch] = useState('');
 
     const [services, setServices] = useState([]);
+    const [serviceSearch, setServiceSearch] = useState('');
     const [salonSearch, setSalonSearch] = useState('');
 
     const [existingImages, setExistingImages] = useState([]); // stored URLs like /assets/...
@@ -39,7 +40,6 @@ const PostForm = () => {
     const [imagePreviews, setImagePreviews] = useState([]); // previews for new File[]
     const [message, setMessage] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
-    const [linkedService, setLinkedService] = useState(null);
 
     const loading = createLoading || updateLoading;
     const error = createError || updateError;
@@ -47,15 +47,17 @@ const PostForm = () => {
     const loadPost = async () => {
         try {
             const post = await getPostById(postId);
+            const loadedLinkedIds = Array.isArray(post.linkedServiceIds)
+                ? post.linkedServiceIds.map((s) => (typeof s === 'string' ? s : s?._id)).filter(Boolean)
+                : (post.linkedServiceId ? [post.linkedServiceId?._id || post.linkedServiceId].filter(Boolean) : []);
             setFormData({
                 content: post.content,
-                linkedServiceId: post.linkedServiceId?._id || '',
+                linkedServiceIds: loadedLinkedIds,
             });
             const loadedTagged = (post.taggedSalonIds || []).map((s) => (typeof s === 'string' ? s : s?._id)).filter(Boolean);
             setTaggedSalonIds(loadedTagged);
             const loadedStaff = (post.taggedStaffIds || []).map((s) => (typeof s === 'string' ? s : s?._id)).filter(Boolean);
             setTaggedStaffIds(loadedStaff);
-            setLinkedService(post.linkedServiceId);
             setExistingImages(Array.isArray(post.images) ? post.images : []);
             setImages([]);
             setImagePreviews([]);
@@ -78,7 +80,7 @@ const PostForm = () => {
     const loadMyServices = async () => {
         try {
             const res = await axiosClient.get('/api/services/owner');
-            const list = Array.isArray(res.data) ? res.data : [];
+            const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
             setServices(list.filter((s) => s.isActive !== false));
         } catch (err) {
             console.error('Failed to load services:', err);
@@ -128,6 +130,17 @@ const PostForm = () => {
             return name.toLowerCase().includes(q);
         });
     }, [staffSearch, staffs]);
+
+    const filteredServices = useMemo(() => {
+        const q = serviceSearch.trim().toLowerCase();
+        if (!q) return services;
+        return services.filter((s) => (s.name || '').toLowerCase().includes(q));
+    }, [serviceSearch, services]);
+
+    const selectedServices = useMemo(() => {
+        const ids = new Set(formData.linkedServiceIds || []);
+        return services.filter((s) => ids.has(s._id));
+    }, [services, formData.linkedServiceIds]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -204,13 +217,6 @@ const PostForm = () => {
                 }
             }
 
-            if (isSalon) {
-                if (!formData.linkedServiceId) {
-                    setMessage({ type: 'error', text: 'linkedServiceId is required for salon posts' });
-                    return;
-                }
-            }
-
             if (isAdmin) {
                 // Admin can optionally tag salons
             }
@@ -224,8 +230,14 @@ const PostForm = () => {
 
             const submitData = new FormData();
             submitData.append('content', formData.content);
-            if (isSalon && formData.linkedServiceId) {
-                submitData.append('linkedServiceId', formData.linkedServiceId);
+            if (isSalon) {
+                if (formData.linkedServiceIds && formData.linkedServiceIds.length > 0) {
+                    formData.linkedServiceIds.forEach((id) => {
+                        submitData.append('linkedServiceIds', id);
+                    });
+                } else if (isEditing) {
+                    submitData.append('linkedServiceIds', '');
+                }
             }
 
             if ((isAdmin || isCustomer) && taggedSalonIds && taggedSalonIds.length > 0) {
@@ -358,37 +370,106 @@ const PostForm = () => {
                         {isSalon && (
                             <div className="salon-service-section">
                                 <label className="service-dropdown-label">
-                                    Link a Service (Required)
+                                    Link Services (Optional)
                                 </label>
                                 {services.length > 0 ? (
-                                    <select
-                                        name="linkedServiceId"
-                                        value={formData.linkedServiceId}
-                                        onChange={(e) => {
-                                            const id = e.target.value;
-                                            setFormData((prev) => ({ ...prev, linkedServiceId: id }));
-                                            const s = services.find((x) => x._id === id) || null;
-                                            setLinkedService(s);
-                                            setMessage(null);
-                                        }}
-                                    >
-                                        <option value="">-- Select a service --</option>
-                                        {services.map((s) => (
-                                            <option key={s._id} value={s._id}>
-                                                {s.name} (${s.price})
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div>
+                                        <input
+                                            type="text"
+                                            placeholder="Search services to link..."
+                                            value={serviceSearch}
+                                            onChange={(e) => setServiceSearch(e.target.value)}
+                                        />
+
+                                        <div
+                                            style={{
+                                                marginTop: 8,
+                                                border: '1px solid #ddd',
+                                                borderRadius: 8,
+                                                padding: 10,
+                                                maxHeight: 220,
+                                                overflow: 'auto',
+                                                background: '#fff',
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                                                gap: 8,
+                                            }}
+                                        >
+                                            {filteredServices.map((s) => {
+                                                const checked = (formData.linkedServiceIds || []).includes(s._id);
+                                                return (
+                                                    <div
+                                                        key={s._id}
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        onClick={() => {
+                                                            setFormData((prev) => ({
+                                                                ...prev,
+                                                                linkedServiceIds: checked
+                                                                    ? (prev.linkedServiceIds || []).filter((id) => id !== s._id)
+                                                                    : [...(prev.linkedServiceIds || []), s._id],
+                                                            }));
+                                                            setMessage(null);
+                                                        }}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
+                                                                setFormData((prev) => ({
+                                                                    ...prev,
+                                                                    linkedServiceIds: checked
+                                                                        ? (prev.linkedServiceIds || []).filter((id) => id !== s._id)
+                                                                        : [...(prev.linkedServiceIds || []), s._id],
+                                                                }));
+                                                                setMessage(null);
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            borderRadius: 10,
+                                                            border: checked ? '2px solid #0d9488' : '1px solid #e5e7eb',
+                                                            background: checked ? '#ecfdf5' : '#fff',
+                                                            cursor: 'pointer',
+                                                            fontWeight: 600,
+                                                            color: '#0f172a',
+                                                        }}
+                                                        title={checked ? 'Click to unlink' : 'Click to link'}
+                                                    >
+                                                        {s.name} (${s.price})
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {selectedServices.length > 0 && (
+                                            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                                {selectedServices.map((s) => (
+                                                    <button
+                                                        key={s._id}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setFormData((prev) => ({
+                                                                ...prev,
+                                                                linkedServiceIds: (prev.linkedServiceIds || []).filter((id) => id !== s._id),
+                                                            }))
+                                                        }
+                                                        style={{
+                                                            border: '1px solid #ddd',
+                                                            background: '#f7f7f7',
+                                                            padding: '6px 10px',
+                                                            borderRadius: 999,
+                                                            cursor: 'pointer',
+                                                        }}
+                                                        title="Remove"
+                                                    >
+                                                        {s.name} ✕
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div style={{ color: '#777', fontSize: 14 }}>
                                         No services found. Create services first in your salon dashboard.
-                                    </div>
-                                )}
-                                {linkedService && (
-                                    <div className="service-selected-info">
-                                        <p><strong>{linkedService.name}</strong></p>
-                                        <p>Price: ${linkedService.price}</p>
-                                        <p>Duration: {linkedService.duration} min</p>
                                     </div>
                                 )}
                             </div>

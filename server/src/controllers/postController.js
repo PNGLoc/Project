@@ -43,8 +43,8 @@ const resolveAuthor = async (post) => {
 // --- CREATE POST/BLOG ---
 export const createPost = async (req, res) => {
     try {
-        const { content, linkedServiceId } = req.body;
-        let { taggedSalonIds, taggedStaffIds } = req.body;
+        const { content } = req.body;
+        let { taggedSalonIds, taggedStaffIds, linkedServiceIds } = req.body;
         const { _id: userId, role } = req.user;
 
         // Determine authorType based on role
@@ -68,21 +68,26 @@ export const createPost = async (req, res) => {
             taggedStaffIds = [];
         }
 
+        // Normalize linkedServiceIds: allow single id or array
+        if (typeof linkedServiceIds === 'string' && linkedServiceIds.trim().length > 0) {
+            linkedServiceIds = [linkedServiceIds];
+        }
+        if (!Array.isArray(linkedServiceIds)) {
+            linkedServiceIds = [];
+        }
+
         // Role-based rules
         if (role === 'SALON_OWNER') {
-            // Salon: must have at least 1 image, must link service, cannot tag salons
+            // Salon: must have at least 1 image, optional services, cannot tag salons
             if (!req.files || req.files.length === 0) {
                 return res.status(400).json({ message: 'Salon posts must include at least 1 image' });
-            }
-            if (!linkedServiceId) {
-                return res.status(400).json({ message: 'Salon posts must include linkedServiceId' });
             }
             if (taggedSalonIds.length > 0) {
                 return res.status(400).json({ message: 'Salon posts cannot tag salons' });
             }
         } else if (role === 'ADMIN') {
             // Admin: optional images, can tag multiple salons, cannot link service
-            if (linkedServiceId) {
+            if (linkedServiceIds.length > 0) {
                 return res.status(400).json({ message: 'Admin posts cannot include linkedServiceId' });
             }
             if (taggedStaffIds.length > 0) {
@@ -90,7 +95,7 @@ export const createPost = async (req, res) => {
             }
         } else {
             // Customer: optional images, must tag exactly 1 salon (check-in), cannot link service
-            if (linkedServiceId) {
+            if (linkedServiceIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot include linkedServiceId' });
             }
             if (taggedSalonIds.length !== 1) {
@@ -121,11 +126,11 @@ export const createPost = async (req, res) => {
             }
         }
 
-        // Validate linkedServiceId if provided
-        if (linkedServiceId) {
-            const service = await Service.findById(linkedServiceId);
-            if (!service) {
-                return res.status(404).json({ message: 'Service not found' });
+        // Validate linkedServiceIds if provided
+        if (linkedServiceIds.length > 0) {
+            const count = await Service.countDocuments({ _id: { $in: linkedServiceIds } });
+            if (count !== linkedServiceIds.length) {
+                return res.status(404).json({ message: 'One or more services not found' });
             }
         }
 
@@ -142,13 +147,14 @@ export const createPost = async (req, res) => {
             images,
             taggedSalonIds,
             taggedStaffIds,
-            linkedServiceId: linkedServiceId || null,
+            linkedServiceIds,
         });
 
         await newPost.save();
 
         // Populate author info for response
         const populatedPost = await Post.findById(newPost._id)
+            .populate('linkedServiceIds', 'name price duration image')
             .populate('linkedServiceId', 'name price duration image');
 
         res.status(201).json(populatedPost);
@@ -196,6 +202,7 @@ export const getPosts = async (req, res) => {
             .sort(sortObj)
             .skip(skip)
             .limit(parseInt(limit))
+            .populate('linkedServiceIds', 'name price duration image')
             .populate('linkedServiceId', 'name price duration image')
             .populate('taggedSalonIds', 'name images')
             .populate({
@@ -229,6 +236,7 @@ export const getPosts = async (req, res) => {
 export const getPostById = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id)
+            .populate('linkedServiceIds', 'name price duration image salonId')
             .populate('linkedServiceId', 'name price duration image salonId')
             .populate('taggedSalonIds', 'name images phone address')
             .populate({
@@ -273,8 +281,8 @@ export const updatePost = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized to update this post' });
         }
 
-        const { content, linkedServiceId, existingImagesJson } = req.body;
-        let { taggedSalonIds, taggedStaffIds } = req.body;
+        const { content, existingImagesJson } = req.body;
+        let { taggedSalonIds, taggedStaffIds, linkedServiceIds } = req.body;
 
         if (content !== undefined) post.content = content;
 
@@ -294,23 +302,28 @@ export const updatePost = async (req, res) => {
             taggedStaffIds = [];
         }
 
+        // Normalize linkedServiceIds: allow single id or array
+        if (typeof linkedServiceIds === 'string' && linkedServiceIds.trim().length > 0) {
+            linkedServiceIds = [linkedServiceIds];
+        }
+        if (linkedServiceIds !== undefined && !Array.isArray(linkedServiceIds)) {
+            linkedServiceIds = [];
+        }
+
         // Enforce role-based rules on update
         if (req.user.role === 'SALON_OWNER') {
             if (taggedSalonIds !== undefined && taggedSalonIds.length > 0) {
                 return res.status(400).json({ message: 'Salon posts cannot tag salons' });
             }
-            if (linkedServiceId !== undefined && !linkedServiceId) {
-                return res.status(400).json({ message: 'Salon posts must include linkedServiceId' });
-            }
         } else if (req.user.role === 'ADMIN') {
-            if (linkedServiceId) {
+            if (linkedServiceIds && linkedServiceIds.length > 0) {
                 return res.status(400).json({ message: 'Admin posts cannot include linkedServiceId' });
             }
             if (taggedStaffIds !== undefined && taggedStaffIds.length > 0) {
                 return res.status(400).json({ message: 'Admin posts cannot tag staff' });
             }
         } else {
-            if (linkedServiceId) {
+            if (linkedServiceIds && linkedServiceIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot include linkedServiceId' });
             }
             if (taggedSalonIds !== undefined && taggedSalonIds.length !== 1) {
@@ -345,13 +358,15 @@ export const updatePost = async (req, res) => {
             post.taggedStaffIds = taggedStaffIds;
         }
 
-        // Update linkedServiceId if provided
-        if (linkedServiceId) {
-            const service = await Service.findById(linkedServiceId);
-            if (!service) {
-                return res.status(404).json({ message: 'Service not found' });
+        // Update linkedServiceIds if provided
+        if (linkedServiceIds !== undefined) {
+            if (linkedServiceIds.length > 0) {
+                const count = await Service.countDocuments({ _id: { $in: linkedServiceIds } });
+                if (count !== linkedServiceIds.length) {
+                    return res.status(404).json({ message: 'One or more services not found' });
+                }
             }
-            post.linkedServiceId = linkedServiceId;
+            post.linkedServiceIds = linkedServiceIds;
         }
 
         // Handle existing images keep-list (for edit delete-image)
@@ -404,6 +419,7 @@ export const updatePost = async (req, res) => {
         await post.save();
 
         const updatedPost = await Post.findById(post._id)
+            .populate('linkedServiceIds', 'name price duration image')
             .populate('linkedServiceId', 'name price duration image')
             .populate('taggedSalonIds', 'name images')
             .populate({
@@ -492,6 +508,7 @@ export const getPostsByAuthor = async (req, res) => {
             .sort(sortObj)
             .skip(skip)
             .limit(parseInt(limit))
+            .populate('linkedServiceIds', 'name price duration image')
             .populate('linkedServiceId', 'name price duration image')
             .populate('taggedSalonIds', 'name images')
             .populate({
@@ -536,6 +553,7 @@ export const searchPosts = async (req, res) => {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit))
+            .populate('linkedServiceIds', 'name price duration image')
             .populate('linkedServiceId', 'name price duration image')
             .populate('taggedSalonIds', 'name images')
             .populate({

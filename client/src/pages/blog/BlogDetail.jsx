@@ -54,12 +54,29 @@ const BlogDetail = () => {
     };
 
     const canEdit = currentUser._id === blog.authorId;
+    const linkedServices = Array.isArray(blog.linkedServiceIds) && blog.linkedServiceIds.length > 0
+        ? blog.linkedServiceIds
+        : (blog.linkedServiceId ? [blog.linkedServiceId] : []);
 
     return (
         <>
 
             <div className="blog-detail-container">
-
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-start' }}>
+                    <button
+                        onClick={() => navigate(-1)}
+                        style={{
+                            padding: '8px 14px',
+                            borderRadius: 6,
+                            border: '1px solid #e5e7eb',
+                            background: '#fff',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                        }}
+                    >
+                        ← Back
+                    </button>
+                </div>
 
                 <article className="blog-detail-card">
                     {/* Header */}
@@ -145,27 +162,31 @@ const BlogDetail = () => {
                     )}
 
                     {/* Service link */}
-                    {blog.linkedServiceId && (
+                    {linkedServices.length > 0 && (
                         <div className="blog-service-link">
-                            <h3>📅 Service mentioned in this blog:</h3>
+                            <h3>📅 Services mentioned in this blog:</h3>
                             <div className="service-card-inline">
-                                <strong>{blog.linkedServiceId.name}</strong>
-                                <p>💰 Price: ${blog.linkedServiceId.price}</p>
-                                <p>⏱️ Duration: {blog.linkedServiceId.duration} minutes</p>
-                                <button
-                                    style={{
-                                        padding: '8px 16px',
-                                        background: '#667eea',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        marginTop: '10px',
-                                    }}
-                                    onClick={() => navigate(`/service/${blog.linkedServiceId._id}`)}
-                                >
-                                    Book Now
-                                </button>
+                                {linkedServices.map((service) => (
+                                    <div key={service._id || service} style={{ marginBottom: 12 }}>
+                                        <strong>{service.name}</strong>
+                                        <p>💰 Price: ${service.price}</p>
+                                        <p>⏱️ Duration: {service.duration} minutes</p>
+                                        <button
+                                            style={{
+                                                padding: '8px 16px',
+                                                background: '#667eea',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                marginTop: '10px',
+                                            }}
+                                            onClick={() => navigate(`/service/${service._id}`)}
+                                        >
+                                            Book Now
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
