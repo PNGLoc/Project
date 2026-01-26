@@ -85,12 +85,21 @@ const BlogManagement = () => {
                         <p>Manage your posts, edits, and tags.</p>
                     </div>
 
-                    <button
-                        className="btn-create-blog"
-                        onClick={() => navigate('/blog/create')}
-                    >
-                        + Create
-                    </button>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <button
+                            className="btn-create-blog"
+                            onClick={() => navigate('/blog/create')}
+                        >
+                            + Create
+                        </button>
+                        <button
+                            className="btn-create-blog"
+                            onClick={() => navigate('/')}
+                            style={{ background: '#fff', color: '#1f2937', border: '1px solid #e5e7eb' }}
+                        >
+                            ← Back to Home
+                        </button>
+                    </div>
                 </div>
 
                 <form onSubmit={handleSearch} className="myblogs-toolbar">
