@@ -3,27 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { usePostsByAuthor, useDeletePost } from '../../features/posts/hooks/usePosts.js';
 import HeaderHome from '../../components/layout/HeaderHome.jsx';
 import { FiSearch, FiX } from 'react-icons/fi';
-import '../../assets/css/BlogManagement.css';
+import '../../assets/css/PostManagement.css';
 
-const BlogManagement = () => {
+const PostManagement = () => {
     const navigate = useNavigate();
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
     const { getPostsByAuthor, loading, error } = usePostsByAuthor();
     const { deletePost } = useDeletePost();
 
-    const [blogs, setBlogs] = useState([]);
+    const [posts, setPosts] = useState([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [order, setOrder] = useState('desc');
     const [searchQ, setSearchQ] = useState('');
     const [activeQuery, setActiveQuery] = useState('');
 
-    const loadMyBlogs = async () => {
+    const loadMyPosts = async () => {
         if (!currentUser._id) {
             console.error('User ID not found');
             return;
         }
-        console.log('🔍 Loading blogs for user:', currentUser._id);
+        console.log('🔍 Loading posts for user:', currentUser._id);
         try {
             const data = await getPostsByAuthor(currentUser._id, {
                 q: activeQuery || undefined,
@@ -31,16 +31,16 @@ const BlogManagement = () => {
                 limit: 10,
                 order,
             });
-            console.log('📚 Blogs loaded:', data);
-            setBlogs(data.posts);
+            console.log('📚 Posts loaded:', data);
+            setPosts(data.posts);
             setTotalPages(data.pagination.pages);
         } catch (err) {
-            console.error('❌ Failed to load my blogs:', err);
+            console.error('❌ Failed to load my posts:', err);
         }
     };
 
     useEffect(() => {
-        loadMyBlogs();
+        loadMyPosts();
     }, [page, order, activeQuery, getPostsByAuthor]);
 
     const handleSearch = (e) => {
@@ -55,13 +55,13 @@ const BlogManagement = () => {
         setActiveQuery('');
     };
 
-    const handleDelete = async (blogId) => {
-        if (window.confirm('Are you sure you want to delete this blog?')) {
+    const handleDelete = async (postId) => {
+        if (window.confirm('Are you sure you want to delete this post?')) {
             try {
-                await deletePost(blogId);
-                loadMyBlogs();
+                await deletePost(postId);
+                loadMyPosts();
             } catch (err) {
-                console.error('Failed to delete blog:', err);
+                console.error('Failed to delete post:', err);
             }
         }
     };
@@ -81,14 +81,14 @@ const BlogManagement = () => {
             <div className="blog-management-container">
                 <div className="blog-management-header">
                     <div className="blog-management-title">
-                        <h1>My Blog/News</h1>
+                        <h1>My Posts/News</h1>
                         <p>Manage your posts, edits, and tags.</p>
                     </div>
 
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                         <button
                             className="btn-create-blog"
-                            onClick={() => navigate('/blog/create')}
+                            onClick={() => navigate('/post/create')}
                         >
                             + Create
                         </button>
@@ -147,38 +147,38 @@ const BlogManagement = () => {
 
                 {error && <div className="blog-error-message">❌ {error}</div>}
 
-                {loading && <div className="blog-loading-message">Loading your blogs...</div>}
+                {loading && <div className="blog-loading-message">Loading your posts...</div>}
 
-                {!loading && blogs.length === 0 && (
+                {!loading && posts.length === 0 && (
                     <div className="blog-empty-message">
                         <p>📭 No posts yet</p>
                     </div>
                 )}
 
-                {blogs.map((blog) => (
-                    <div key={blog._id} className="blog-management-card">
+                {posts.map((post) => (
+                    <div key={post._id} className="blog-management-card">
                         <div className="blog-management-content">
-                            <h3>{blog.content.substring(0, 80)}</h3>
-                            <p className="blog-date">📅 {formatDate(blog.createdAt)}</p>
-                            <p className="blog-preview">{blog.content.substring(0, 150)}...</p>
+                            <h3>{post.content.substring(0, 80)}</h3>
+                            <p className="blog-date">📅 {formatDate(post.createdAt)}</p>
+                            <p className="blog-preview">{post.content.substring(0, 150)}...</p>
                         </div>
 
                         <div className="blog-management-actions">
                             <button
                                 className="btn-view"
-                                onClick={() => navigate(`/blog/${blog._id}`)}
+                                onClick={() => navigate(`/post/${post._id}`)}
                             >
                                 📰 View
                             </button>
                             <button
                                 className="btn-edit"
-                                onClick={() => navigate(`/blog/${blog._id}/edit`)}
+                                onClick={() => navigate(`/post/${post._id}/edit`)}
                             >
                                 ✏️ Edit
                             </button>
                             <button
                                 className="btn-delete"
-                                onClick={() => handleDelete(blog._id)}
+                                onClick={() => handleDelete(post._id)}
                             >
                                 🗑️ Delete
                             </button>
@@ -216,4 +216,4 @@ const BlogManagement = () => {
     );
 };
 
-export default BlogManagement;
+export default PostManagement;

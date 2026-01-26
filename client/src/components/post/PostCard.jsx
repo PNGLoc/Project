@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import '../../assets/css/BlogCard.css';
+import '../../assets/css/PostCard.css';
 
-const BlogCard = ({ post }) => {
+const PostCard = ({ post }) => {
     // Determine thumbnail
     const thumbnail = post.images && post.images.length > 0
         ? `http://localhost:5000${post.images[0]}`
@@ -34,7 +34,7 @@ const BlogCard = ({ post }) => {
                 </div>
 
                 <h3 className="blog-card-title">
-                    <Link to={`/blog/${post._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link to={`/post/${post._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                         {post.title || post.content?.substring(0, 60) + "..."}
                     </Link>
                 </h3>
@@ -44,7 +44,7 @@ const BlogCard = ({ post }) => {
                         <img src={authorAvatar} alt={authorName} className="blog-author-avatar" />
                         <span className="blog-author-name">{authorName}</span>
                     </div>
-                    <Link to={`/blog/${post._id}`} className="read-more-btn">
+                    <Link to={`/post/${post._id}`} className="read-more-btn">
                         Read More &rarr;
                     </Link>
                 </div>
@@ -53,4 +53,4 @@ const BlogCard = ({ post }) => {
     );
 };
 
-export default BlogCard;
+export default PostCard;

@@ -126,8 +126,8 @@ const HeaderHome = () => {
                                         <GoPerson /> Profile
                                     </Link>
 
-                                    <Link to="/blog/my-blogs" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-                                        <FiBookOpen /> My Blogs
+                                    <Link to="/post/my-posts" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                        <FiBookOpen /> My Posts
                                     </Link>
 
                                     {/* --- LOGIC HIỂN THỊ QUAN TRỌNG --- */}

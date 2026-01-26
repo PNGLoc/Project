@@ -263,19 +263,19 @@ const PostForm = () => {
 
             if (isEditing) {
                 await updatePost(postId, submitData);
-                setMessage({ type: 'success', text: 'Blog updated successfully!' });
+                setMessage({ type: 'success', text: 'Post updated successfully!' });
             } else {
                 await createPost(submitData);
-                setMessage({ type: 'success', text: 'Blog created successfully!' });
+                setMessage({ type: 'success', text: 'Post created successfully!' });
             }
 
             setTimeout(() => {
-                navigate('/blog/my-blogs');
+                navigate('/post/my-posts');
             }, 1500);
         } catch (err) {
             setMessage({
                 type: 'error',
-                text: err.response?.data?.message || 'Failed to save blog',
+                text: err.response?.data?.message || 'Failed to save post',
             });
         }
     };
@@ -287,7 +287,7 @@ const PostForm = () => {
             <div className="post-form-container">
                 <div className="post-form-card">
                     <h2 className="post-form-title">
-                        {isEditing ? '✏️ Edit Blog/News' : '✏️ Create New Blog/News'}
+                        {isEditing ? '✏️ Edit Post/News' : '✏️ Create New Post/News'}
                     </h2>
 
                     {message && (
@@ -351,7 +351,7 @@ const PostForm = () => {
                                         name="content"
                                         value={formData.content}
                                         onChange={handleInputChange}
-                                        placeholder="Write your blog content here. Supports markdown formatting..."
+                                        placeholder="Write your post content here. Supports markdown formatting..."
                                     />
                                 </div>
                             ) : (
@@ -361,7 +361,7 @@ const PostForm = () => {
                                     name="content"
                                     value={formData.content}
                                     onChange={handleInputChange}
-                                    placeholder="Write your blog content here..."
+                                    placeholder="Write your post content here..."
                                 />
                             )}
                         </div>
@@ -762,12 +762,12 @@ const PostForm = () => {
                                 className="btn-submit"
                                 disabled={loading}
                             >
-                                {loading ? 'Saving...' : (isEditing ? '💾 Update Blog' : '✨ Create Blog')}
+                                {loading ? 'Saving...' : (isEditing ? '💾 Update Post' : '✨ Create Post')}
                             </button>
                             <button
                                 type="button"
                                 className="btn-cancel"
-                                onClick={() => navigate('/blog/my-blogs')}
+                                onClick={() => navigate('/post/my-posts')}
                                 disabled={loading}
                             >
                                 Cancel
