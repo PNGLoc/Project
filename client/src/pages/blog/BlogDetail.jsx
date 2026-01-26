@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePostById } from '../../features/posts/hooks/usePosts.js';
-import HeaderHome from '../../components/layout/HeaderHome.jsx';
 import '../../assets/css/BlogDetail.css';
 
 const BlogDetail = () => {
@@ -58,23 +57,9 @@ const BlogDetail = () => {
 
     return (
         <>
-            <HeaderHome />
 
             <div className="blog-detail-container">
-                <button
-                    onClick={() => navigate('/')}
-                    style={{
-                        padding: '8px 16px',
-                        background: '#f0f0f0',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        marginBottom: '20px',
-                        fontWeight: '600',
-                    }}
-                >
-                    ← Back to Home
-                </button>
+
 
                 <article className="blog-detail-card">
                     {/* Header */}
