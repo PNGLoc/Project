@@ -11,9 +11,9 @@ import SalonDashboard from '../pages/salon/SalonDashboard';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
 import SalonRegistration from '../pages/salon/SalonRegistration';
-import BlogDetail from '../pages/blog/BlogDetail';
-import PostForm from '../pages/blog/PostForm';
-import BlogManagement from '../pages/blog/BlogManagement';
+import PostDetail from '../pages/post/PostDetail';
+import PostForm from '../pages/post/PostForm';
+import PostManagement from '../pages/post/PostManagement';
 import StaffRegistration from '../pages/salon/StaffRegistration';
 import LookbookPage from '../pages/LookbookPage';
 
@@ -30,7 +30,7 @@ const AppRoutes = () => {
             <Route element={<MainLayout />}>
                 {/* --- NHÓM PUBLIC --- */}
                 <Route path="/" element={<HomePage />} />
-                <Route path="/blog/:id" element={<BlogDetail />} />
+                <Route path="/post/:id" element={<PostDetail />} />
                 {/* <Route path="/salons" element={<AllSalons />} /> */}
 
                 {/* MENU */}
@@ -45,10 +45,10 @@ const AppRoutes = () => {
                 <Route element={<ProtectedRoute allowedRoles={['CUSTOMER', 'SALON_OWNER', 'STAFF', 'ADMIN']} />}>
                     <Route path='/users/profile' element={<ProfilePage />} />
                     <Route path='/profile' element={<ProfilePage />} />
-                    {/* Blog Management */}
-                    <Route path='/blog/my-blogs' element={<BlogManagement />} />
-                    <Route path='/blog/create' element={<PostForm />} />
-                    <Route path='/blog/:id/edit' element={<PostForm />} />
+                    {/* Post Management */}
+                    <Route path='/post/my-posts' element={<PostManagement />} />
+                    <Route path='/post/create' element={<PostForm />} />
+                    <Route path='/post/:id/edit' element={<PostForm />} />
                 </Route>
 
                 {/* Role: CUSTOMER */}

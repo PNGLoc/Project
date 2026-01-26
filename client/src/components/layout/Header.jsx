@@ -29,8 +29,8 @@ const Header = () => {
                                 <Link to="/users/profile" className="header-link">My Profile</Link>
                             )}
 
-                            <Link to="/blog/my-blogs" className="header-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                                <FiBookOpen /> My Blogs
+                            <Link to="/post/my-posts" className="header-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                <FiBookOpen /> My Posts
                             </Link>
 
                             <span className="header-user-info">

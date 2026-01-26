@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import BlogCard from '../blog/BlogCard';
-import '../../assets/css/BlogSection.css';
+import BlogCard from '../post/PostCard';
+import '../../assets/css/PostSection.css';
 
-const BlogSection = () => {
+const PostSection = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterSource, setFilterSource] = useState(''); // '' (All), 'Salon', 'Customer'
@@ -92,4 +92,4 @@ const BlogSection = () => {
     );
 };
 
-export default BlogSection;
+export default PostSection;
