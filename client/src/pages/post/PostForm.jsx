@@ -221,13 +221,6 @@ const PostForm = () => {
                 // Admin can optionally tag salons
             }
 
-            if (isCustomer) {
-                if (!taggedSalonIds || taggedSalonIds.length !== 1) {
-                    setMessage({ type: 'error', text: 'Please select exactly 1 salon to check-in' });
-                    return;
-                }
-            }
-
             const submitData = new FormData();
             submitData.append('content', formData.content);
             if (isSalon) {
@@ -478,8 +471,8 @@ const PostForm = () => {
                         {/* CUSTOMER/Admin: Tag salons */}
                         {(isAdmin || isCustomer) && (
                             <div className="form-group">
-                                <label className={isCustomer ? 'required' : ''}>
-                                    {isCustomer ? 'Check-in Salon (Required)' : 'Tag Salons (Optional)'}
+                                <label>
+                                    {isCustomer ? 'Check-in Salon (Optional)' : 'Tag Salons (Optional)'}
                                 </label>
 
                                 {salons.length === 0 ? (
@@ -585,7 +578,7 @@ const PostForm = () => {
 
                                 <div style={{ color: '#777', fontSize: 12, marginTop: 6 }}>
                                     {isCustomer
-                                        ? 'Customer: tag exactly 1 salon (check-in).'
+                                        ? 'Customer/Staff: salon check-in is optional.'
                                         : 'Admin: tagging salons is optional.'}
                                 </div>
                             </div>
