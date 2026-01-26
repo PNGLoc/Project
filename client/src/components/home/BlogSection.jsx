@@ -37,23 +37,36 @@ const BlogSection = () => {
         <section className="blog-section">
             <div className="section-container">
                 <div className="blog-section-header">
-                    <h2 className="blog-section-title">Latest News & Stories</h2>
+                    {/* REMOVED TITLE to avoid duplication */}
 
-                    <div className="blog-controls">
-                        <select
-                            className="filter-select"
-                            value={filterSource}
-                            onChange={(e) => setFilterSource(e.target.value)}
-                        >
-                            <option value="">All Sources</option>
-                            <option value="Salon">From Salons</option>
-                            <option value="Customer">From Community</option>
-                        </select>
+                    <div className="blog-controls" style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+                        {/* Custom Tab-like Filter */}
+                        <div className="filter-btn-group">
+                            <button
+                                className={`filter-btn ${filterSource === '' ? 'active' : ''}`}
+                                onClick={() => setFilterSource('')}
+                            >
+                                All Stories
+                            </button>
+                            <button
+                                className={`filter-btn ${filterSource === 'Salon' ? 'active' : ''}`}
+                                onClick={() => setFilterSource('Salon')}
+                            >
+                                From Salons
+                            </button>
+                            <button
+                                className={`filter-btn ${filterSource === 'Customer' ? 'active' : ''}`}
+                                onClick={() => setFilterSource('Customer')}
+                            >
+                                From Community
+                            </button>
+                        </div>
 
                         <select
                             className="filter-select"
                             value={sortOrder}
                             onChange={(e) => setSortOrder(e.target.value)}
+                            style={{ width: 'auto' }}
                         >
                             <option value="desc">Newest First</option>
                             <option value="asc">Oldest First</option>

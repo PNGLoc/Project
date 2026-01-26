@@ -15,6 +15,7 @@ import BlogDetail from '../pages/blog/BlogDetail';
 import PostForm from '../pages/blog/PostForm';
 import BlogManagement from '../pages/blog/BlogManagement';
 import StaffRegistration from '../pages/salon/StaffRegistration';
+import LookbookPage from '../pages/LookbookPage';
 
 // --- IMPORT ĐÃ ĐƯỢC GỘP TỪ 2 NHÁNH & THÊM MỚI ---
 import ProfilePage from '../pages/users/ProfilePage';
@@ -34,7 +35,7 @@ const AppRoutes = () => {
 
                 {/* MENU */}
                 <Route path="/search" element={<div>All Salons </div>} />
-                <Route path="/lookbook" element={<div>Lookbook Page (</div>} />
+                <Route path="/lookbook" element={<LookbookPage />} />
                 <Route path="/ai-analysis" element={<div>AI Analysis Page </div>} />
                 <Route path="/category/:type" element={<div>Category Page </div>} />
 

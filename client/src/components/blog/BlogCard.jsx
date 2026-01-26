@@ -39,10 +39,6 @@ const BlogCard = ({ post }) => {
                     </Link>
                 </h3>
 
-                <p className="blog-card-excerpt">
-                    {post.content?.substring(0, 120)}...
-                </p>
-
                 <div className="blog-card-footer">
                     <div className="blog-author">
                         <img src={authorAvatar} alt={authorName} className="blog-author-avatar" />
