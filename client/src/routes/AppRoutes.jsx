@@ -7,6 +7,7 @@ import ResetPassword from '../pages/auth/ResetPassword';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import Login from '../pages/auth/Login';
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import AdminMyPosts from '../pages/admin/AdminMyPosts';
 import SalonDashboard from '../pages/salon/SalonDashboard';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
@@ -77,6 +78,7 @@ const AppRoutes = () => {
             {/* Role: ADMIN */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                 <Route path='/admin/dashboard' element={<AdminDashboard />} />
+                <Route path='/admin/my-posts' element={<AdminMyPosts />} />
                 <Route path='/admin/users' element={<h2>Manage Users (Placeholder)</h2>} />
             </Route>
 

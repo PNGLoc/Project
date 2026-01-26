@@ -94,12 +94,9 @@ export const createPost = async (req, res) => {
                 return res.status(400).json({ message: 'Admin posts cannot tag staff' });
             }
         } else {
-            // Customer: optional images, must tag exactly 1 salon (check-in), cannot link service
+            // Customer/Staff: optional images, optional salon check-in, cannot link service
             if (linkedServiceIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot include linkedServiceId' });
-            }
-            if (taggedSalonIds.length !== 1) {
-                return res.status(400).json({ message: 'Customer posts must tag exactly 1 salon' });
             }
             if (taggedStaffIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot tag staff' });
@@ -325,9 +322,6 @@ export const updatePost = async (req, res) => {
         } else {
             if (linkedServiceIds && linkedServiceIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot include linkedServiceId' });
-            }
-            if (taggedSalonIds !== undefined && taggedSalonIds.length !== 1) {
-                return res.status(400).json({ message: 'Customer posts must tag exactly 1 salon' });
             }
             if (taggedStaffIds !== undefined && taggedStaffIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot tag staff' });
