@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axiosClient from '../../lib/axios';
-import HeaderHome from '../../components/layout/HeaderHome';
+
 import '../../assets/css/StaffList.css'; // Import CSS
 
 function StaffList() {
@@ -11,6 +11,10 @@ function StaffList() {
   const [loading, setLoading] = useState(true);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Filter & Sort state
+  const [filterStatus, setFilterStatus] = useState('all'); // all | active | inactive
+  const [sortBy, setSortBy] = useState('name_asc'); // name_asc | name_desc | skills_desc | status_active_first
 
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -34,22 +38,54 @@ function StaffList() {
     }
   };
 
-  // Tìm kiếm theo tên, email HOẶC skill
-  const filteredStaffs = staffs.filter(staff => {
+  // Tìm kiếm + Lọc + Sắp xếp theo tên, email HOẶC skill
+  const filteredStaffs = (() => {
     const searchLower = search.toLowerCase().trim();
-    if (!searchLower) return true;
 
-    if (staff.fullName?.toLowerCase().includes(searchLower)) return true;
-    if (staff.userId?.email?.toLowerCase().includes(searchLower)) return true;
+    // initial filter by search and status
+    let list = staffs.filter(staff => {
+      // filter by status
+      if (filterStatus === 'active' && !staff.isActive) return false;
+      if (filterStatus === 'inactive' && staff.isActive) return false;
 
-    if (staff.skills && Array.isArray(staff.skills)) {
-      return staff.skills.some(skill =>
-        skill.name?.toLowerCase().includes(searchLower)
-      );
-    }
+      if (!searchLower) return true;
 
-    return false;
-  });
+      if (staff.fullName?.toLowerCase().includes(searchLower)) return true;
+      if (staff.userId?.email?.toLowerCase().includes(searchLower)) return true;
+
+      if (staff.skills && Array.isArray(staff.skills)) {
+        return staff.skills.some(skill =>
+          skill.name?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      return false;
+    });
+
+    // sort
+    list.sort((a, b) => {
+      const nameA = (a.fullName || '').toLowerCase();
+      const nameB = (b.fullName || '').toLowerCase();
+      const skillsA = (a.skills && Array.isArray(a.skills)) ? a.skills.length : 0;
+      const skillsB = (b.skills && Array.isArray(b.skills)) ? b.skills.length : 0;
+
+      switch (sortBy) {
+        case 'name_asc':
+          return nameA.localeCompare(nameB);
+        case 'name_desc':
+          return nameB.localeCompare(nameA);
+        case 'skills_desc':
+          return skillsB - skillsA || nameA.localeCompare(nameB);
+        case 'status_inactive_first':
+          return (a.isActive === b.isActive) ? nameA.localeCompare(nameB) : (a.isActive ? 1 : -1);
+        case 'status_active_first':
+        default:
+          return (a.isActive === b.isActive) ? nameA.localeCompare(nameB) : (a.isActive ? -1 : 1);
+      }
+    });
+
+    return list;
+  })();
 
   const handleDelete = async (staffId, currentStatus) => {
     const actionText = currentStatus ? 'deactivate' : 'reactivate';
@@ -132,7 +168,7 @@ function StaffList() {
 
   return (
     <>
-      <HeaderHome />
+    
       <div className="staff-management-container">
         <h1 className="staff-management-title">Staff Management</h1>
         <p className="staff-management-subtitle">Manage your salon staff members.</p>
@@ -145,6 +181,21 @@ function StaffList() {
             onChange={(e) => setSearch(e.target.value)}
             className="staff-search-input"
           />
+          <div className="staff-filter-sort-wrapper" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="staff-filter-select">
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="staff-sort-select">
+              <option value="name_asc">Name A → Z</option>
+              <option value="name_desc">Name Z → A</option>
+              <option value="skills_desc">Most Skills</option>
+              <option value="status_active_first">Active First</option>
+              <option value="status_inactive_first">Inactive First</option>
+            </select>
+          </div>
           <Link to="/salon/staff/add">
             <button className="staff-add-button">+ Add New Staff</button>
           </Link>

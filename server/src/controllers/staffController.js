@@ -35,7 +35,7 @@ export const createStaff = async (req, res) => {
         // Validate bắt buộc
         if (!fullName || !email || !password) {
             return res.status(400).json({
-                message: 'Vui lòng cung cấp đầy đủ: họ tên, email và mật khẩu cho nhân viên'
+                message: 'Please provide full name, email, and password for the staff member.'
             });
         }
 
@@ -47,7 +47,7 @@ export const createStaff = async (req, res) => {
 
         if (existingUser) {
             return res.status(400).json({
-                message: 'Email này đã được sử dụng trong hệ thống (khách hàng, admin hoặc nhân viên khác). Vui lòng dùng email khác.'
+                message: 'This email is already in use by another account (customer, admin, or staff). Please use a different email.'
             });
         }
 
@@ -67,7 +67,7 @@ export const createStaff = async (req, res) => {
 
         if (!salon) {
             return res.status(404).json({
-                message: 'Không tìm thấy salon của bạn. Vui lòng tạo salon trước khi thêm nhân viên.'
+                message: 'Salon not found. Please create a salon before adding staff.'
             });
         }
 
@@ -88,36 +88,36 @@ export const createStaff = async (req, res) => {
         // === GỬI EMAIL CHÀO MỪNG + MẬT KHẨU ===
         await sendEmail(
             normalizedEmail,
-            'Chào mừng bạn gia nhập đội ngũ Boms Salon!',
-            `Chào ${fullName},\n\n` +
-            `Bạn đã được thêm làm nhân viên tại salon.\n\n` +
-            `Thông tin đăng nhập:\n` +
+            'Welcome to Boms Salon!',
+            `Hello ${fullName},\n\n` +
+            `You have been added as a staff member at our salon.\n\n` +
+            `Login details:\n` +
             `Email: ${normalizedEmail}\n` +
-            `Mật khẩu: ${password}\n\n` +
-            `Vui lòng đăng nhập ngay và đổi mật khẩu để bảo mật tài khoản.\n\n` +
-            `Trân trọng,\nĐội ngũ Boms Salon`,
-            `<h3>Chào mừng ${fullName}!</h3>` +
-            `<p>Bạn đã được thêm vào làm nhân viên tại <strong>Boms Salon</strong>.</p>` +
-            `<p><strong>Thông tin đăng nhập:</strong></p>` +
+            `Password: ${password}\n\n` +
+            `Please log in and change your password immediately to secure your account.\n\n` +
+            `Best regards,\nBoms Salon Team`,
+            `<h3>Welcome ${fullName}!</h3>` +
+            `<p>You have been added as a staff member at <strong>Boms Salon</strong>.</p>` +
+            `<p><strong>Login details:</strong></p>` +
             `<ul>` +
             `<li>Email: <strong>${normalizedEmail}</strong></li>` +
-            `<li>Mật khẩu: <strong>${password}</strong></li>` +
+            `<li>Password: <strong>${password}</strong></li>` +
             `</ul>` +
-            `<p style="color: red; font-weight: bold;">Vui lòng đổi mật khẩu ngay sau khi đăng nhập lần đầu!</p>` +
-            `<p>Trân trọng,<br/>Đội ngũ Boms Salon</p>`
+            `<p style="color: red; font-weight: bold;">Please change your password immediately after your first login!</p>` +
+            `<p>Best regards,<br/>Boms Salon Team</p>`
         );
 
         res.status(201).json({
             success: true,
-            message: 'Thêm nhân viên thành công',
+            message: 'Staff created successfully',
             staff,
-            note: 'Mật khẩu đã được gửi qua email cho nhân viên'
+            note: 'Password has been sent to the staff via email'
         });
 
     } catch (error) {
         console.error('[CREATE STAFF ERROR]', error);
         res.status(500).json({
-            message: error.message || 'Lỗi server khi thêm nhân viên'
+            message: error.message || 'Server error while creating staff'
         });
     }
 };
@@ -129,7 +129,7 @@ export const getStaffs = async (req, res) => {
     try {
         const salon = await Salon.findOne({ ownerId: req.user._id });
         if (!salon) {
-            return res.status(404).json({ message: 'Không tìm thấy salon của bạn' });
+            return res.status(404).json({ message: 'Salon not found' });
         }
 
         const staffs = await Staff.find({ salonId: salon._id })
@@ -143,7 +143,7 @@ export const getStaffs = async (req, res) => {
         });
     } catch (error) {
         console.error('[GET STAFFS ERROR]', error);
-        res.status(500).json({ message: error.message || 'Lỗi server' });
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 };
 // @desc    Cập nhật kỹ năng cho nhân viên
@@ -170,7 +170,7 @@ export const updateStaffSkills = async (req, res) => {
         );
 
         if (!staff) {
-            return res.status(404).json({ message: 'Staff not found or not belong to your salon' });
+            return res.status(404).json({ message: 'Staff not found or does not belong to your salon' });
         }
 
         res.json({
@@ -195,13 +195,13 @@ export const updateStaffProfile = async (req, res) => {
         // 1. Tìm salon của chủ sở hữu
         const salon = await Salon.findOne({ ownerId: req.user._id });
         if (!salon) {
-            return res.status(404).json({ message: 'Không tìm thấy salon của bạn' });
+            return res.status(404).json({ message: 'Salon not found' });
         }
 
         // 2. Tìm nhân viên thuộc salon đó
         const staff = await Staff.findOne({ _id: staffId, salonId: salon._id });
         if (!staff) {
-            return res.status(404).json({ message: 'Nhân viên không tồn tại hoặc không thuộc salon này' });
+            return res.status(404).json({ message: 'Staff not found or does not belong to this salon' });
         }
 
         // 3. Cập nhật bảng User (fullName và phone)
@@ -216,12 +216,12 @@ export const updateStaffProfile = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Cập nhật nhân viên thành công',
+            message: 'Staff updated successfully',
             data: staff
         });
     } catch (error) {
         console.error('[UPDATE STAFF PROFILE ERROR]', error);
-        res.status(500).json({ message: error.message || 'Lỗi server' });
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 };
 // @desc    Vô hiệu hóa/Kích hoạt lại nhân viên (Thay cho xóa vĩnh viễn)
@@ -233,13 +233,13 @@ export const deleteStaff = async (req, res) => {
         // 1. Kiểm tra salon
         const salon = await Salon.findOne({ ownerId: req.user._id });
         if (!salon) {
-            return res.status(404).json({ message: 'Không tìm thấy salon' });
+            return res.status(404).json({ message: 'Salon not found' });
         }
 
         // 2. Tìm staff
         const staff = await Staff.findOne({ _id: staffId, salonId: salon._id });
         if (!staff) {
-            return res.status(404).json({ message: 'Nhân viên không tồn tại' });
+            return res.status(404).json({ message: 'Staff not found' });
         }
 
         // 3. Logic Soft Delete (Đảo ngược trạng thái)
@@ -260,8 +260,8 @@ export const deleteStaff = async (req, res) => {
         res.json({
             success: true,
             message: newStatus
-                ? 'Đã kích hoạt lại nhân viên thành công'
-                : 'Đã vô hiệu hóa nhân viên (Dữ liệu lịch sử vẫn được giữ)',
+                ? 'Staff reactivated successfully'
+                : 'Staff deactivated successfully (history preserved)',
             data: { _id: staff._id, isActive: newStatus }
         });
 

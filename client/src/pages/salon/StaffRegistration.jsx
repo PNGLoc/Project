@@ -2,12 +2,12 @@
 import { Link } from 'react-router-dom';
 import AuthLayout from '../../features/auth/components/AuthLayout';
 import StaffForm from '../../features/staff/components/StaffForm';
-import HeaderHome from '../../components/layout/HeaderHome'; // ← Thêm Header
+
 
 function StaffRegistration() {
     return (
         <>
-            <HeaderHome /> {/* Thêm header giống các trang salon khác */}
+          
 
             <div style={{ padding: '40px 20px', maxWidth: '600px', margin: '0 auto' }}>
                 <AuthLayout

@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { HiSparkles } from 'react-icons/hi';
 import { GoBriefcase, GoPerson } from 'react-icons/go';
 import { FiBookOpen } from 'react-icons/fi';
+import { FaUsers } from 'react-icons/fa';
 import '../../assets/css/HeaderHome.css';
 
 const HeaderHome = () => {
@@ -131,19 +132,23 @@ const HeaderHome = () => {
                                     </Link>
 
                                     {/* --- LOGIC HIỂN THỊ QUAN TRỌNG --- */}
-
                                     {isOfficialOwner ? (
-                                        // TRƯỜNG HỢP 1: Đã là Chủ Salon (Đã duyệt)
-                                        <Link to="/salon/dashboard" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-                                            <GoBriefcase /> My Salon
-                                        </Link>
+                                        // Owner: show My Salon and My Staff
+                                        <>
+                                            <Link to="/salon/dashboard" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                                <GoBriefcase /> My Salon
+                                            </Link>
+                                            <Link to="/salon/staff" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                                <FaUsers /> My Staff
+                                            </Link>
+                                        </>
                                     ) : hasSalon ? (
-                                        // TRƯỜNG HỢP 2: Đã đăng ký nhưng Role vẫn là USER (Chờ duyệt)
+                                        // Registered but waiting approval
                                         <div className="dropdown-item" style={{ cursor: 'default', color: '#d97706' }}>
                                             <HiSparkles /> Pending Approval
                                         </div>
                                     ) : (
-                                        // TRƯỜNG HỢP 3: Chưa có Salon (Cho phép đăng ký)
+                                        // No salon yet
                                         <Link to="/salon/register" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                             <GoBriefcase /> Become a Partner
                                         </Link>
