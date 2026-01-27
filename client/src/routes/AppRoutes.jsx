@@ -13,6 +13,7 @@ import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
 import SalonRegistration from '../pages/salon/SalonRegistration';
 import PostDetail from '../pages/post/PostDetail';
+import LookbookDetail from '../pages/post/LookbookDetail';
 import PostForm from '../pages/post/PostForm';
 import PostManagement from '../pages/post/PostManagement';
 import StaffRegistration from '../pages/salon/StaffRegistration';
@@ -37,6 +38,7 @@ const AppRoutes = () => {
                 {/* MENU */}
                 <Route path="/search" element={<div>All Salons </div>} />
                 <Route path="/lookbook" element={<LookbookPage />} />
+                <Route path="/lookbook/:id" element={<LookbookDetail />} />
                 <Route path="/ai-analysis" element={<div>AI Analysis Page </div>} />
                 <Route path="/category/:type" element={<div>Category Page </div>} />
 
