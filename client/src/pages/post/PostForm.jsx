@@ -1,8 +1,9 @@
+//LocPNG
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCreatePost, useUpdatePost, usePostById } from '../../features/posts/hooks/usePosts.js';
 import axiosClient from '../../lib/axios.js';
-import HeaderHome from '../../components/layout/HeaderHome.jsx';
+//import HeaderHome from '../../components/layout/HeaderHome.jsx';
 import '../../assets/css/PostForm.css';
 
 const PostForm = () => {
@@ -296,7 +297,7 @@ const PostForm = () => {
                         <div className="form-group">
                             <label htmlFor="content" className="required">
                                 Content
-                                {isAdmin && <span className="role-indicator">Admin - RichText</span>}
+                                {isAdmin && <span className="role-indicator">Admin</span>}
                                 {isSalon && <span className="role-indicator">Salon</span>}
                             </label>
 

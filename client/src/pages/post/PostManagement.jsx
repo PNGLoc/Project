@@ -1,7 +1,8 @@
+//LocPNG
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePostsByAuthor, useDeletePost } from '../../features/posts/hooks/usePosts.js';
-import HeaderHome from '../../components/layout/HeaderHome.jsx';
+//import HeaderHome from '../../components/layout/HeaderHome.jsx';
 import { FiSearch, FiX } from 'react-icons/fi';
 import '../../assets/css/PostManagement.css';
 
