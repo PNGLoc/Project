@@ -25,6 +25,16 @@ function StaffList() {
     fetchStaffs();
   }, []);
 
+  // Listen for external events indicating staff list changed (e.g. after adding a staff)
+  useEffect(() => {
+    const handler = () => {
+      fetchStaffs();
+    };
+
+    window.addEventListener('staff:added', handler);
+    return () => window.removeEventListener('staff:added', handler);
+  }, []);
+
   const fetchStaffs = async () => {
     try {
       setLoading(true);

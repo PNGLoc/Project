@@ -63,15 +63,22 @@ const StaffForm = () => {
         }
 
         try {
-            await registerStaff({
+            const resp = await registerStaff({
                 fullName: fullName.trim(),
                 email: email.trim(),
                 phone: phone.trim(),
                 password
             });
 
+            // Notify other parts of the app (e.g. StaffList) that a staff was added
+            try {
+                window.dispatchEvent(new CustomEvent('staff:added', { detail: resp }));
+            } catch (e) {
+                // ignore if dispatching fails in some environments
+            }
+
             alert('Staff added successfully! Login credentials have been sent to their email.');
-            navigate('/salon/staff-list');
+            navigate('/salon/staff');
         } catch (err) {
             // Error từ server sẽ được hook xử lý và trả về trong `error`
             // Không cần làm gì thêm ở đây

@@ -7,7 +7,10 @@ import '../../assets/css/SalonDashboard.css';
 const SalonDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const user = JSON.parse(localStorage.getItem('user'));
-    const isStaffRoute = useMatch('/salon/staff') || useMatch('/salon/staff/*');
+    // Call hooks unconditionally to preserve hooks order across renders
+    const matchStaffBase = useMatch('/salon/staff');
+    const matchStaffAll = useMatch('/salon/staff/*');
+    const isStaffRoute = Boolean(matchStaffBase || matchStaffAll);
     const isStaffUser = user?.role === 'STAFF';
 
     return (
