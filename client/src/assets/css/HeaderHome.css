@@ -1,0 +1,290 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 100;
+}
+
+.header-content {
+    display: flex;
+    /* Chuyển từ Grid sang Flex */
+    align-items: center;
+    justify-content: space-between;
+    /* Đẩy Logo sang trái, Auth sang phải */
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    gap: 40px;
+    /* Khoảng cách giữa các khối chính */
+}
+
+.logo-section {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0d9488;
+    /* Màu xanh chủ đạo */
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 30px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #666;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    color: #0d9488;
+}
+
+.auth-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.user-logged-in,
+.auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8f9fa;
+    padding: 5px 12px;
+    border-radius: 20px;
+}
+
+.user-email {
+    /* Bỏ max-width nếu bạn muốn hiện đầy đủ email, 
+       hoặc giữ lại nếu muốn giới hạn độ dài */
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    color: #444;
+}
+
+/* Tái sử dụng style cho cả nút Logout và Sign Up */
+
+
+.btn-primary,
+.btn-logout {
+    background-color: #0d9488;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-primary:hover,
+.btn-logout:hover {
+    filter: brightness(0.9);
+    /* Hover chỉ làm tối màu nền một chút */
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    color: #666;
+}
+
+.business-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #0d9488;
+    text-decoration: none;
+    font-weight: 500
+}
+
+/* Container bao ngoài */
+.user-dropdown-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Trigger: Phần hiển thị Hi, Ngoc */
+.user-profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 14px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #f1f5f9;
+    background-color: #ffffff;
+}
+
+.user-profile-trigger:hover {
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+/* Avatar chữ cái đầu */
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    border: 1px solid #e2e8f0;
+}
+
+.user-info-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.user-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.user-role-label {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Menu xổ xuống */
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 240px;
+    background: white;
+    border-radius: 16px;
+    /* Bo tròn mạnh như ảnh mẫu */
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f1f5f9;
+    padding: 8px;
+    z-index: 1000;
+    animation: fadeInSlide 0.2s ease-out;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Thông tin Email trên cùng menu */
+.dropdown-info-mobile {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dropdown-info-mobile strong {
+    font-size: 15px;
+    color: #1e293b;
+}
+
+.dropdown-info-mobile span {
+    font-size: 13px;
+    color: #64748b;
+    word-break: break-all;
+}
+
+/* Từng dòng Item trong menu */
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    color: #475569;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 10px;
+    transition: all 0.2s;
+    width: 100%;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background-color: #f8fafc;
+    color: #0d9488;
+    /* Màu xanh teal giống nút của bạn */
+}
+
+/* Icon trong menu */
+.dropdown-item svg {
+    font-size: 18px;
+    color: #94a3b8;
+}
+
+/* Nút Logout màu đỏ */
+.btn-logout-item {
+    color: #ef4444 !important;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+.btn-logout-item:hover {
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+}
+
+/* Đường kẻ ngang */
+.dropdown-divider {
+    margin: 8px 0;
+    border: 0;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Mũi tên */
+.arrow-icon {
+    font-size: 10px;
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+}
+
+.arrow-icon.open {
+    transform: rotate(180deg);
+}

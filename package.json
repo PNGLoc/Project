@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "multer": "^2.0.2",
+    "react-avatar-editor": "^14.0.0",
+    "react-router-dom": "^7.12.0"
+  }
+}
