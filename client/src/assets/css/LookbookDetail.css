@@ -1,0 +1,249 @@
+/* LookbookDetail.css */
+
+.lookbook-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fafafa;
+    min-height: 100vh;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.lookbook-back-btn {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #666;
+    margin-bottom: 20px;
+    transition: color 0.2s;
+}
+
+.lookbook-back-btn:hover {
+    color: #000;
+}
+
+.lookbook-content-wrapper {
+    display: flex;
+    gap: 40px;
+    background: white;
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.lookbook-visual {
+    flex: 3;
+    background-color: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 600px;
+}
+
+.lookbook-main-image-frame {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f0f0f0;
+}
+
+.lookbook-main-image {
+    max-width: 100%;
+    max-height: 800px;
+    object-fit: contain;
+    display: block;
+}
+
+.lookbook-thumbnails {
+    position: absolute;
+    bottom: 20px;
+    display: flex;
+    gap: 10px;
+    background: rgba(255,255,255,0.8);
+    padding: 10px;
+    border-radius: 30px;
+    backdrop-filter: blur(5px);
+}
+
+.lookbook-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.lookbook-thumb.active {
+    opacity: 1;
+    border-color: #000;
+    transform: scale(1.1);
+}
+
+.lookbook-thumb:hover {
+    opacity: 1;
+}
+
+/* Details Side */
+.lookbook-details {
+    flex: 2;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+}
+
+.lookbook-meta-top {
+    font-size: 0.85rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.lookbook-title {
+    font-family: 'Playfair Display', 'Times New Roman', serif;
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin: 0 0 30px 0;
+    line-height: 1.2;
+}
+
+.lookbook-author-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #eee;
+}
+
+.lookbook-author-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.lookbook-author-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.lookbook-by {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+.lookbook-author-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.lookbook-body {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #444;
+    margin-bottom: 40px;
+    flex-grow: 1;
+}
+
+/* Shop Section */
+.lookbook-shop-section {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: auto;
+}
+
+.lookbook-shop-section h3 {
+    font-size: 1rem;
+    margin-bottom: 15px;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lookbook-products {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lookbook-product-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    border: 1px solid #eee;
+}
+
+.lookbook-product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.lookbook-product-image {
+    width: 40px;
+    height: 40px;
+    background: #eee;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+}
+
+.lookbook-product-info h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #222;
+}
+
+.lookbook-price {
+    font-weight: 700;
+    color: #d32f2f;
+    font-size: 0.9rem;
+}
+
+.lookbook-tags {
+    margin-top: 20px;
+    font-size: 0.9rem;
+}
+
+.lookbook-tag {
+    display: inline-block;
+    background: #e0e0e0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    color: #555;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .lookbook-content-wrapper {
+        flex-direction: column;
+    }
+    
+    .lookbook-visual {
+        min-height: 400px;
+    }
+    
+    .lookbook-details {
+        padding: 20px;
+    }
+}

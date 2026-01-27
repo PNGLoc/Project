@@ -34,7 +34,7 @@ const PostCard = ({ post }) => {
                 </div>
 
                 <h3 className="blog-card-title">
-                    <Link to={`/post/${post._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link to={`/lookbook/${post._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                         {post.title || post.content?.substring(0, 60) + "..."}
                     </Link>
                 </h3>
@@ -44,7 +44,7 @@ const PostCard = ({ post }) => {
                         <img src={authorAvatar} alt={authorName} className="blog-author-avatar" />
                         <span className="blog-author-name">{authorName}</span>
                     </div>
-                    <Link to={`/post/${post._id}`} className="read-more-btn">
+                    <Link to={`/lookbook/${post._id}`} className="read-more-btn">
                         Read More &rarr;
                     </Link>
                 </div>

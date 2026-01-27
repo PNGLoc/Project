@@ -11,6 +11,11 @@ const postApi = {
         return axiosClient.get(`/api/posts/${postId}`);
     },
 
+    // Get separate lookbook detail
+    getLookbookById: (postId) => {
+        return axiosClient.get(`/api/posts/lookbook/${postId}`);
+    },
+
     // Create post with images (FormData)
     createPost: (formData) => {
         return axiosClient.post('/api/posts', formData, {

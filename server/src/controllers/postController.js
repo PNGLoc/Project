@@ -255,6 +255,33 @@ export const getPostById = async (req, res) => {
     }
 };
 
+
+// --- GET LOOKBOOK DETAIL (PUBLIC) ---
+export const getLookbookById = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id)
+            .populate('linkedServiceIds', 'name price duration image salonId')
+            .populate('linkedServiceId', 'name price duration image salonId')
+            .populate('taggedSalonIds', 'name images phone address')
+            .populate({
+                path: 'taggedStaffIds',
+                select: 'fullName userId',
+                populate: { path: 'userId', select: 'fullName avatar email phone' },
+            });
+
+        if (!post) {
+            return res.status(404).json({ message: 'Lookbook not found' });
+        }
+
+        // Fetch author details
+        const author = await resolveAuthor(post);
+
+        res.json({ ...post.toObject(), author });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // --- UPDATE POST/BLOG ---
 export const updatePost = async (req, res) => {
     try {
