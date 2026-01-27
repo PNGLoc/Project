@@ -61,22 +61,6 @@ const PostDetail = () => {
     return (
         <>
             <div className="blog-detail-container">
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-start' }}>
-                    <button
-                        onClick={() => navigate(-1)}
-                        style={{
-                            padding: '8px 14px',
-                            borderRadius: 6,
-                            border: '1px solid #e5e7eb',
-                            background: '#fff',
-                            cursor: 'pointer',
-                            fontWeight: 600,
-                        }}
-                    >
-                        ← Back
-                    </button>
-                </div>
-
                 <article className="blog-detail-card">
                     {/* Header */}
                     <div className="blog-detail-header">
