@@ -304,41 +304,6 @@ const PostForm = () => {
                             {isAdmin ? (
                                 // Admin gets rich text editor
                                 <div className="rich-text-editor-wrapper">
-                                    <div className="rich-text-toolbar">
-                                        <button type="button" onClick={(e) => {
-                                            e.preventDefault();
-                                            const textarea = document.getElementById('content');
-                                            const start = textarea.selectionStart;
-                                            const end = textarea.selectionEnd;
-                                            const text = textarea.value;
-                                            textarea.value = text.substring(0, start) + '**' + text.substring(start, end) + '**' + text.substring(end);
-                                            setFormData(prev => ({ ...prev, content: textarea.value }));
-                                        }}>
-                                            <strong>B</strong>
-                                        </button>
-                                        <button type="button" onClick={(e) => {
-                                            e.preventDefault();
-                                            const textarea = document.getElementById('content');
-                                            const start = textarea.selectionStart;
-                                            const end = textarea.selectionEnd;
-                                            const text = textarea.value;
-                                            textarea.value = text.substring(0, start) + '*' + text.substring(start, end) + '*' + text.substring(end);
-                                            setFormData(prev => ({ ...prev, content: textarea.value }));
-                                        }}>
-                                            <em>I</em>
-                                        </button>
-                                        <button type="button" onClick={(e) => {
-                                            e.preventDefault();
-                                            const textarea = document.getElementById('content');
-                                            const start = textarea.selectionStart;
-                                            const end = textarea.selectionEnd;
-                                            const text = textarea.value;
-                                            textarea.value = text.substring(0, start) + '\n\n---\n\n' + text.substring(start);
-                                            setFormData(prev => ({ ...prev, content: textarea.value }));
-                                        }}>
-                                            H-Line
-                                        </button>
-                                    </div>
                                     <textarea
                                         id="content"
                                         className="rich-text-editor"

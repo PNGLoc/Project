@@ -74,29 +74,6 @@
     background: white;
 }
 
-.rich-text-toolbar {
-    display: flex;
-    gap: 8px;
-    padding: 12px;
-    background: #f9f9f9;
-    border-bottom: 1px solid #ddd;
-    flex-wrap: wrap;
-}
-
-.rich-text-toolbar button {
-    padding: 6px 10px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: all 0.2s;
-}
-
-.rich-text-toolbar button:hover {
-    background: #e0e0e0;
-}
-
 .rich-text-editor {
     padding: 12px;
     min-height: 200px;
