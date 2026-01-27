@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import authApi from '../../features/auth/api/authApi';
-import { FaUser, FaEdit, FaLock, FaInfoCircle, FaArrowLeft, FaIdCard } from 'react-icons/fa';
+import { FaUser, FaEdit, FaLock, FaInfoCircle, FaIdCard } from 'react-icons/fa';
 
 const ProfilePage = () => {
     const [searchParams] = useSearchParams();
@@ -126,6 +127,7 @@ const ProfilePage = () => {
             const updatedUser = await authApi.updateProfile(formData);
             setUser(updatedUser);
             setMessage({ type: 'success', text: 'Profile updated successfully' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.message || 'Update failed' });
         }
@@ -147,6 +149,7 @@ const ProfilePage = () => {
             });
             setMessage({ type: 'success', text: 'Password changed successfully' });
             setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.message || 'Change password failed' });
         }
@@ -159,17 +162,7 @@ const ProfilePage = () => {
             {/* Header and home-container moved to MainLayout */}
             <div className="container" style={{ alignItems: 'center', paddingTop: '20px', minHeight: 'calc(100vh - 80px)', flexDirection: 'column' }}>
 
-                {/* Back to Home Button */}
-                <div style={{ width: '100%', maxWidth: '1000px', marginBottom: '1rem' }}>
-                    <Link to="/" className="btn" style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '8px',
-                        background: 'transparent', color: 'var(--text-muted)',
-                        border: '1px solid var(--border-color)', padding: '8px 16px',
-                        width: 'auto'
-                    }}>
-                        <FaArrowLeft /> Back to Home
-                    </Link>
-                </div>
+
 
                 <div className="profile-wrapper" style={{ display: 'flex', width: '100%', maxWidth: '1000px', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
