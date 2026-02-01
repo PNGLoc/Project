@@ -297,32 +297,15 @@ const PostForm = () => {
                         <div className="form-group">
                             <label htmlFor="content" className="required">
                                 Content
-                                {isAdmin && <span className="role-indicator">Admin</span>}
-                                {isSalon && <span className="role-indicator">Salon</span>}
                             </label>
+                            <textarea
+                                id="content"
+                                name="content"
+                                value={formData.content}
+                                onChange={handleInputChange}
+                                placeholder="Write your post content here..."
+                            />
 
-                            {isAdmin ? (
-                                // Admin gets rich text editor
-                                <div className="rich-text-editor-wrapper">
-                                    <textarea
-                                        id="content"
-                                        className="rich-text-editor"
-                                        name="content"
-                                        value={formData.content}
-                                        onChange={handleInputChange}
-                                        placeholder="Write your post content here. Supports markdown formatting..."
-                                    />
-                                </div>
-                            ) : (
-                                // Customer/Salon gets regular textarea
-                                <textarea
-                                    id="content"
-                                    name="content"
-                                    value={formData.content}
-                                    onChange={handleInputChange}
-                                    placeholder="Write your post content here..."
-                                />
-                            )}
                         </div>
 
                         {/* SALON-specific: Service dropdown */}
