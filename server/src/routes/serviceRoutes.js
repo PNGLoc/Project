@@ -4,6 +4,9 @@ import * as serviceController from '../controllers/serviceController.js';
 
 const router = express.Router();
 
+// Public: Lấy danh sách dịch vụ theo salon(booking)
+router.get('/salon/:salonId', serviceController.getPublicServicesBySalon);
+
 // Lấy danh sách dịch vụ của chủ salon (Dashboard)
 router.get('/owner', protect, serviceController.getMyServices);
 
