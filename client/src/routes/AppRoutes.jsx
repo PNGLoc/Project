@@ -22,6 +22,7 @@ import LookbookPage from '../pages/LookbookPage';
 // --- IMPORT ĐÃ ĐƯỢC GỘP TỪ 2 NHÁNH & THÊM MỚI ---
 import ProfilePage from '../pages/users/ProfilePage';
 import StaffList from "../pages/salon/StaffList";
+import BookAppointment from '../pages/booking/BookAppointment';
 
 import MainLayout from '../components/layout/MainLayout';
 
@@ -57,6 +58,7 @@ const AppRoutes = () => {
                 {/* Role: CUSTOMER */}
                 <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']} />}>
                     <Route path="/salon/register" element={<SalonRegistration />} />
+                    <Route path="/book-appointment" element={<BookAppointment />} />
                 </Route>
                 {/* Role: SALON_OWNER */}
                 <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>

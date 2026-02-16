@@ -103,3 +103,23 @@ export const hideService = async (req, res) => {
         res.status(500).json({ message: "Lỗi hệ thống", error: error.message });
     }
 };
+
+// @desc    Lấy danh sách dịch vụ public theo salon
+// @route   GET /api/services/salon/:salonId
+// for booking LocPNG
+export const getPublicServicesBySalon = async (req, res) => {
+    try {
+        const services = await Service.find({
+            salonId: req.params.salonId,
+            isActive: true
+        }).sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            count: services.length,
+            data: services
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

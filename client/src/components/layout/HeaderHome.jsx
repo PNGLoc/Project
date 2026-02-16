@@ -87,6 +87,7 @@ const HeaderHome = () => {
                 <nav className="nav-links">
                     <NavLink to="/" className={({ isActive }) => isActive ? "active" : ""}>Home</NavLink>
                     <NavLink to="/search">Search</NavLink>
+                    <NavLink to="/book-appointment">Book</NavLink>
                     <NavLink to="/lookbook">Lookbook</NavLink>
                     <NavLink to="/ai-analysis">AI Analysis</NavLink>
                 </nav>
