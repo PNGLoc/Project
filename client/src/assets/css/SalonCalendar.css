@@ -1,0 +1,384 @@
+/* SalonCalendar.css */
+
+.calendar-page {
+    padding: 1.5rem 0.5rem;
+    /* Reduced padding to widen content */
+    background-color: #f8fafc;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.calendar-title-section h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.calendar-title-section p {
+    color: #64748b;
+    margin: 0.25rem 0 0 0;
+}
+
+.calendar-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-filter,
+.btn-new {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-filter {
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+.btn-filter:hover {
+    background: #f1f5f9;
+}
+
+.btn-new {
+    background: var(--primary-color, #00897b);
+    border: none;
+    color: white;
+}
+
+.btn-new:hover {
+    background: var(--primary-hover, #00796b);
+    box-shadow: 0 4px 12px rgba(0, 137, 123, 0.2);
+}
+
+/* Date Navigator */
+.date-navigator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Space out nav buttons */
+    gap: 1.5rem;
+    background: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    /* Stretched to full container */
+}
+
+.nav-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.nav-btn:hover {
+    background: #f1f5f9;
+    color: #1a1a1a;
+    border-color: #cbd5e1;
+}
+
+.current-date-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 1.125rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.current-date-btn:hover {
+    background: #f1f5f9;
+    color: var(--primary-color);
+}
+
+.date-picker-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    flex: 1;
+}
+
+.hidden-date-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+/* Status Legend */
+.status-legend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.legend-items {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.dot.pending {
+    background: #fbbf24;
+}
+
+.dot.confirmed {
+    background: #0ea5e9;
+}
+
+.dot.completed {
+    background: #10b981;
+}
+
+.dot.cancelled {
+    background: #94a3b8;
+}
+
+.drag-tip {
+    font-size: 0.8125rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* Calendar Grid */
+.calendar-container {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: auto;
+    /* Allow horizontal scroll if needed */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.fetching-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.4);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    padding-top: 100px;
+}
+
+.mini-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #00897b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: 100px repeat(4, 1fr);
+    /* 1 time col + 4 staff cols */
+}
+
+/* Headers */
+.grid-header {
+    padding: 1rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.staff-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.staff-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.staff-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* Time Cells */
+.time-cell {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: #f8fafc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.slot-cell {
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    min-height: 80px;
+    position: relative;
+    padding: 4px;
+}
+
+/* Appointments */
+.appointment-card {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.75rem;
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 10;
+}
+
+.appointment-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+}
+
+.appointment-card.pending {
+    background: #fffbeb;
+    border-left-color: #fbbf24;
+    color: #92400e;
+}
+
+.appointment-card.confirmed {
+    background: #f0f9ff;
+    border-left-color: #0ea5e9;
+    color: #075985;
+}
+
+.client-name {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.service-name {
+    opacity: 0.8;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-top: 6px;
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.status-badge.confirmed {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.time-range {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.6;
+}
+
+/* Footer Summary */
+.calendar-footer {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.stat-card {
+    flex: 1;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}

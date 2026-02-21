@@ -18,8 +18,10 @@ export const getMyServices = async (req, res) => {
 
         const salonIds = mySalons.map(s => s._id);
 
-        // Tìm tất cả dịch vụ thuộc về bất kỳ Salon nào mà User này sở hữu
-        const services = await Service.find({ salonId: { $in: salonIds } });
+        // Tìm tất cả dịch vụ thuộc về bất kỳ Salon nào mà User này sở hữu, kèm theo thông tin chi tiết các món trong combo
+        const services = await Service.find({ salonId: { $in: salonIds } })
+            .populate('comboItems', 'name price duration')
+            .sort({ createdAt: -1 });
 
         res.json({
             success: true,
@@ -35,7 +37,7 @@ export const getMyServices = async (req, res) => {
 // @route   POST /api/services/create
 export const createService = async (req, res) => {
     try {
-        const { name, price, duration, description } = req.body;
+        const { name, price, duration, description, categoryId, type, comboItems } = req.body;
         const mySalon = await getMySalon(req.user._id);
 
         if (!mySalon) {
@@ -47,7 +49,10 @@ export const createService = async (req, res) => {
             price: Number(price),
             duration: Number(duration),
             description,
+            categoryId: categoryId || null,
             salonId: mySalon._id, // Gán ID của Salon
+            type: type || 'SINGLE',
+            comboItems: comboItems || [],
             isActive: true
         });
 
@@ -112,7 +117,9 @@ export const getPublicServicesBySalon = async (req, res) => {
         const services = await Service.find({
             salonId: req.params.salonId,
             isActive: true
-        }).sort({ createdAt: -1 });
+        })
+            .populate('comboItems', 'name price duration')
+            .sort({ createdAt: -1 });
 
         res.json({
             success: true,
