@@ -136,7 +136,7 @@ const HeaderHome = () => {
                                     {isOfficialOwner ? (
                                         // Owner: show My Salon and My Staff
                                         <>
-                                            <Link to="/salon/dashboard" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                            <Link to="/salon" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                                 <GoBriefcase /> My Salon
                                             </Link>
                                             <Link to="/salon/staff" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>

@@ -158,3 +158,51 @@ export const markAppointmentPaidByCash = async (req, res) => {
         return res.status(500).json({ message: error.message || 'Server error' });
     }
 };
+
+// @desc    Get all appointments for a salon (for owner/staff)
+// @route   GET /api/appointments/salon
+// @access  Private/SALON_OWNER, STAFF
+export const getSalonAppointments = async (req, res) => {
+    try {
+        let salonId;
+
+        if (req.user.role === 'SALON_OWNER') {
+            const salon = await Salon.findOne({ ownerId: req.user._id });
+            if (!salon) return res.status(404).json({ message: 'Salon not found.' });
+            salonId = salon._id;
+        } else if (req.user.role === 'STAFF') {
+            const staff = await Staff.findOne({ userId: req.user._id });
+            if (!staff) return res.status(404).json({ message: 'Staff profile not found.' });
+            salonId = staff.salonId;
+        } else {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const { date, staffId } = req.query;
+        let query = { salonId };
+
+        if (date) {
+            const startOfDay = new Date(date);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(date);
+            endOfDay.setHours(23, 59, 59, 999);
+            query.startAt = { $gte: startOfDay, $lte: endOfDay };
+        }
+
+        if (staffId) {
+            query.staffId = staffId;
+        }
+
+        const appointments = await Appointment.find(query)
+            .populate('customerId', 'fullName email phone')
+            .sort({ startAt: 1 });
+
+        res.json({
+            success: true,
+            count: appointments.length,
+            data: appointments
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message || 'Server error' });
+    }
+};

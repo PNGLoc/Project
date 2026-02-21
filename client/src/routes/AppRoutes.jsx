@@ -23,6 +23,7 @@ import LookbookPage from '../pages/LookbookPage';
 import ProfilePage from '../pages/users/ProfilePage';
 import StaffList from "../pages/salon/StaffList";
 import BookAppointment from '../pages/booking/BookAppointment';
+import SalonCalendar from '../pages/salon/SalonCalendar';
 
 import MainLayout from '../components/layout/MainLayout';
 
@@ -66,6 +67,7 @@ const AppRoutes = () => {
                         <Route path="staff/add" element={<StaffRegistration />} />
                         <Route path="dashboard" element={<SalonDashboard />} />
                         <Route path="staff" element={<StaffList />} />
+                        <Route path="calendar" element={<SalonCalendar />} />
                     </Route>
                 </Route>
             </Route>
