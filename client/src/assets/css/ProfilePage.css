@@ -1,0 +1,237 @@
+/* ProfilePage.css - unified typography & colors */
+
+.profile-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+  min-height: calc(100vh - 80px);
+  font-family: inherit;
+  background-color: #f8fafc;
+}
+
+.profile-wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 1000px;
+  gap: 2rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.profile-sidebar {
+  flex: 1;
+  min-width: 250px;
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+.profile-menu-button {
+  width: 100%;
+  padding: 12px 15px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  color: var(--text-main);
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.profile-menu-button.active {
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.profile-content {
+  flex: 3;
+  min-width: 300px;
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  min-height: 600px;
+}
+
+.profile-section-title {
+  margin-bottom: 1.5rem;
+  color: var(--primary-color);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.profile-basic-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.profile-avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--primary-color);
+  padding: 3px;
+}
+
+.profile-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.profile-email {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+}
+
+.profile-role-pill {
+  font-size: 0.85rem;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.profile-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.profile-detail-label {
+  color: var(--text-muted);
+}
+
+.profile-detail-value {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.profile-form-group {
+  margin-bottom: 1rem;
+}
+
+.profile-form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--primary-color);
+}
+
+.profile-form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.95rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.profile-form-control.error {
+  border-color: #f97373;
+}
+
+.profile-error-text {
+  color: #e11d48;
+  font-size: 0.8rem;
+}
+
+.profile-submit-btn {
+  max-width: 200px;
+}
+
+.profile-message {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.profile-message.success {
+  background: #e8f5e9;
+  color: #15803d;
+}
+
+.profile-message.error {
+  background: #ffebee;
+  color: #b91c1c;
+}
+
+/* Avatar upload section (Update tab) */
+.profile-avatar-upload-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.profile-avatar-upload-image {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-color);
+}
+
+.profile-avatar-upload-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-avatar-upload-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.profile-avatar-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--primary-color);
+  background: #ecfeff;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.profile-avatar-upload-button:hover {
+  background: #ccfbf1;
+}
+
+@media (max-width: 768px) {
+  .profile-wrapper {
+    flex-direction: column;
+  }
+
+  .profile-content {
+    padding: 1.5rem;
+  }
+
+  .profile-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
