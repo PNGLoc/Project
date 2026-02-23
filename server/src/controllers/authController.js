@@ -5,6 +5,8 @@ import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import Salon from '../models/Salon.js';
+import path from 'path';
+import fs from 'fs';
 
 // Generate JWT
 const generateToken = (id) => {
@@ -35,6 +37,20 @@ const sendEmail = async (to, subject, text, html) => {
 
     await transporter.sendMail(mailOptions);
 };
+
+const buildUserResponse = (user, message) => ({
+    _id: user._id,
+    fullName: user.fullName,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    avatar: user.avatar,
+    bio: user.bio,
+    dateOfBirth: user.dateOfBirth,
+    createdAt: user.createdAt,
+    token: generateToken(user._id),
+    ...(message ? { message } : {}),
+});
 
 
 // @desc    Register user
@@ -331,19 +347,7 @@ export const updateUserProfile = async (req, res) => {
 
             const updatedUser = await user.save();
 
-            res.json({
-                _id: updatedUser._id,
-                fullName: updatedUser.fullName,
-                email: updatedUser.email,
-                phone: updatedUser.phone,
-                role: updatedUser.role,
-                avatar: updatedUser.avatar,
-                bio: updatedUser.bio,
-                dateOfBirth: updatedUser.dateOfBirth,
-                createdAt: updatedUser.createdAt,
-                token: generateToken(updatedUser._id),
-                message: 'Profile updated successfully',
-            });
+            res.json(buildUserResponse(updatedUser, 'Profile updated successfully'));
         } else {
             res.status(404).json({ message: 'User not found' });
         }
@@ -374,6 +378,50 @@ export const changePassword = async (req, res) => {
         if (error.name === 'ValidationError') {
             return res.status(400).json({ message: error.message });
         }
+        res.status(500).json({ message: 'Server error: ' + error.message });
+    }
+};
+
+// @desc    Update avatar image
+// @route   PUT /api/auth/avatar
+// @access  Private
+export const updateAvatar = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No avatar file uploaded' });
+        }
+
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            // Cleanup uploaded file if user not found
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch {
+                // ignore
+            }
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Optionally remove old avatar file if it was stored in assets
+        if (user.avatar && typeof user.avatar === 'string' && user.avatar.startsWith('/assets/avatars/')) {
+            const oldPath = path.resolve(process.cwd(), '../client/public', user.avatar.replace(/^\//, ''));
+            if (fs.existsSync(oldPath)) {
+                try {
+                    fs.unlinkSync(oldPath);
+                } catch {
+                    // ignore cleanup error
+                }
+            }
+        }
+
+        const relativePath = `/assets/avatars/${req.file.filename}`;
+        user.avatar = relativePath;
+        const updatedUser = await user.save();
+
+        res.json(buildUserResponse(updatedUser, 'Avatar updated successfully'));
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'Server error: ' + error.message });
     }
 };

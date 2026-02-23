@@ -35,6 +35,17 @@ const authApi = {
         const response = await axiosClient.get('/api/auth/profile');
         return response.data;
     },
+    updateAvatar: async (formData) => {
+        const response = await axiosClient.put('/api/auth/avatar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        if (response.data && response.data.token) {
+            localStorage.setItem('user', JSON.stringify(response.data));
+        }
+        return response.data;
+    },
     updateProfile: async (userData) => {
         const response = await axiosClient.put('/api/auth/profile', userData);
         if (response.data && response.data.token) {
