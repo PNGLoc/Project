@@ -12,6 +12,7 @@ const AdminDashboard = () => {
     const location = useLocation();
     const isOverview = location.pathname === '/admin/dashboard';
     const isMyPosts = location.pathname === '/admin/my-posts';
+    const isUsers = location.pathname === '/admin/users';
 
     return (
         <div className="admin-wrapper">
@@ -31,6 +32,9 @@ const AdminDashboard = () => {
                             </Link>
                             <Link className={`nav-link ${isMyPosts ? 'active' : ''}`} to="/admin/my-posts">
                                 My Posts
+                            </Link>
+                            <Link className={`nav-link ${isUsers ? 'active' : ''}`} to="/admin/users">
+                                Users
                             </Link>
                         </nav>
                     </div>
