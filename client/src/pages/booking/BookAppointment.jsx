@@ -40,6 +40,7 @@ const BookAppointment = () => {
     const [selectedTime, setSelectedTime] = useState('');
     const [note, setNote] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('CASH');
+    const [bookedSlots, setBookedSlots] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -105,6 +106,32 @@ const BookAppointment = () => {
         fetchDetails();
     }, [selectedSalon]);
 
+    useEffect(() => {
+        const fetchAvailability = async () => {
+            if (!selectedStaff?._id || !selectedDate) {
+                setBookedSlots([]);
+                return;
+            }
+
+            try {
+                const res = await axiosClient.get('/api/appointments/availability', {
+                    params: { staffId: selectedStaff._id, date: selectedDate }
+                });
+                setBookedSlots(res.data?.data || []);
+            } catch (err) {
+                setBookedSlots([]);
+            }
+        };
+
+        fetchAvailability();
+    }, [selectedStaff, selectedDate]);
+
+    useEffect(() => {
+        if (selectedTime && isSlotUnavailable(selectedTime)) {
+            setSelectedTime('');
+        }
+    }, [bookedSlots, selectedTime, selectedService, selectedDate]);
+
     const resetBooking = () => {
         setSelectedSalon(null);
         setSelectedService(null);
@@ -115,8 +142,21 @@ const BookAppointment = () => {
         setSelectedTime('');
         setNote('');
         setPaymentMethod('CASH');
+        setBookedSlots([]);
         setSuccess('');
         setStepIndex(0);
+    };
+
+    const isSlotUnavailable = (slot) => {
+        if (!selectedDate || !selectedService?.duration) return false;
+        const slotStart = new Date(`${selectedDate}T${slot}`);
+        const slotEnd = new Date(slotStart.getTime() + selectedService.duration * 60000);
+
+        return bookedSlots.some((item) => {
+            const startAt = new Date(item.startAt);
+            const endAt = new Date(item.endAt);
+            return slotStart < endAt && slotEnd > startAt;
+        });
     };
 
     const handleNext = () => {
@@ -200,6 +240,7 @@ const BookAppointment = () => {
                                 setSelectedTime('');
                                 setSuccess('');
                                 setPaymentMethod('CASH');
+                                setBookedSlots([]);
                             }}
                             role="button"
                             tabIndex={0}
@@ -325,16 +366,20 @@ const BookAppointment = () => {
                 </label>
             </div>
             <div className="time-grid">
-                {timeSlots.map((slot) => (
-                    <button
-                        type="button"
-                        key={slot}
-                        className={`time-slot ${selectedTime === slot ? 'selected' : ''}`}
-                        onClick={() => setSelectedTime(slot)}
-                    >
-                        {slot}
-                    </button>
-                ))}
+                {timeSlots.map((slot) => {
+                    const isUnavailable = isSlotUnavailable(slot);
+                    return (
+                        <button
+                            type="button"
+                            key={slot}
+                            className={`time-slot ${selectedTime === slot ? 'selected' : ''} ${isUnavailable ? 'disabled' : ''}`}
+                            onClick={() => setSelectedTime(slot)}
+                            disabled={isUnavailable}
+                        >
+                            {slot}
+                        </button>
+                    );
+                })}
             </div>
         </>
     );

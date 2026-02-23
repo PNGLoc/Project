@@ -159,6 +159,39 @@ export const markAppointmentPaidByCash = async (req, res) => {
     }
 };
 
+// @desc    Get booked slots for a staff on a date
+// @route   GET /api/appointments/availability?staffId=...&date=YYYY-MM-DD
+// @access  Private/CUSTOMER
+export const getAppointmentAvailability = async (req, res) => {
+    try {
+        const { staffId, date } = req.query;
+        if (!staffId || !date) {
+            return res.status(400).json({ message: 'Missing staffId or date.' });
+        }
+
+        const dayStart = new Date(`${date}T00:00:00`);
+        const dayEnd = new Date(`${date}T23:59:59.999`);
+
+        if (Number.isNaN(dayStart.getTime()) || Number.isNaN(dayEnd.getTime())) {
+            return res.status(400).json({ message: 'Invalid date.' });
+        }
+
+        const appointments = await Appointment.find({
+            staffId,
+            status: { $ne: 'CANCELLED' },
+            startAt: { $lte: dayEnd },
+            endAt: { $gte: dayStart }
+        }).select('startAt endAt');
+
+        return res.json({
+            success: true,
+            data: appointments
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
 // @desc    Get all appointments for a salon (for owner/staff)
 // @route   GET /api/appointments/salon
 // @access  Private/SALON_OWNER, STAFF
