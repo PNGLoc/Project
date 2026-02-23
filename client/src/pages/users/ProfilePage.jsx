@@ -2,7 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import authApi from '../../features/auth/api/authApi';
-import { FaUser, FaEdit, FaLock, FaIdCard } from 'react-icons/fa';
+import followApi from '../../features/social/api/followApi';
+import { FaUser, FaEdit, FaLock, FaIdCard, FaHeart } from 'react-icons/fa';
+import SalonCard from '../../components/salon/SalonCard';
 import '../../assets/css/ProfilePage.css';
 
 const ProfilePage = () => {
@@ -32,11 +34,34 @@ const ProfilePage = () => {
     // Error State
     const [errors, setErrors] = useState({});
 
+    // Following State
+    const [followedSalons, setFollowedSalons] = useState([]);
+    const [loadingFollows, setLoadingFollows] = useState(false);
+
     useEffect(() => {
         const tab = searchParams.get('tab');
         if (tab) setActiveTab(tab);
         fetchProfile();
     }, [searchParams]);
+
+    useEffect(() => {
+        if (activeTab === 'following' && user?.role === 'CUSTOMER') {
+            fetchFollowedSalons();
+        }
+    }, [activeTab, user]);
+
+    const fetchFollowedSalons = async () => {
+        try {
+            setLoadingFollows(true);
+            const data = await followApi.getMySalons();
+            setFollowedSalons(data.items || []);
+        } catch (error) {
+            console.error('[PROFILE] Failed to load followed salons', error);
+            setMessage({ type: 'error', text: 'Failed to load followed salons' });
+        } finally {
+            setLoadingFollows(false);
+        }
+    };
 
     const fetchProfile = async () => {
         try {
@@ -215,6 +240,14 @@ const ProfilePage = () => {
                             >
                                 <FaLock /> Security
                             </button>
+                            {user?.role === 'CUSTOMER' && (
+                                <button
+                                    onClick={() => setActiveTab('following')}
+                                    className={`profile-menu-button ${activeTab === 'following' ? 'active' : ''}`}
+                                >
+                                    <FaHeart /> Following
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -382,6 +415,40 @@ const ProfilePage = () => {
                                     </div>
                                     <button type="submit" className="btn profile-submit-btn">Update Password</button>
                                 </form>
+                            </div>
+                        )}
+
+                        {/* 5. Following Tab (Only for CUSTOMER) */}
+                        {activeTab === 'following' && user?.role === 'CUSTOMER' && (
+                            <div>
+                                <h2 className="profile-section-title">Salons You Follow</h2>
+                                {loadingFollows ? (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                                        Loading followed salons...
+                                    </div>
+                                ) : followedSalons.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                                        <p>You haven't followed any salons yet.</p>
+                                        <p style={{ marginTop: '8px', fontSize: '14px' }}>
+                                            Go to Home page to discover and follow salons!
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div style={{ 
+                                        display: 'grid', 
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                                        gap: '24px',
+                                        marginTop: '20px'
+                                    }}>
+                                        {followedSalons.map((salon) => (
+                                            <SalonCard 
+                                                key={salon._id} 
+                                                data={salon} 
+                                                onUnfollow={fetchFollowedSalons}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

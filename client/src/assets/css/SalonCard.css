@@ -105,3 +105,32 @@
     gap: 5px;
     /* Khoảng cách nhỏ giữa tên salon và chữ Hair Salon */
 }
+
+.salon-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.follow-btn {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid #0d9488;
+    background: #ecfeff;
+    color: #0d9488;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.follow-btn.following {
+    background: #0d9488;
+    color: #ffffff;
+}
+
+.follow-btn:disabled {
+    opacity: 0.7;
+    cursor: default;
+}
