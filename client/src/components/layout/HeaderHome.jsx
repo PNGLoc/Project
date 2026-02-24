@@ -74,6 +74,8 @@ const HeaderHome = () => {
     // User đã được Admin duyệt lên chức SALON_OWNER chưa?
     const isOfficialOwner = currentUser?.role === 'SALON_OWNER';
     const isCustomer = currentUser?.role === 'CUSTOMER';
+    const isStaff = currentUser?.role === 'STAFF';
+
     return (
         <header className="header">
             <div className="header-content">
@@ -149,13 +151,18 @@ const HeaderHome = () => {
                                                 <FaUsers /> My Staff
                                             </Link>
                                         </>
+                                    ) : isStaff ? (
+                                        // Staff: show My Schedule
+                                        <Link to="/salon/schedule" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                            <FiBookOpen /> My Schedule
+                                        </Link>
                                     ) : hasSalon ? (
                                         // Registered but waiting approval
                                         <div className="dropdown-item" style={{ cursor: 'default', color: '#d97706' }}>
                                             <HiSparkles /> Pending Approval
                                         </div>
                                     ) : (
-                                        // No salon yet
+                                        // No salon yet (Customer/User)
                                         <Link to="/salon/register" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                             <GoBriefcase /> Become a Partner
                                         </Link>
