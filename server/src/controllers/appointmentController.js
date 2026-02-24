@@ -239,3 +239,22 @@ export const getSalonAppointments = async (req, res) => {
         res.status(500).json({ message: error.message || 'Server error' });
     }
 };
+
+// @desc    Get appointments for current customer
+// @route   GET /api/appointments/my
+// @access  Private/CUSTOMER
+export const getCustomerAppointments = async (req, res) => {
+    try {
+        const appointments = await Appointment.find({ customerId: req.user._id })
+            .populate('salonId', 'name address')
+            .sort({ startAt: -1 });
+
+        return res.json({
+            success: true,
+            count: appointments.length,
+            data: appointments
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
