@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { register, verifyEmail, login, forgotPassword, resetPassword, getUserProfile, updateUserProfile, changePassword, resendOTP, updateAvatar } from '../controllers/authController.js';
+import { register, verifyEmail, login, forgotPassword, resetPassword, getUserProfile, updateUserProfile, changePassword, resendOTP, updateAvatar, googleLogin } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -30,6 +30,7 @@ router.post('/register', register);
 router.post('/verify-email', verifyEmail);
 router.post('/resend-otp', resendOTP);
 router.post('/login', login);
+router.post('/google', googleLogin);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 

@@ -1,4 +1,7 @@
 import User from '../models/User.js';
+import { OAuth2Client } from 'google-auth-library';
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 import PendingUser from '../models/PendingUser.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
@@ -229,7 +232,73 @@ export const login = async (req, res) => {
     }
 };
 
-// @desc    Forgot Password - Send OTP
+// @desc    Login/Register using Google OAuth
+// @route   POST /api/auth/google
+// @access  Public
+export const googleLogin = async (req, res) => {
+    try {
+        const { credential } = req.body;
+
+        if (!credential) {
+            return res.status(400).json({ message: 'Missing Google credential' });
+        }
+
+        // Verify Google token
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const { email, name, picture, sub: googleId } = payload;
+
+        // Check if user exists
+        let user = await User.findOne({ email }).select('+password');
+
+        if (!user) {
+            // User does not exist, create a new one natively
+            // Generate a random, highly secure password to bypass Mongoose validation
+            const randomPassword = 'Google_Login@123!' + Math.random().toString(36).slice(-8) + 'Xy';
+
+            user = await User.create({
+                fullName: name,
+                email: email,
+                password: randomPassword,
+                phone: `0000000000`, // Default dummy phone, matching regex ^0\d{9}$
+                isVerified: true,    // Google emails are already verified
+                avatar: picture,
+                role: 'CUSTOMER'     // Default role
+            });
+        } else {
+            // If user exists but is not verified, verify them since Google vouches for the email
+            if (!user.isVerified) {
+                user.isVerified = true;
+                await user.save();
+            }
+        }
+
+        // Check if active (soft delete)
+        if (!user.isActive) {
+            return res.status(403).json({ message: 'Account is disabled. Please contact admin.' });
+        }
+
+        const salon = await Salon.findOne({ ownerId: user._id });
+
+        res.json({
+            _id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            role: user.role,
+            avatar: user.avatar,
+            token: generateToken(user._id),
+            salonId: salon ? salon._id : null
+        });
+
+    } catch (error) {
+        console.error('[GOOGLE LOGIN ERROR]', error);
+        res.status(500).json({ message: 'Failed to authenticate with Google' });
+    }
+};
 // @route   POST /api/auth/forgot-password
 // @access  Public
 export const forgotPassword = async (req, res) => {

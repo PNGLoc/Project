@@ -23,6 +23,17 @@ const authApi = {
         }
         return response.data;
     },
+    googleLogin: async (credential) => {
+        const response = await axiosClient.post('/api/auth/google', { credential });
+        if (response.data) {
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token);
+            }
+            const { token, ...user } = response.data;
+            localStorage.setItem('user', JSON.stringify(user));
+        }
+        return response.data;
+    },
     forgotPassword: async (email) => {
         const response = await axiosClient.post('/api/auth/forgot-password', { email });
         return response.data;
