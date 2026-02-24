@@ -73,7 +73,7 @@ const HeaderHome = () => {
     const hasSalon = !!currentUser?.salonId;
     // User đã được Admin duyệt lên chức SALON_OWNER chưa?
     const isOfficialOwner = currentUser?.role === 'SALON_OWNER';
-
+    const isCustomer = currentUser?.role === 'CUSTOMER';
     return (
         <header className="header">
             <div className="header-content">
@@ -131,7 +131,13 @@ const HeaderHome = () => {
                                     <Link to="/post/my-posts" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                         <FiBookOpen /> My Posts
                                     </Link>
-
+                                    {isCustomer && (
+                                        <>
+                                            <Link to="/booking-history" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                                <FiBookOpen /> My Bookings
+                                            </Link>
+                                        </>)
+                                    }
                                     {/* --- LOGIC HIỂN THỊ QUAN TRỌNG --- */}
                                     {isOfficialOwner ? (
                                         // Owner: show My Salon and My Staff

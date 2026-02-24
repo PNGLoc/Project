@@ -24,6 +24,7 @@ import LookbookPage from '../pages/LookbookPage';
 import ProfilePage from '../pages/users/ProfilePage';
 import StaffList from "../pages/salon/StaffList";
 import BookAppointment from '../pages/booking/BookAppointment';
+import BookingHistory from '../pages/booking/BookingHistory';
 import SalonCalendar from '../pages/salon/SalonCalendar';
 
 import MainLayout from '../components/layout/MainLayout';
@@ -61,6 +62,7 @@ const AppRoutes = () => {
                 <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']} />}>
                     <Route path="/salon/register" element={<SalonRegistration />} />
                     <Route path="/book-appointment" element={<BookAppointment />} />
+                    <Route path="/booking-history" element={<BookingHistory />} />
                 </Route>
                 {/* Role: SALON_OWNER */}
                 <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>
