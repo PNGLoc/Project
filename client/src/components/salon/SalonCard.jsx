@@ -4,6 +4,7 @@ import { FaStar } from 'react-icons/fa';
 import { HiSparkles } from 'react-icons/hi';
 import '../../assets/css/SalonCard.css';
 import { useFollow } from '../../features/social/hooks/useFollow';
+import { useNavigate } from 'react-router-dom';
 
 const SalonCard = ({ data, onUnfollow }) => {
     const imageUrl = data?.images?.length > 0
@@ -11,6 +12,12 @@ const SalonCard = ({ data, onUnfollow }) => {
         : "https://via.placeholder.com/300";
 
     const districtName = data.address?.district || "Hồ Chí Minh";
+
+    // --- PHẦN XỬ LÝ HIỂN THỊ CATEGORY ĐỘNG ---
+    // data.categories được Backend (salonController) trả về dưới dạng mảng ["Hair", "Nails"]
+    const categoryDisplay = data.categories && data.categories.length > 0 
+        ? data.categories.join(' & ') 
+        : "Beauty Salon"; 
 
     const currentUser = (() => {
         try {
@@ -23,7 +30,6 @@ const SalonCard = ({ data, onUnfollow }) => {
     const isCustomer = currentUser?.role === 'CUSTOMER';
 
     const handleToggleCallback = (newIsFollowing) => {
-        // Chỉ gọi callback khi unfollow (từ true -> false)
         if (!newIsFollowing && onUnfollow) {
             onUnfollow();
         }
@@ -35,7 +41,6 @@ const SalonCard = ({ data, onUnfollow }) => {
         e.stopPropagation();
         if (!isCustomer) return;
 
-        // Nếu đang Following thì hỏi xác nhận trước khi bỏ follow
         if (isFollowing) {
             const ok = window.confirm('Bạn có chắc chắn muốn bỏ Follow salon này không?');
             if (!ok) return;
@@ -44,9 +49,17 @@ const SalonCard = ({ data, onUnfollow }) => {
         toggleFollow();
     };
 
+    const navigate = useNavigate();
+
+    const handleDetailsClick = () => {
+        if (data?._id) {
+            navigate(`/salon/${data._id}`);
+        }
+    };
+
     return (
         <div className="salon-card">
-            <div className="salon-image">
+            <div className="salon-image" onClick={handleDetailsClick} style={{cursor:'pointer'}}>
                 <img src={imageUrl} alt={data.name} />
 
                 {data.isApproved && (
@@ -60,8 +73,10 @@ const SalonCard = ({ data, onUnfollow }) => {
             <div className="salon-info">
                 <div className="salon-header-row">
                     <div className="salon-header">
-                        <h3 className="salon-name">{data.name}</h3>
-                        <p className="salon-type">Hair Salon & Spa</p>
+                        <h3 className="salon-name" onClick={handleDetailsClick} style={{cursor:'pointer'}}>{data.name}</h3>
+                        
+                        {/* THAY ĐỔI TẠI ĐÂY: Hiển thị danh mục động */}
+                        <p className="salon-type">{categoryDisplay}</p>
                     </div>
                     {isCustomer && (
                         <button
@@ -86,7 +101,7 @@ const SalonCard = ({ data, onUnfollow }) => {
                     </div>
                 </div>
 
-                <button className="details-btn">View Details</button>
+                <button className="details-btn" onClick={handleDetailsClick}>View Details</button>
             </div>
         </div>
     );

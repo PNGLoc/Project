@@ -304,3 +304,82 @@
 .btn-book-now:hover {
     background-color: #0f766e;
 }
+
+.search-page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 3rem 1.5rem;
+}
+.search-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 900px;
+  margin: 0 auto 1.5rem auto;
+}
+.search-bar-large {
+  margin: 0;
+  flex: 1;
+}
+.search-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.search-filter-button:hover {
+  background: #f9fafb;
+}
+.search-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.08rem;
+  color: #888;
+  margin-bottom: 1.5rem;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.salon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 2.2rem;
+  margin-bottom: 0.75rem;
+}
+.pagination-row {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+.pagination-row button {
+  background: #f6f6f6;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.95rem;
+  font-size: 1.08rem;
+  color: #222;
+  cursor: pointer;
+  transition: background 0.15s;
+  min-width: 2.4rem;
+  text-align: center;
+}
+.pagination-row button.active,
+.pagination-row button:focus {
+  background: #009688;
+  color: #fff;
+}
+.pagination-row button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
