@@ -211,8 +211,12 @@ export const getSalonAppointments = async (req, res) => {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
-        const { date, staffId } = req.query;
+        const { date, staffId, status } = req.query;
         let query = { salonId };
+
+        if (status) {
+            query.status = status;
+        }
 
         if (date) {
             const startOfDay = new Date(date);
@@ -256,5 +260,150 @@ export const getCustomerAppointments = async (req, res) => {
         });
     } catch (error) {
         return res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
+// @desc    Get single appointment details
+// @route   GET /api/appointments/:id
+// @access  Private/SALON_OWNER, STAFF
+export const getAppointmentById = async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id)
+            .populate('customerId', 'fullName email phone avatar')
+            .populate('serviceId', 'name price duration')
+            .populate('staffId', 'fullName avatar');
+
+        if (!appointment) {
+            return res.status(404).json({ message: 'Appointment not found.' });
+        }
+
+        // Check permissions
+        let hasAccess = false;
+        if (req.user.role === 'SALON_OWNER') {
+            const salon = await Salon.findOne({ ownerId: req.user._id });
+            hasAccess = salon && salon._id.toString() === appointment.salonId.toString();
+        } else if (req.user.role === 'STAFF') {
+            const staff = await Staff.findOne({ userId: req.user._id, isActive: true });
+            hasAccess = staff && staff._id.toString() === appointment.staffId.toString();
+        }
+
+        if (!hasAccess) {
+            return res.status(403).json({ message: 'Not authorized to view this appointment.' });
+        }
+
+        res.json({ success: true, data: appointment });
+    } catch (error) {
+        res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
+// @desc    Update an appointment
+// @route   PUT /api/appointments/:id
+// @access  Private/SALON_OWNER, STAFF
+export const updateAppointment = async (req, res) => {
+    try {
+        const { startAt, status, note, staffId } = req.body;
+        const appointment = await Appointment.findById(req.params.id);
+
+        if (!appointment) {
+            return res.status(404).json({ message: 'Appointment not found.' });
+        }
+
+        // Check permissions
+        let hasAccess = false;
+        let isOwner = false;
+        if (req.user.role === 'SALON_OWNER') {
+            const salon = await Salon.findOne({ ownerId: req.user._id });
+            hasAccess = salon && salon._id.toString() === appointment.salonId.toString();
+            isOwner = true;
+        } else if (req.user.role === 'STAFF') {
+            const staff = await Staff.findOne({ userId: req.user._id, isActive: true });
+            hasAccess = staff && staff._id.toString() === appointment.staffId.toString();
+        }
+
+        if (!hasAccess) {
+            return res.status(403).json({ message: 'Not authorized to update this appointment.' });
+        }
+
+        // Update fields
+        if (status) appointment.status = status;
+        if (note !== undefined) appointment.note = note;
+
+        if (startAt) {
+            const startDate = new Date(startAt);
+            if (Number.isNaN(startDate.getTime())) {
+                return res.status(400).json({ message: 'Invalid start time.' });
+            }
+            appointment.startAt = startDate;
+            // Recalculate endAt based on snapshot duration
+            if (appointment.serviceSnapshot && appointment.serviceSnapshot.duration) {
+                appointment.endAt = new Date(startDate.getTime() + appointment.serviceSnapshot.duration * 60000);
+            }
+        }
+
+        // Only owner can reassign staff
+        if (staffId && isOwner && staffId !== appointment.staffId.toString()) {
+            const newStaff = await Staff.findOne({ _id: staffId, salonId: appointment.salonId, isActive: true });
+            if (!newStaff) {
+                return res.status(400).json({ message: 'New stylist not found or inactive.' });
+            }
+            appointment.staffId = staffId;
+            if (appointment.staffSnapshot) {
+                appointment.staffSnapshot.fullName = newStaff.fullName;
+            }
+        }
+
+        // Conflict check if time or staff changed
+        if (startAt || staffId) {
+            const conflict = await Appointment.findOne({
+                _id: { $ne: appointment._id },
+                staffId: appointment.staffId,
+                status: { $ne: 'CANCELLED' },
+                startAt: { $lt: appointment.endAt },
+                endAt: { $gt: appointment.startAt }
+            });
+
+            if (conflict) {
+                return res.status(409).json({ message: 'Selected time slot is not available for this stylist.' });
+            }
+        }
+
+        await appointment.save();
+        res.json({ success: true, data: appointment });
+    } catch (error) {
+        res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
+// @desc    Delete (cancel) an appointment
+// @route   DELETE /api/appointments/:id
+// @access  Private/SALON_OWNER, STAFF
+export const deleteAppointment = async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id);
+
+        if (!appointment) {
+            return res.status(404).json({ message: 'Appointment not found.' });
+        }
+
+        // Check permissions
+        let hasAccess = false;
+        if (req.user.role === 'SALON_OWNER') {
+            const salon = await Salon.findOne({ ownerId: req.user._id });
+            hasAccess = salon && salon._id.toString() === appointment.salonId.toString();
+        } else if (req.user.role === 'STAFF') {
+            const staff = await Staff.findOne({ userId: req.user._id, isActive: true });
+            hasAccess = staff && staff._id.toString() === appointment.staffId.toString();
+        }
+
+        if (!hasAccess) {
+            return res.status(403).json({ message: 'Not authorized to delete this appointment.' });
+        }
+
+        await appointment.deleteOne();
+
+        res.json({ success: true, message: 'Appointment deleted successfully.', data: appointment });
+    } catch (error) {
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 };

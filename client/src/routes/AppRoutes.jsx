@@ -76,6 +76,11 @@ const AppRoutes = () => {
                         <Route path="calendar" element={<SalonCalendar />} />
                     </Route>
                 </Route>
+
+                {/* Role: SALON_OWNER & STAFF (View Schedule) */}
+                <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER', 'STAFF']} />}>
+                    <Route path="/salon/schedule" element={<SalonCalendar />} />
+                </Route>
             </Route>
 
             {/* --- AUTH ROUTES (Không dùng Header chung) --- */}
