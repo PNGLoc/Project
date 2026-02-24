@@ -174,10 +174,10 @@ export const createPost = async (req, res) => {
 export const getPosts = async (req, res) => {
     try {
         const {
-            authorType,         // 'Customer' or 'Salon'
+            authorType,           // 'Customer' or 'Salon'
             taggedSalonId,
             sortBy = 'createdAt', // 'createdAt', 'likes'
-            order = 'desc',      // 'asc' or 'desc'
+            order = 'desc',       // 'asc' or 'desc'
             page = 1,
             limit = 10
         } = req.query;
@@ -206,6 +206,10 @@ export const getPosts = async (req, res) => {
                 path: 'taggedStaffIds',
                 select: 'fullName userId',
                 populate: { path: 'userId', select: 'fullName avatar email phone' },
+            })
+            .populate({
+                path: 'comments.user',
+                select: 'fullName avatar',
             })
             .lean();
 
@@ -240,6 +244,10 @@ export const getPostById = async (req, res) => {
                 path: 'taggedStaffIds',
                 select: 'fullName userId',
                 populate: { path: 'userId', select: 'fullName avatar email phone' },
+            })
+            .populate({
+                path: 'comments.user',
+                select: 'fullName avatar',
             });
 
         if (!post) {
@@ -267,6 +275,10 @@ export const getLookbookById = async (req, res) => {
                 path: 'taggedStaffIds',
                 select: 'fullName userId',
                 populate: { path: 'userId', select: 'fullName avatar email phone' },
+            })
+            .populate({
+                path: 'comments.user',
+                select: 'fullName avatar',
             });
 
         if (!post) {
@@ -277,6 +289,73 @@ export const getLookbookById = async (req, res) => {
         const author = await resolveAuthor(post);
 
         res.json({ ...post.toObject(), author });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// --- TOGGLE LIKE ON POST ---
+export const toggleLikePost = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        const userId = req.user._id.toString();
+        const likedBy = Array.isArray(post.likedBy) ? post.likedBy : [];
+        const alreadyLiked = likedBy.some(id => id.toString() === userId);
+
+        if (alreadyLiked) {
+            post.likedBy = likedBy.filter(id => id.toString() !== userId);
+        } else {
+            post.likedBy.push(req.user._id);
+        }
+
+        post.likes = post.likedBy.length;
+        await post.save();
+
+        await post.populate({
+            path: 'comments.user',
+            select: 'fullName avatar',
+        });
+
+        res.json({
+            ...post.toObject(),
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// --- ADD COMMENT TO POST ---
+export const addCommentToPost = async (req, res) => {
+    try {
+        const { content } = req.body;
+        if (!content || !content.trim()) {
+            return res.status(400).json({ message: 'Comment content is required' });
+        }
+
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        post.comments.push({
+            user: req.user._id,
+            content: content.trim(),
+        });
+
+        await post.save();
+
+        await post.populate({
+            path: 'comments.user',
+            select: 'fullName avatar',
+        });
+
+        res.status(201).json({
+            comments: post.comments,
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

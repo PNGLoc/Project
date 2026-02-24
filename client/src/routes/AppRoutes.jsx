@@ -13,12 +13,14 @@ import SalonDashboard from '../pages/salon/SalonDashboard';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
 import SalonRegistration from '../pages/salon/SalonRegistration';
+import SalonDetail from '../pages/salon/SalonDetail';
 import PostDetail from '../pages/post/PostDetail';
 import LookbookDetail from '../pages/post/LookbookDetail';
 import PostForm from '../pages/post/PostForm';
 import PostManagement from '../pages/post/PostManagement';
 import StaffRegistration from '../pages/salon/StaffRegistration';
 import LookbookPage from '../pages/LookbookPage';
+import SearchPage from '../pages/SearchPage';
 
 // --- IMPORT ĐÃ ĐƯỢC GỘP TỪ 2 NHÁNH & THÊM MỚI ---
 import ProfilePage from '../pages/users/ProfilePage';
@@ -40,7 +42,8 @@ const AppRoutes = () => {
                 {/* <Route path="/salons" element={<AllSalons />} /> */}
 
                 {/* MENU */}
-                <Route path="/search" element={<div>All Salons </div>} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/salon/:id" element={<SalonDetail />} />
                 <Route path="/lookbook" element={<LookbookPage />} />
                 <Route path="/lookbook/:id" element={<LookbookDetail />} />
                 <Route path="/ai-analysis" element={<div>AI Analysis Page </div>} />
@@ -82,16 +85,12 @@ const AppRoutes = () => {
             <Route path='/register' element={<Register />} />
             <Route path='/verify-email' element={<VerifyEmail />} />
 
-
-
             {/* Role: ADMIN */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                 <Route path='/admin/dashboard' element={<AdminDashboard />} />
                 <Route path='/admin/my-posts' element={<AdminMyPosts />} />
                 <Route path='/admin/users' element={<AdminUsers />} />
             </Route>
-
-
 
             {/* 404 - NOT FOUND */}
             <Route path="*" element={<div>404 - Không tìm thấy trang</div>} />

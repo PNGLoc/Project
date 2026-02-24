@@ -39,6 +39,16 @@ const postApi = {
         return axiosClient.delete(`/api/posts/${postId}`);
     },
 
+    // Toggle like on post
+    toggleLike: (postId) => {
+        return axiosClient.post(`/api/posts/${postId}/like`);
+    },
+
+    // Add comment to post
+    addComment: (postId, payload) => {
+        return axiosClient.post(`/api/posts/${postId}/comments`, payload);
+    },
+
     // Get posts by author
     getPostsByAuthor: (authorId, params = {}) => {
         return axiosClient.get(`/api/posts/author/${authorId}`, { params });

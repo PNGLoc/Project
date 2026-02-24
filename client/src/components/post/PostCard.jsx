@@ -21,6 +21,9 @@ const PostCard = ({ post }) => {
         ? `http://localhost:5000${post.author?.avatar || post.author?.images?.[0]}`
         : 'https://via.placeholder.com/150';
 
+    const likeCount = post.likes || 0;
+    const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
+
     return (
         <article className="blog-card">
             <img src={thumbnail} alt="Post thumbnail" className="blog-card-image" />
@@ -31,6 +34,13 @@ const PostCard = ({ post }) => {
                     </span>
                     <span>•</span>
                     <span>{date}</span>
+                    <span className="blog-meta-spacer" />
+                    <span className="blog-meta-icon">
+                        <span className="blog-meta-heart">♥</span> {likeCount}
+                    </span>
+                    <span className="blog-meta-icon">
+                        <span className="blog-meta-comment">💬</span> {commentCount}
+                    </span>
                 </div>
 
                 <h3 className="blog-card-title">
