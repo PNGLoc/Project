@@ -28,6 +28,10 @@ const followApi = {
     const response = await axiosClient.get('/api/follows/my-staffs');
     return response.data;
   },
+  getFollowers: async () => {
+    const response = await axiosClient.get('/api/follows/followers');
+    return response.data;
+  },
 };
 
 export default followApi;

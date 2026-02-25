@@ -6,11 +6,15 @@ import {
   getFollowStatus,
   getMySalons,
   getMyStaffs,
+  getFollowers
 } from '../controllers/followController.js';
 
 const router = express.Router();
 
-// All follow routes are for CUSTOMER role
+// Routes for PROVIDERS (Salon Owners, Staff)
+router.get('/followers', protect, authorize('SALON_OWNER', 'STAFF'), getFollowers);
+
+// Routes for CUSTOMERS
 router.use(protect, authorize('CUSTOMER'));
 
 router.post('/', createFollow);
