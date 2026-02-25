@@ -11,19 +11,6 @@ const serviceSchema = new mongoose.Schema({
     price: { type: Number, required: true },
     duration: { type: Number, required: true }, // Số phút
     image: { type: String }, // Đường dẫn ảnh local
-    categoryId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category'
-    },
-    type: {
-        type: String,
-        enum: ['SINGLE', 'COMBO'],
-        default: 'SINGLE'
-    },
-    comboItems: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Service'
-    }],
     isActive: { type: Boolean, default: true } // Kích hoạt/Ẩn dịch vụ
 }, { timestamps: true });
 

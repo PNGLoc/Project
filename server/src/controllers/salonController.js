@@ -1,8 +1,5 @@
 import Salon from '../models/Salon.js';
 import User from '../models/User.js';
-import Service from '../models/Service.js';
-import Staff from '../models/Staff.js';
-import Category from '../models/Category.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -123,27 +120,12 @@ export const rejectSalon = async (req, res) => {
     }
 };
 
-
-
-
-// --- 4. Cập nhật getAllSalons ---
+// --- 4. Get All ---
 export const getAllSalons = async (req, res) => {
     try {
-        const salons = await Salon.find({ isApproved: true }).lean(); // Dùng lean() để dễ thêm thuộc tính mới
-        
-        // Lấy danh mục cho từng salon
-        const salonsWithCategories = await Promise.all(salons.map(async (salon) => {
-            const categories = await Category.find({ salonId: salon._id }).select('name');
-            return {
-                ...salon,
-                categories: categories.map(c => c.name) // Trả về mảng ['Hair', 'Nails']
-            };
-        }));
-
-        res.json(salonsWithCategories);
-    } catch (error) { 
-        res.status(500).json({ message: error.message }); 
-    }
+        const salons = await Salon.find({ isApproved: true });
+        res.json(salons);
+    } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
 // --- 5. Get Pending ---
@@ -157,59 +139,4 @@ export const getPendingSalons = async (req, res) => {
 // --- 6. Get My Salon ---
 export const getMySalon = async (userId) => {
     return await Salon.findOne({ ownerId: userId }).sort({ createdAt: -1 });
-};
-
-// @desc    Lấy FULL chi tiết salon public (dùng cho View Details)
-// @route   GET /api/salons/:id/details
-// @access  Public
-export const getSalonDetails = async (req, res) => {
-    try {
-        const salon = await Salon.findById(req.params.id);
-
-        if (!salon || !salon.isApproved) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Salon not found or not approved yet' 
-            });
-        }
-
-        // Lấy services và staffs song song
-        const [services, staffs] = await Promise.all([
-            Service.find({ 
-                salonId: salon._id, 
-                isActive: true 
-            }).populate('comboItems', 'name price duration')
-              .sort({ createdAt: -1 }),
-
-            Staff.find({ 
-                salonId: salon._id, 
-                isActive: true 
-            }).populate('userId', 'fullName email phone avatar')
-              .sort({ createdAt: -1 })
-        ]);
-
-        res.json({
-            success: true,
-            data: {
-                salon: {
-                    _id: salon._id,
-                    name: salon.name,
-                    description: salon.description || "Premium Hair Salon & Spa", // bạn có thể thêm field description sau
-                    phone: salon.phone,
-                    address: salon.address,
-                    images: salon.images,
-                    workingHours: salon.workingHours,
-                    rating: salon.rating,
-                    reviews: salon.reviews,
-                    isApproved: salon.isApproved,
-                    // thêm amenities nếu bạn có field sau này
-                },
-                services,
-                staffs
-            }
-        });
-    } catch (error) {
-        console.error('[GET SALON DETAILS ERROR]', error);
-        res.status(500).json({ message: 'Server error' });
-    }
 };

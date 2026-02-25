@@ -23,17 +23,6 @@ const authApi = {
         }
         return response.data;
     },
-    googleLogin: async (credential) => {
-        const response = await axiosClient.post('/api/auth/google', { credential });
-        if (response.data) {
-            if (response.data.token) {
-                localStorage.setItem('token', response.data.token);
-            }
-            const { token, ...user } = response.data;
-            localStorage.setItem('user', JSON.stringify(user));
-        }
-        return response.data;
-    },
     forgotPassword: async (email) => {
         const response = await axiosClient.post('/api/auth/forgot-password', { email });
         return response.data;
@@ -44,17 +33,6 @@ const authApi = {
     },
     getProfile: async () => {
         const response = await axiosClient.get('/api/auth/profile');
-        return response.data;
-    },
-    updateAvatar: async (formData) => {
-        const response = await axiosClient.put('/api/auth/avatar', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-        if (response.data && response.data.token) {
-            localStorage.setItem('user', JSON.stringify(response.data));
-        }
         return response.data;
     },
     updateProfile: async (userData) => {

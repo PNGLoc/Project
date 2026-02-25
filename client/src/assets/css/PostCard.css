@@ -38,26 +38,6 @@
     margin-bottom: 12px;
 }
 
-.blog-meta-spacer {
-    flex: 1;
-}
-
-.blog-meta-icon {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.blog-meta-heart {
-    font-size: 0.9rem;
-    color: #f97373;
-}
-
-.blog-meta-comment {
-    font-size: 0.9rem;
-    color: #9ca3af;
-}
-
 .blog-author-type {
     padding: 4px 8px;
     border-radius: 12px;

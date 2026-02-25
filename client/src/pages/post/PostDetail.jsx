@@ -1,4 +1,3 @@
-//LocPNG
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePostById } from '../../features/posts/hooks/usePosts.js';
@@ -62,14 +61,7 @@ const PostDetail = () => {
     return (
         <>
             <div className="blog-detail-container">
-                <div
-                    style={{
-                        marginBottom: 16,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                    }}
-                >
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-start' }}>
                     <button
                         onClick={() => navigate(-1)}
                         style={{
@@ -83,23 +75,8 @@ const PostDetail = () => {
                     >
                         ← Back
                     </button>
-                    {canEdit && (
-                        <button
-                            onClick={() => navigate(`/post/${post._id}/edit`)}
-                            style={{
-                                padding: '8px 14px',
-                                background: '#667eea',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontWeight: '600',
-                            }}
-                        >
-                            ✏️ Edit
-                        </button>
-                    )}
                 </div>
+
                 <article className="blog-detail-card">
                     {/* Header */}
                     <div className="blog-detail-header">
@@ -162,7 +139,7 @@ const PostDetail = () => {
                             </div>
                         </div>
                     )}
-                    {/* Tagged staff */}
+
                     {post.taggedStaffIds && post.taggedStaffIds.length > 0 && (
                         <div className="blog-service-link">
                             <h3>👥 Tagged staff:</h3>
@@ -213,6 +190,25 @@ const PostDetail = () => {
                         </div>
                     )}
 
+                    {/* Actions */}
+                    {canEdit && (
+                        <div className="blog-detail-actions">
+                            <button
+                                onClick={() => navigate(`/post/${post._id}/edit`)}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#667eea',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                }}
+                            >
+                                ✏️ Edit
+                            </button>
+                        </div>
+                    )}
                 </article>
             </div>
         </>

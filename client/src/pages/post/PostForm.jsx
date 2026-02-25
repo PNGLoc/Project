@@ -1,9 +1,8 @@
-//LocPNG
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCreatePost, useUpdatePost, usePostById } from '../../features/posts/hooks/usePosts.js';
 import axiosClient from '../../lib/axios.js';
-//import HeaderHome from '../../components/layout/HeaderHome.jsx';
+import HeaderHome from '../../components/layout/HeaderHome.jsx';
 import '../../assets/css/PostForm.css';
 
 const PostForm = () => {
@@ -222,6 +221,13 @@ const PostForm = () => {
                 // Admin can optionally tag salons
             }
 
+            if (isCustomer) {
+                if (!taggedSalonIds || taggedSalonIds.length !== 1) {
+                    setMessage({ type: 'error', text: 'Please select exactly 1 salon to check-in' });
+                    return;
+                }
+            }
+
             const submitData = new FormData();
             submitData.append('content', formData.content);
             if (isSalon) {
@@ -297,15 +303,67 @@ const PostForm = () => {
                         <div className="form-group">
                             <label htmlFor="content" className="required">
                                 Content
+                                {isAdmin && <span className="role-indicator">Admin - RichText</span>}
+                                {isSalon && <span className="role-indicator">Salon</span>}
                             </label>
-                            <textarea
-                                id="content"
-                                name="content"
-                                value={formData.content}
-                                onChange={handleInputChange}
-                                placeholder="Write your post content here..."
-                            />
 
+                            {isAdmin ? (
+                                // Admin gets rich text editor
+                                <div className="rich-text-editor-wrapper">
+                                    <div className="rich-text-toolbar">
+                                        <button type="button" onClick={(e) => {
+                                            e.preventDefault();
+                                            const textarea = document.getElementById('content');
+                                            const start = textarea.selectionStart;
+                                            const end = textarea.selectionEnd;
+                                            const text = textarea.value;
+                                            textarea.value = text.substring(0, start) + '**' + text.substring(start, end) + '**' + text.substring(end);
+                                            setFormData(prev => ({ ...prev, content: textarea.value }));
+                                        }}>
+                                            <strong>B</strong>
+                                        </button>
+                                        <button type="button" onClick={(e) => {
+                                            e.preventDefault();
+                                            const textarea = document.getElementById('content');
+                                            const start = textarea.selectionStart;
+                                            const end = textarea.selectionEnd;
+                                            const text = textarea.value;
+                                            textarea.value = text.substring(0, start) + '*' + text.substring(start, end) + '*' + text.substring(end);
+                                            setFormData(prev => ({ ...prev, content: textarea.value }));
+                                        }}>
+                                            <em>I</em>
+                                        </button>
+                                        <button type="button" onClick={(e) => {
+                                            e.preventDefault();
+                                            const textarea = document.getElementById('content');
+                                            const start = textarea.selectionStart;
+                                            const end = textarea.selectionEnd;
+                                            const text = textarea.value;
+                                            textarea.value = text.substring(0, start) + '\n\n---\n\n' + text.substring(start);
+                                            setFormData(prev => ({ ...prev, content: textarea.value }));
+                                        }}>
+                                            H-Line
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        id="content"
+                                        className="rich-text-editor"
+                                        name="content"
+                                        value={formData.content}
+                                        onChange={handleInputChange}
+                                        placeholder="Write your post content here. Supports markdown formatting..."
+                                    />
+                                </div>
+                            ) : (
+                                // Customer/Salon gets regular textarea
+                                <textarea
+                                    id="content"
+                                    name="content"
+                                    value={formData.content}
+                                    onChange={handleInputChange}
+                                    placeholder="Write your post content here..."
+                                />
+                            )}
                         </div>
 
                         {/* SALON-specific: Service dropdown */}
@@ -420,8 +478,8 @@ const PostForm = () => {
                         {/* CUSTOMER/Admin: Tag salons */}
                         {(isAdmin || isCustomer) && (
                             <div className="form-group">
-                                <label>
-                                    {isCustomer ? 'Check-in Salon (Optional)' : 'Tag Salons (Optional)'}
+                                <label className={isCustomer ? 'required' : ''}>
+                                    {isCustomer ? 'Check-in Salon (Required)' : 'Tag Salons (Optional)'}
                                 </label>
 
                                 {salons.length === 0 ? (
@@ -527,7 +585,7 @@ const PostForm = () => {
 
                                 <div style={{ color: '#777', fontSize: 12, marginTop: 6 }}>
                                     {isCustomer
-                                        ? 'Customer/Staff: salon check-in is optional.'
+                                        ? 'Customer: tag exactly 1 salon (check-in).'
                                         : 'Admin: tagging salons is optional.'}
                                 </div>
                             </div>

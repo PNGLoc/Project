@@ -4,8 +4,7 @@ import path from 'path'; // Thêm cái này để dùng path.join
 import fs from 'fs';
 import { protect } from '../middlewares/authMiddleware.js';
 import {
-    registerSalon, approveSalon, rejectSalon, getAllSalons, getPendingSalons,
-    getSalonDetails
+    registerSalon, approveSalon, rejectSalon, getAllSalons, getPendingSalons
 } from '../controllers/salonController.js';
 
 import { fileURLToPath } from 'url';
@@ -37,8 +36,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.get('/', getAllSalons);
-// public detail endpoint used by SalonDetail page
-router.get('/:id/details', getSalonDetails);
 router.post('/register', protect, upload.single('image'), registerSalon); // 'image' phải khớp với field bên Frontend gửi lên
 router.get('/pending', protect, getPendingSalons);
 router.patch('/approve/:id', protect, approveSalon);

@@ -7,27 +7,19 @@ import ResetPassword from '../pages/auth/ResetPassword';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import Login from '../pages/auth/Login';
 import AdminDashboard from '../pages/admin/AdminDashboard';
-import AdminMyPosts from '../pages/admin/AdminMyPosts';
-import AdminUsers from '../pages/admin/AdminUsers';
 import SalonDashboard from '../pages/salon/SalonDashboard';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
 import SalonRegistration from '../pages/salon/SalonRegistration';
-import SalonDetail from '../pages/salon/SalonDetail';
 import PostDetail from '../pages/post/PostDetail';
-import LookbookDetail from '../pages/post/LookbookDetail';
 import PostForm from '../pages/post/PostForm';
 import PostManagement from '../pages/post/PostManagement';
 import StaffRegistration from '../pages/salon/StaffRegistration';
 import LookbookPage from '../pages/LookbookPage';
-import SearchPage from '../pages/SearchPage';
 
 // --- IMPORT ĐÃ ĐƯỢC GỘP TỪ 2 NHÁNH & THÊM MỚI ---
 import ProfilePage from '../pages/users/ProfilePage';
 import StaffList from "../pages/salon/StaffList";
-import BookAppointment from '../pages/booking/BookAppointment';
-import BookingHistory from '../pages/booking/BookingHistory';
-import SalonCalendar from '../pages/salon/SalonCalendar';
 
 import MainLayout from '../components/layout/MainLayout';
 
@@ -42,10 +34,8 @@ const AppRoutes = () => {
                 {/* <Route path="/salons" element={<AllSalons />} /> */}
 
                 {/* MENU */}
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/salon/:id" element={<SalonDetail />} />
+                <Route path="/search" element={<div>All Salons </div>} />
                 <Route path="/lookbook" element={<LookbookPage />} />
-                <Route path="/lookbook/:id" element={<LookbookDetail />} />
                 <Route path="/ai-analysis" element={<div>AI Analysis Page </div>} />
                 <Route path="/category/:type" element={<div>Category Page </div>} />
 
@@ -64,8 +54,6 @@ const AppRoutes = () => {
                 {/* Role: CUSTOMER */}
                 <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']} />}>
                     <Route path="/salon/register" element={<SalonRegistration />} />
-                    <Route path="/book-appointment" element={<BookAppointment />} />
-                    <Route path="/booking-history" element={<BookingHistory />} />
                 </Route>
                 {/* Role: SALON_OWNER */}
                 <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>
@@ -73,13 +61,7 @@ const AppRoutes = () => {
                         <Route path="staff/add" element={<StaffRegistration />} />
                         <Route path="dashboard" element={<SalonDashboard />} />
                         <Route path="staff" element={<StaffList />} />
-                        <Route path="calendar" element={<SalonCalendar />} />
                     </Route>
-                </Route>
-
-                {/* Role: SALON_OWNER & STAFF (View Schedule) */}
-                <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER', 'STAFF']} />}>
-                    <Route path="/salon/schedule" element={<SalonCalendar />} />
                 </Route>
             </Route>
 
@@ -90,12 +72,15 @@ const AppRoutes = () => {
             <Route path='/register' element={<Register />} />
             <Route path='/verify-email' element={<VerifyEmail />} />
 
+
+
             {/* Role: ADMIN */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                 <Route path='/admin/dashboard' element={<AdminDashboard />} />
-                <Route path='/admin/my-posts' element={<AdminMyPosts />} />
-                <Route path='/admin/users' element={<AdminUsers />} />
+                <Route path='/admin/users' element={<h2>Manage Users (Placeholder)</h2>} />
             </Route>
+
+
 
             {/* 404 - NOT FOUND */}
             <Route path="*" element={<div>404 - Không tìm thấy trang</div>} />

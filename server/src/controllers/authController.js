@@ -1,15 +1,10 @@
 import User from '../models/User.js';
-import { OAuth2Client } from 'google-auth-library';
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 import PendingUser from '../models/PendingUser.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import Salon from '../models/Salon.js';
-import path from 'path';
-import fs from 'fs';
 
 // Generate JWT
 const generateToken = (id) => {
@@ -40,20 +35,6 @@ const sendEmail = async (to, subject, text, html) => {
 
     await transporter.sendMail(mailOptions);
 };
-
-const buildUserResponse = (user, message) => ({
-    _id: user._id,
-    fullName: user.fullName,
-    email: user.email,
-    phone: user.phone,
-    role: user.role,
-    avatar: user.avatar,
-    bio: user.bio,
-    dateOfBirth: user.dateOfBirth,
-    createdAt: user.createdAt,
-    token: generateToken(user._id),
-    ...(message ? { message } : {}),
-});
 
 
 // @desc    Register user
@@ -232,73 +213,7 @@ export const login = async (req, res) => {
     }
 };
 
-// @desc    Login/Register using Google OAuth
-// @route   POST /api/auth/google
-// @access  Public
-export const googleLogin = async (req, res) => {
-    try {
-        const { credential } = req.body;
-
-        if (!credential) {
-            return res.status(400).json({ message: 'Missing Google credential' });
-        }
-
-        // Verify Google token
-        const ticket = await client.verifyIdToken({
-            idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-
-        const payload = ticket.getPayload();
-        const { email, name, picture, sub: googleId } = payload;
-
-        // Check if user exists
-        let user = await User.findOne({ email }).select('+password');
-
-        if (!user) {
-            // User does not exist, create a new one natively
-            // Generate a random, highly secure password to bypass Mongoose validation
-            const randomPassword = 'Google_Login@123!' + Math.random().toString(36).slice(-8) + 'Xy';
-
-            user = await User.create({
-                fullName: name,
-                email: email,
-                password: randomPassword,
-                phone: `0000000000`, // Default dummy phone, matching regex ^0\d{9}$
-                isVerified: true,    // Google emails are already verified
-                avatar: picture,
-                role: 'CUSTOMER'     // Default role
-            });
-        } else {
-            // If user exists but is not verified, verify them since Google vouches for the email
-            if (!user.isVerified) {
-                user.isVerified = true;
-                await user.save();
-            }
-        }
-
-        // Check if active (soft delete)
-        if (!user.isActive) {
-            return res.status(403).json({ message: 'Account is disabled. Please contact admin.' });
-        }
-
-        const salon = await Salon.findOne({ ownerId: user._id });
-
-        res.json({
-            _id: user.id,
-            fullName: user.fullName,
-            email: user.email,
-            role: user.role,
-            avatar: user.avatar,
-            token: generateToken(user._id),
-            salonId: salon ? salon._id : null
-        });
-
-    } catch (error) {
-        console.error('[GOOGLE LOGIN ERROR]', error);
-        res.status(500).json({ message: 'Failed to authenticate with Google' });
-    }
-};
+// @desc    Forgot Password - Send OTP
 // @route   POST /api/auth/forgot-password
 // @access  Public
 export const forgotPassword = async (req, res) => {
@@ -416,7 +331,19 @@ export const updateUserProfile = async (req, res) => {
 
             const updatedUser = await user.save();
 
-            res.json(buildUserResponse(updatedUser, 'Profile updated successfully'));
+            res.json({
+                _id: updatedUser._id,
+                fullName: updatedUser.fullName,
+                email: updatedUser.email,
+                phone: updatedUser.phone,
+                role: updatedUser.role,
+                avatar: updatedUser.avatar,
+                bio: updatedUser.bio,
+                dateOfBirth: updatedUser.dateOfBirth,
+                createdAt: updatedUser.createdAt,
+                token: generateToken(updatedUser._id),
+                message: 'Profile updated successfully',
+            });
         } else {
             res.status(404).json({ message: 'User not found' });
         }
@@ -447,50 +374,6 @@ export const changePassword = async (req, res) => {
         if (error.name === 'ValidationError') {
             return res.status(400).json({ message: error.message });
         }
-        res.status(500).json({ message: 'Server error: ' + error.message });
-    }
-};
-
-// @desc    Update avatar image
-// @route   PUT /api/auth/avatar
-// @access  Private
-export const updateAvatar = async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No avatar file uploaded' });
-        }
-
-        const user = await User.findById(req.user.id);
-
-        if (!user) {
-            // Cleanup uploaded file if user not found
-            try {
-                fs.unlinkSync(req.file.path);
-            } catch {
-                // ignore
-            }
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Optionally remove old avatar file if it was stored in assets
-        if (user.avatar && typeof user.avatar === 'string' && user.avatar.startsWith('/assets/avatars/')) {
-            const oldPath = path.resolve(process.cwd(), '../client/public', user.avatar.replace(/^\//, ''));
-            if (fs.existsSync(oldPath)) {
-                try {
-                    fs.unlinkSync(oldPath);
-                } catch {
-                    // ignore cleanup error
-                }
-            }
-        }
-
-        const relativePath = `/assets/avatars/${req.file.filename}`;
-        user.avatar = relativePath;
-        const updatedUser = await user.save();
-
-        res.json(buildUserResponse(updatedUser, 'Avatar updated successfully'));
-    } catch (error) {
-        console.error(error);
         res.status(500).json({ message: 'Server error: ' + error.message });
     }
 };

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { FiEdit, FiFilter, FiChevronDown } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { FiEdit } from 'react-icons/fi';
 import axiosClient from '../../lib/axios';
 import '../../assets/css/SalonDashboard.css';
 
@@ -7,19 +7,11 @@ import '../../assets/css/SalonDashboard.css';
 
 const ServiceManagement = () => {
     const [services, setServices] = useState([]);
-    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [showCategoryModal, setShowCategoryModal] = useState(false);
-    const [newCategoryName, setNewCategoryName] = useState('');
-    const [filterCategory, setFilterCategory] = useState('all');
-    const [showFilterMenu, setShowFilterMenu] = useState(false);
-    const filterMenuRef = useRef(null);
-    const [notification, setNotification] = useState(null);
     const [editId, setEditId] = useState(null);
     const [formData, setFormData] = useState({
-        name: '', price: '', duration: '', description: '', categoryId: '', isActive: true,
-        type: 'SINGLE', comboItems: []
+        name: '', price: '', duration: '', description: '', isActive: true
     });
 
     // Biến số thành chuỗi có dấu phẩy: 100000 -> "100,000"
@@ -53,23 +45,11 @@ const ServiceManagement = () => {
         }
     }, []);
 
-    const fetchCategories = useCallback(async () => {
-        try {
-            const res = await axiosClient.get('/api/categories');
-            setCategories(res.data?.data || []);
-        } catch (error) {
-            console.error("Lỗi tải danh mục:", error);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchServices();
-        fetchCategories();
-    }, [fetchServices, fetchCategories]);
+    useEffect(() => { fetchServices(); }, [fetchServices]);
 
     const handleOpenCreate = () => {
         setEditId(null);
-        setFormData({ name: '', price: '', duration: '', description: '', categoryId: '', isActive: true, type: 'SINGLE', comboItems: [] });
+        setFormData({ name: '', price: '', duration: '', description: '', isActive: true });
         setShowModal(true);
     };
 
@@ -80,10 +60,7 @@ const ServiceManagement = () => {
             price: service.price,
             duration: service.duration,
             description: service.description || '',
-            categoryId: service.categoryId || '',
-            isActive: service.isActive,
-            type: service.type || 'SINGLE',
-            comboItems: (service.comboItems || []).map(item => typeof item === 'object' ? item._id : item)
+            isActive: service.isActive
         });
         setShowModal(true);
     };
@@ -106,22 +83,17 @@ const ServiceManagement = () => {
 
             if (editId) {
                 await axiosClient.put(`/api/services/${editId}`, payload);
-                setNotification({ type: 'success', message: 'Service updated successfully!' });
+                alert("Update successful!");
             } else {
                 await axiosClient.post('/api/services/create', payload);
-                setNotification({ type: 'success', message: 'New service created successfully!' });
+                alert("Creation successful!");
             }
 
             setShowModal(false);
             fetchServices();
-
-            // Tự động tắt thông báo sau 5 giây
-            setTimeout(() => setNotification(null), 5000);
-
         } catch (error) {
             const errorMsg = error.response?.data?.message || "Unknown error occurred";
-            setNotification({ type: 'error', message: 'Error: ' + errorMsg });
-            setTimeout(() => setNotification(null), 5000);
+            alert("Lỗi: " + errorMsg);
         }
     };
 
@@ -129,70 +101,12 @@ const ServiceManagement = () => {
         if (window.confirm("Are you sure you want to hide this service?")) {
             try {
                 await axiosClient.patch(`/api/services/${id}/hide`, {});
-                setNotification({ type: 'success', message: 'Service hidden successfully!' });
                 fetchServices();
-                setTimeout(() => setNotification(null), 5000);
             } catch (error) {
-                const errorMsg = error.response?.data?.message || error.message;
-                setNotification({ type: 'error', message: 'Could not hide service: ' + errorMsg });
-                setTimeout(() => setNotification(null), 5000);
+                alert("Không thể ẩn dịch vụ: " + (error.response?.data?.message || error.message));
             }
         }
     };
-
-    const handleCreateCategory = async (e) => {
-        e.preventDefault();
-        if (!newCategoryName.trim()) return;
-        try {
-            await axiosClient.post('/api/categories', { name: newCategoryName });
-            setNewCategoryName('');
-            setShowCategoryModal(false);
-            fetchCategories();
-            setNotification({ type: 'success', message: 'Category created successfully!' });
-            setTimeout(() => setNotification(null), 5000);
-        } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message;
-            setNotification({ type: 'error', message: 'Error creating category: ' + errorMsg });
-            setTimeout(() => setNotification(null), 5000);
-        }
-    };
-
-    // Close filter menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (filterMenuRef.current && !filterMenuRef.current.contains(event.target)) {
-                setShowFilterMenu(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    // Effect to auto-calculate price and duration for Combos
-    useEffect(() => {
-        if (formData.type === 'COMBO' && formData.comboItems.length > 0) {
-            const selectedServices = services.filter(s => formData.comboItems.includes(s._id));
-            const totalP = selectedServices.reduce((sum, s) => sum + s.price, 0);
-            const totalD = selectedServices.reduce((sum, s) => sum + s.duration, 0);
-
-            // Apply a default 10% discount for the combo
-            const discountedPrice = Math.floor(totalP * 0.9 / 1000) * 1000; // Round to nearest 1000
-
-            setFormData(prev => ({
-                ...prev,
-                // Update price and duration automatically
-                price: discountedPrice,
-                duration: totalD
-            }));
-        }
-    }, [formData.comboItems.length, formData.type]); // Only trigger when items are added/removed
-
-    const filteredServices = useMemo(() => {
-        if (filterCategory === 'all') return services;
-        if (filterCategory === 'uncategorized') return services.filter(s => !s.categoryId);
-        if (filterCategory === 'combos') return services.filter(s => s.type === 'COMBO');
-        return services.filter(s => s.categoryId === filterCategory);
-    }, [services, filterCategory]);
 
     // Render loading state
     if (loading && services.length === 0) {
@@ -201,82 +115,20 @@ const ServiceManagement = () => {
 
     return (
         <div className="service-management-container">
-            {notification && (
-                <div className={`toast-notification ${notification.type}`}>
-                    {notification.message}
-                </div>
-            )}
-            <div className="service-header" style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="service-header">
                 <button className="btn-add-service" onClick={handleOpenCreate}>
                     + Add New Service
                 </button>
-                <button className="btn-secondary" onClick={() => setShowCategoryModal(true)}>
-                    Manage Categories
-                </button>
-
-                <div className="filter-dropdown-container" style={{ marginLeft: 'auto' }} ref={filterMenuRef}>
-                    <button
-                        className="btn-filter-calendar"
-                        onClick={() => setShowFilterMenu(!showFilterMenu)}
-                    >
-                        <FiFilter size={16} />
-                        <span>
-                            {filterCategory === 'all' ? 'All Categories' :
-                                filterCategory === 'uncategorized' ? 'Uncategorized' :
-                                    filterCategory === 'combos' ? 'Combos Only' :
-                                        categories.find(c => c._id === filterCategory)?.name}
-                        </span>
-                        <FiChevronDown size={14} />
-                    </button>
-
-                    {showFilterMenu && (
-                        <div className="filter-menu">
-                            <div
-                                className={`filter-menu-item ${filterCategory === 'all' ? 'selected' : ''}`}
-                                onClick={() => { setFilterCategory('all'); setShowFilterMenu(false); }}
-                            >
-                                All Categories
-                            </div>
-                            <div
-                                className={`filter-menu-item ${filterCategory === 'uncategorized' ? 'selected' : ''}`}
-                                onClick={() => { setFilterCategory('uncategorized'); setShowFilterMenu(false); }}
-                            >
-                                Uncategorized
-                            </div>
-                            <div
-                                className={`filter-menu-item ${filterCategory === 'combos' ? 'selected' : ''}`}
-                                onClick={() => { setFilterCategory('combos'); setShowFilterMenu(false); }}
-                            >
-                                Combos Only
-                            </div>
-                            <div className="filter-divider"></div>
-                            {categories.map(cat => (
-                                <div
-                                    key={cat._id}
-                                    className={`filter-menu-item ${filterCategory === cat._id ? 'selected' : ''}`}
-                                    onClick={() => { setFilterCategory(cat._id); setShowFilterMenu(false); }}
-                                >
-                                    {cat.name}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
             </div>
 
             <div className="service-data-card">
-                {filteredServices.length === 0 ? (
-                    <div className="empty-state">
-                        {filterCategory === 'all'
-                            ? "There are no services yet. Please add a new service."
-                            : "No services found in this category."}
-                    </div>
+                {services.length === 0 ? (
+                    <div className="empty-state">There are no services yet. Please add a new service.</div>
                 ) : (
                     <table className="service-table">
                         <thead>
                             <tr>
                                 <th>Service Name</th>
-                                <th>Category</th>
                                 <th>Price (VNĐ)</th>
                                 <th>Duration</th>
                                 <th>Status</th>
@@ -284,37 +136,23 @@ const ServiceManagement = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredServices.map((s) => (
+                            {services.map((s) => (
                                 <tr key={s._id} className={s.isActive ? '' : 'row-hidden'}>
-                                    <td>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span className="service-name">{s.name}</span>
-                                            {s.type === 'COMBO' && (
-                                                <span className="combo-badge">COMBO ({s.comboItems?.length || 0} items)</span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className="category-tag">
-                                            {categories.find(c => c._id === s.categoryId)?.name || 'Uncategorized'}
-                                        </span>
-                                    </td>
+                                    <td><span className="service-name">{s.name}</span></td>
                                     <td>{Number(s.price).toLocaleString()} VNĐ</td>
                                     <td>{s.duration} min</td>
                                     <td>
                                         <span className={`status-badge ${s.isActive ? 'status-active' : 'status-hidden'}`}>
-                                            {s.isActive ? 'Active' : 'Hidden'}
+                                            {s.isActive ? 'Pending' : 'Hidden'}
                                         </span>
                                     </td>
-                                    <td className="actions-cell">
-                                        <div className="action-buttons">
-                                            <button className="btn-edit-service" onClick={() => handleEdit(s)}>
-                                                <FiEdit size={18} color="#1e293b" style={{ marginRight: '5px' }} /> Edit
-                                            </button>
-                                            {s.isActive && (
-                                                <button className="btn-hire-service" onClick={() => handleHide(s._id)}>Hide</button>
-                                            )}
-                                        </div>
+                                    <td className="action-buttons">
+                                        <button className="btn-edit-service" onClick={() => handleEdit(s)}>
+                                            <FiEdit size={18} color="#1e293b" style={{ marginRight: '5px' }} /> Edit
+                                        </button>
+                                        {s.isActive && (
+                                            <button className="btn-hire-service" onClick={() => handleHide(s._id)}>Hire</button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -332,105 +170,36 @@ const ServiceManagement = () => {
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
-                                <label>Service Type</label>
-                                <div className="type-selector">
-                                    <button
-                                        type="button"
-                                        className={`type-btn ${formData.type === 'SINGLE' ? 'active' : ''}`}
-                                        onClick={() => setFormData({ ...formData, type: 'SINGLE', comboItems: [] })}
-                                    >
-                                        Single Service
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`type-btn ${formData.type === 'COMBO' ? 'active' : ''}`}
-                                        onClick={() => setFormData({ ...formData, type: 'COMBO' })}
-                                    >
-                                        Combo Bundle
-                                    </button>
-                                </div>
-                            </div>
-
-                            {formData.type === 'COMBO' && (
-                                <div className="form-group">
-                                    <label>Select Services in Combo</label>
-                                    <div className="combo-selection-list">
-                                        {services.filter(s => s.type === 'SINGLE').map(s => (
-                                            <label key={s._id} className="combo-item-checkbox">
-                                                <div className="checkbox-flex-container">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={formData.comboItems.includes(s._id)}
-                                                        onChange={(e) => {
-                                                            const checked = e.target.checked;
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                comboItems: checked
-                                                                    ? [...prev.comboItems, s._id]
-                                                                    : prev.comboItems.filter(id => id !== s._id)
-                                                            }));
-                                                        }}
-                                                    />
-                                                    <span className="combo-item-name">{s.name}</span>
-                                                    <span className="combo-item-price">{formatNumber(s.price)} VNĐ</span>
-                                                </div>
-                                            </label>
-                                        ))}
-                                    </div>
-                                    {formData.comboItems.length > 0 && (
-                                        <p className="combo-hint">
-                                            Total: {formatNumber(services.filter(s => formData.comboItems.includes(s._id)).reduce((a, b) => a + b.price, 0))} VNĐ.
-                                            <span style={{ color: '#059669', fontWeight: 'bold', marginLeft: '5px' }}>
-                                                Applied 10% Discount!
-                                            </span>
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="form-group">
                                 <label>Service Name</label>
                                 <input
                                     type="text" required
-                                    placeholder='e.g., VIP Hair Combo'
+                                    placeholder='e.g., Haircut'
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 />
                             </div>
-
-                            <div className="form-group">
-                                <label>Category</label>
-                                <select
-                                    value={formData.categoryId}
-                                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                                    className="form-select"
-                                >
-                                    <option value="">Select a category (Optional)</option>
-                                    {categories.map(cat => (
-                                        <option key={cat._id} value={cat._id}>{cat.name}</option>
-                                    ))}
-                                </select>
-                            </div>
                             <div className="form-row">
                                 <div className="form-group">
                                     <label>Price (VNĐ)</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="e.g., 100,000"
-                                        /* Dùng Intl để ép định dạng 3 chữ số một dấu phẩy */
-                                        value={formData.price ? new Intl.NumberFormat('en-US').format(formData.price) : ''}
-                                        onChange={(e) => {
-                                            // Chặn đứng các ký tự không phải số, chỉ lấy số thuần túy
-                                            const rawValue = e.target.value.replace(/\D/g, "");
-                                            setFormData({ ...formData, price: rawValue });
-                                        }}
-                                    />
+                                    <div className="form-group">
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="e.g., 100,000"
+                                            /* Dùng Intl để ép định dạng 3 chữ số một dấu phẩy */
+                                            value={formData.price ? new Intl.NumberFormat('en-US').format(formData.price) : ''}
+                                            onChange={(e) => {
+                                                // Chặn đứng các ký tự không phải số, chỉ lấy số thuần túy
+                                                const rawValue = e.target.value.replace(/\D/g, "");
+                                                setFormData({ ...formData, price: rawValue });
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                                 <div className="form-group">
                                     <label>Duration (minutes)</label>
                                     <input
-                                        type="number" required min="1" placeholder="1"
+                                        type="number" required min="1"
                                         value={formData.duration}
                                         onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                                     />
@@ -462,75 +231,12 @@ const ServiceManagement = () => {
                             )}
 
                             <div className="modal-footer">
-                                <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-                                    {editId ? 'Save Changes' : 'Create Service'}
+                                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                                <button type="submit" className="btn-primary">
+                                    {editId ? 'Save' : 'Create'}
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
-            )}
-            {showCategoryModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h3>Manage Categories</h3>
-                            <button className="close-btn" onClick={() => setShowCategoryModal(false)}>&times;</button>
-                        </div>
-                        <form onSubmit={handleCreateCategory}>
-                            <div className="form-group">
-                                <label>Category Name</label>
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g., Hair, Nails..."
-                                        value={newCategoryName}
-                                        onChange={(e) => setNewCategoryName(e.target.value)}
-                                        style={{ flex: 1 }}
-                                    />
-                                    <button type="submit" className="btn-primary">Add</button>
-                                </div>
-                            </div>
-                        </form>
-                        <div className="category-list" style={{ marginTop: '20px' }}>
-                            <h4>Existing Categories</h4>
-                            {categories.length === 0 ? (
-                                <p>No categories yet.</p>
-                            ) : (
-                                <ul style={{ listStyle: 'none', padding: 0 }}>
-                                    {categories.map(cat => (
-                                        <li key={cat._id} style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            padding: '10px',
-                                            borderBottom: '1px solid #e2e8f0',
-                                            alignItems: 'center'
-                                        }}>
-                                            <span>{cat.name}</span>
-                                            <button
-                                                className="btn-reject-rose"
-                                                style={{ padding: '4px 8px', fontSize: '12px' }}
-                                                onClick={async () => {
-                                                    if (window.confirm("Are you sure you want to delete this category?")) {
-                                                        try {
-                                                            await axiosClient.delete(`/api/categories/${cat._id}`);
-                                                            fetchCategories();
-                                                            fetchServices(); // Cập nhật lại danh sách dịch vụ để hiện thị Uncategorized mới
-                                                            setNotification({ type: 'success', message: 'Category deleted successfully!' });
-                                                            setTimeout(() => setNotification(null), 5000);
-                                                        } catch (error) {
-                                                            const errorMsg = error.response?.data?.message || "Delete failed";
-                                                            setNotification({ type: 'error', message: 'Error: ' + errorMsg });
-                                                            setTimeout(() => setNotification(null), 5000);
-                                                        }
-                                                    }
-                                                }}
-                                            >Delete</button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
                     </div>
                 </div>
             )}

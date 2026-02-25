@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { useLogout } from '../../features/auth/hooks/useLogout';
 import PendingApplications from './PendingApplications';
 import '../../assets/css/AdminDashboard.css';
@@ -9,10 +8,6 @@ import { GoPerson } from 'react-icons/go';
 const AdminDashboard = () => {
     const { logout } = useLogout();
     const user = JSON.parse(localStorage.getItem('user'));
-    const location = useLocation();
-    const isOverview = location.pathname === '/admin/dashboard';
-    const isMyPosts = location.pathname === '/admin/my-posts';
-    const isUsers = location.pathname === '/admin/users';
 
     return (
         <div className="admin-wrapper">
@@ -27,15 +22,7 @@ const AdminDashboard = () => {
                         </div>
 
                         <nav className="header-nav">
-                            <Link className={`nav-link ${isOverview ? 'active' : ''}`} to="/admin/dashboard">
-                                Overview
-                            </Link>
-                            <Link className={`nav-link ${isMyPosts ? 'active' : ''}`} to="/admin/my-posts">
-                                My Posts
-                            </Link>
-                            <Link className={`nav-link ${isUsers ? 'active' : ''}`} to="/admin/users">
-                                Users
-                            </Link>
+                            <button className="nav-link active">Overview</button>
                         </nav>
                     </div>
 

@@ -20,20 +20,5 @@ export const useLogin = () => {
         }
     };
 
-    const loginWithGoogle = async (credential) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const response = await authApi.googleLogin(credential);
-            return response;
-        } catch (err) {
-            const message = err.response?.data?.message || err.message || 'Google Login failed';
-            setError(message);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return { login, loginWithGoogle, isLoading, error };
+    return { login, isLoading, error };
 };

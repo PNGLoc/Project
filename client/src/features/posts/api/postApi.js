@@ -11,11 +11,6 @@ const postApi = {
         return axiosClient.get(`/api/posts/${postId}`);
     },
 
-    // Get separate lookbook detail
-    getLookbookById: (postId) => {
-        return axiosClient.get(`/api/posts/lookbook/${postId}`);
-    },
-
     // Create post with images (FormData)
     createPost: (formData) => {
         return axiosClient.post('/api/posts', formData, {
@@ -37,16 +32,6 @@ const postApi = {
     // Delete post
     deletePost: (postId) => {
         return axiosClient.delete(`/api/posts/${postId}`);
-    },
-
-    // Toggle like on post
-    toggleLike: (postId) => {
-        return axiosClient.post(`/api/posts/${postId}/like`);
-    },
-
-    // Add comment to post
-    addComment: (postId, payload) => {
-        return axiosClient.post(`/api/posts/${postId}/comments`, payload);
     },
 
     // Get posts by author

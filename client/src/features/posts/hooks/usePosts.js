@@ -64,27 +64,6 @@ export const usePostById = () => {
     return { getPostById, loading, error };
 };
 
-export const useLookbookById = () => {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    const getLookbookById = useCallback(async (postId) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await postApi.getLookbookById(postId);
-            return response.data;
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to fetch lookbook');
-            throw err;
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    return { getLookbookById, loading, error };
-};
-
 export const useUpdatePost = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);

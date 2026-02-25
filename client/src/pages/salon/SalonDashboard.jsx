@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Outlet, useMatch } from 'react-router-dom';
 import HeaderHome from '../../components/layout/HeaderHome';
 import ServiceManagement from './ServiceManagement';
-import SalonCalendar from './SalonCalendar';
 import '../../assets/css/SalonDashboard.css';
 
 const SalonDashboard = () => {
@@ -16,60 +15,46 @@ const SalonDashboard = () => {
 
     return (
         <div className="salon-full-layout">
+
             <main className="salon-main-wrapper">
                 {!isStaffRoute && (
-                    <header className="dashboard-top-bar">
-                        <div className="dynamic-title">
-                            {!isStaffUser && (activeTab === 'overview' ? (
-                                <>
-                                    <h1>Partner Dashboard</h1>
-                                    <p>Welcome back! Here's what's happening today.</p>
-                                </>
-                            ) : activeTab === 'services' ? (
-                                <>
-                                    <h1>Service Management</h1>
-                                    <p>Manage and update your salon's service menu</p>
-                                </>
-                            ) : activeTab === 'calendar' ? (
-                                <>
-                                    <h1>Calendar Scheduler</h1>
-                                    <p>View and manage appointments</p>
-                                </>
-                            ) : (
-                                <>
-                                    <h1>Partner Dashboard</h1>
-                                    <p>Welcome back! Here's what's happening today.</p>
-                                </>
-                            ))}
-                            {isStaffUser && (
-                                <>
-                                    <h1>Staff Area</h1>
-                                </>
-                            )}
-                        </div>
+                    <>
+                        <header className="dashboard-top-bar">
+                            <div className="dynamic-title">
+                                {!isStaffUser && (activeTab === 'overview' ? (
+                                    <>
+                                        <h1>Partner Dashboard</h1>
+                                        <p>Welcome back! Here's what's happening today.</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h1>Service Management</h1>
+                                        <p>Manage and update your salon's service menu</p>
+                                    </>
+                                ))}
+                                {isStaffUser && (
+                                    <>
+                                        <h1>Staff Area</h1>
+                                    </>
+                                )}
+                            </div>
 
-                        <nav className="dashboard-nav-container">
-                            <button
-                                className={`tab-btn-link ${activeTab === 'overview' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('overview')}
-                            >
-                                Overview
-                            </button>
-                            <button
-                                className={`tab-btn-link ${activeTab === 'services' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('services')}
-                            >
-                                Services
-                            </button>
-                            <button
-                                className={`tab-btn-link ${activeTab === 'calendar' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('calendar')}
-                            >
-                                Calendar
-                            </button>
-                        </nav>
-                        <div className="header-balance-div"></div>
-                    </header>
+                            <nav className="dashboard-nav-container">
+                                <button
+                                    className={`tab-btn-link ${activeTab === 'overview' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('overview')}
+                                >
+                                    Overview
+                                </button>
+                                <button
+                                    className={`tab-btn-link ${activeTab === 'services' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('services')}
+                                >
+                                    Services
+                                </button>
+                            </nav>
+                        </header>
+                    </>
                 )}
 
                 <div className="content-render-area">
@@ -84,8 +69,9 @@ const SalonDashboard = () => {
                                     </div>
                                 </div>
                             )}
+
+
                             {activeTab === 'services' && <ServiceManagement />}
-                            {activeTab === 'calendar' && <SalonCalendar />}
                         </>
                     )}
                 </div>

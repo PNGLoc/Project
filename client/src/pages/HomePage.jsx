@@ -84,7 +84,7 @@ const HomePage = () => {
                     {categories.map((item) => (
                         <Link
                             key={item.id}
-                            to={`/search?category=${encodeURIComponent(item.name.toLowerCase())}`}
+                            to={`/category/${item.name.toLowerCase()}`}
                             className="cat-card"
                             style={{ textDecoration: 'none', color: 'inherit' }}
                         >
