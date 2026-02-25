@@ -6,7 +6,7 @@ import { useLogout } from '../../features/auth/hooks/useLogout';
 import '../../assets/css/AdminDashboard.css';
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]); // all users from API (unfiltered)
   const [pagination, setPagination] = useState({ page: 1, limit: 8, pages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
@@ -14,6 +14,9 @@ const AdminUsers = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
   const [confirmUser, setConfirmUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   const { logout } = useLogout();
   const user = JSON.parse(localStorage.getItem('user'));
@@ -22,16 +25,21 @@ const AdminUsers = () => {
   const isMyPosts = location.pathname === '/admin/my-posts';
   const isUsers = location.pathname === '/admin/users';
 
-  const fetchUsers = async (page = 1) => {
+  const PAGE_SIZE = 8;
+
+  const fetchUsers = async () => {
     try {
       setLoading(true);
-      const params = {
-        page,
-        limit: 8,
-      };
-      const data = await userAdminApi.getUsers(params);
-      setUsers(data.users || []);
-      setPagination(data.pagination || { page, limit: 8, pages: 1, total: 0 });
+      // Lấy nhiều user một lần, phân trang & lọc ở client
+      const data = await userAdminApi.getUsers({ page: 1, limit: 1000 });
+      const list = data.users || [];
+      setUsers(list);
+      setPagination({
+        page: 1,
+        limit: PAGE_SIZE,
+        pages: Math.max(1, Math.ceil(list.length / PAGE_SIZE)),
+        total: list.length,
+      });
     } catch (error) {
       console.error('[ADMIN USERS] fetch error', error);
       showToast('error', error.response?.data?.message || 'Failed to load users');
@@ -41,13 +49,16 @@ const AdminUsers = () => {
   };
 
   useEffect(() => {
-    fetchUsers(1);
+    fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChangePage = (nextPage) => {
     if (nextPage < 1 || nextPage > pagination.pages) return;
-    fetchUsers(nextPage);
+    setPagination((prev) => ({
+      ...prev,
+      page: nextPage,
+    }));
   };
 
   const showToast = (type, message) => {
@@ -97,6 +108,39 @@ const AdminUsers = () => {
 
   const statusPillClass = (isActive) =>
     isActive ? 'status-active-pill' : 'status-banned-pill';
+
+  // Lọc theo search + role + status trên toàn bộ danh sách
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
+      !normalizedSearch ||
+      (u.fullName && u.fullName.toLowerCase().includes(normalizedSearch)) ||
+      (u.email && u.email.toLowerCase().includes(normalizedSearch));
+
+    const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
+
+    const matchesStatus =
+      statusFilter === 'ALL' ||
+      (statusFilter === 'ACTIVE' && u.isActive) ||
+      (statusFilter === 'BANNED' && !u.isActive);
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  // Tính lại pagination dựa trên danh sách đã lọc
+  const totalFiltered = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+
+  const currentPage = Math.min(pagination.page, totalPages);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + PAGE_SIZE);
+
+  const displayedPagination = {
+    page: currentPage,
+    pages: totalPages,
+    total: totalFiltered,
+  };
 
   return (
     <div className="admin-wrapper">
@@ -151,7 +195,90 @@ const AdminUsers = () => {
             <div className="admin-card users-card">
               <div className="table-header-row">
                 <h3>Users</h3>
-                <span className="count-badge">{pagination.total} users</span>
+                <span className="count-badge">{displayedPagination.total} users</span>
+              </div>
+
+              <div
+                className="filters-row"
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                  marginBottom: '16px',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Search by name or email"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchTerm(value);
+                    // luôn quay về trang 1 khi search
+                    fetchUsers(1, { searchTerm: value });
+                  }}
+                  style={{
+                    flex: '1 1 220px',
+                    minWidth: '200px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb',
+                    fontSize: '14px',
+                  }}
+                />
+
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    justifyContent: 'flex-end',
+                  }}
+                >
+                  <select
+                    value={roleFilter}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRoleFilter(value);
+                      fetchUsers(1, { roleFilter: value });
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      fontSize: '14px',
+                      backgroundColor: 'white',
+                    }}
+                  >
+                    <option value="ALL">All roles</option>
+                    <option value="CUSTOMER">Customer</option>
+                    <option value="SALON_OWNER">Salon owner</option>
+                    <option value="STAFF">Staff</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setStatusFilter(value);
+                      fetchUsers(1, { statusFilter: value });
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      fontSize: '14px',
+                      backgroundColor: 'white',
+                    }}
+                  >
+                    <option value="ALL">All status</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="BANNED">Banned</option>
+                  </select>
+                </div>
               </div>
 
               {loading ? (
@@ -178,14 +305,14 @@ const AdminUsers = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.length === 0 ? (
+                      {paginatedUsers.length === 0 ? (
                         <tr>
                           <td colSpan="6" className="no-data-cell">
                             No users found.
                           </td>
                         </tr>
                       ) : (
-                        users.map((u) => (
+                        paginatedUsers.map((u) => (
                           <tr key={u._id}>
                             <td className="font-semibold">{u.fullName}</td>
                             <td>{u.email}</td>
@@ -236,19 +363,19 @@ const AdminUsers = () => {
                 <button
                   type="button"
                   className="btn-outline"
-                  disabled={pagination.page <= 1}
-                  onClick={() => handleChangePage(pagination.page - 1)}
+                  disabled={displayedPagination.page <= 1}
+                  onClick={() => handleChangePage(displayedPagination.page - 1)}
                 >
                   Previous
                 </button>
                 <span className="pagination-info">
-                  Page {pagination.page} / {pagination.pages || 1}
+                  Page {displayedPagination.page} / {displayedPagination.pages || 1}
                 </span>
                 <button
                   type="button"
                   className="btn-outline"
-                  disabled={pagination.page >= pagination.pages}
-                  onClick={() => handleChangePage(pagination.page + 1)}
+                  disabled={displayedPagination.page >= displayedPagination.pages}
+                  onClick={() => handleChangePage(displayedPagination.page + 1)}
                 >
                   Next
                 </button>
