@@ -52,7 +52,12 @@ export const handleVnpayReturn = async (req, res) => {
             return res.redirect(`${clientUrl}/book-appointment?vnpay=success&appointmentId=${txnRef}`);
         }
 
-        return res.redirect(`${clientUrl}/book-appointment?vnpay=failed&code=${responseCode}`);
+        await Appointment.findByIdAndUpdate(txnRef, {
+            status: 'CANCELLED',
+            paymentStatus: 'UNPAID'
+        });
+
+        return res.redirect(`${clientUrl}/book-appointment?vnpay=failed&code=${responseCode}&appointmentId=${txnRef}`);
     } catch (error) {
         return res.redirect(`${clientUrl}/book-appointment?vnpay=failed&message=server-error`);
     }

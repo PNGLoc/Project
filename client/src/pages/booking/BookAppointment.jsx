@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axiosClient from '../../lib/axios';
 import '../../assets/css/BookAppointment.css';
 
@@ -28,6 +28,10 @@ const formatCurrency = (value) => {
     return `${new Intl.NumberFormat('vi-VN').format(value)} VND`;
 };
 
+const DRAFT_KEY = 'booking_draft_v1';
+const VNPAY_PENDING_KEY = 'vnpay_pending_appointment_id';
+const VNPAY_REDIRECTING_KEY = 'vnpay_redirecting';
+
 const BookAppointment = () => {
     const [stepIndex, setStepIndex] = useState(0);
     const [salons, setSalons] = useState([]);
@@ -41,7 +45,8 @@ const BookAppointment = () => {
     const [note, setNote] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('CASH');
     const [bookedSlots, setBookedSlots] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [salonsLoading, setSalonsLoading] = useState(false);
+    const [detailsLoading, setDetailsLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -52,7 +57,7 @@ const BookAppointment = () => {
 
     useEffect(() => {
         const fetchSalons = async () => {
-            setLoading(true);
+            setSalonsLoading(true);
             setError('');
             try {
                 const res = await axiosClient.get('/api/salons');
@@ -60,7 +65,7 @@ const BookAppointment = () => {
             } catch (err) {
                 setError(err.response?.data?.message || 'Failed to load salons.');
             } finally {
-                setLoading(false);
+                setSalonsLoading(false);
             }
         };
 
@@ -68,6 +73,23 @@ const BookAppointment = () => {
     }, []);
 
     useEffect(() => {
+        try {
+            const raw = sessionStorage.getItem(DRAFT_KEY);
+            if (raw) {
+                const draft = JSON.parse(raw);
+                if (draft?.stepIndex >= 0) setStepIndex(draft.stepIndex);
+                if (draft?.selectedSalon) setSelectedSalon(draft.selectedSalon);
+                if (draft?.selectedService) setSelectedService(draft.selectedService);
+                if (draft?.selectedStaff) setSelectedStaff(draft.selectedStaff);
+                if (draft?.selectedDate) setSelectedDate(draft.selectedDate);
+                if (draft?.selectedTime) setSelectedTime(draft.selectedTime);
+                if (typeof draft?.note === 'string') setNote(draft.note);
+                if (draft?.paymentMethod) setPaymentMethod(draft.paymentMethod);
+            }
+        } catch {
+            sessionStorage.removeItem(DRAFT_KEY);
+        }
+
         const params = new URLSearchParams(window.location.search);
         const vnpayStatus = params.get('vnpay');
         const appointmentId = params.get('appointmentId');
@@ -75,18 +97,36 @@ const BookAppointment = () => {
             if (vnpayStatus === 'success') {
                 setSuccess(`Payment successful. Appointment ID: ${appointmentId || 'N/A'}.`);
                 setStepIndex(4);
+                sessionStorage.removeItem(DRAFT_KEY);
+                sessionStorage.removeItem(VNPAY_PENDING_KEY);
+                sessionStorage.removeItem(VNPAY_REDIRECTING_KEY);
             } else {
                 setError('VNPay payment failed or was cancelled. Please try again.');
                 setStepIndex(4);
+                sessionStorage.removeItem(VNPAY_PENDING_KEY);
+                sessionStorage.removeItem(VNPAY_REDIRECTING_KEY);
             }
             window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+
+        const pendingId = sessionStorage.getItem(VNPAY_PENDING_KEY);
+        const wasRedirecting = sessionStorage.getItem(VNPAY_REDIRECTING_KEY) === '1';
+        if (pendingId && wasRedirecting) {
+            axiosClient.patch(`/api/appointments/${pendingId}/cancel-vnpay`).catch(() => null).finally(() => {
+                sessionStorage.removeItem(VNPAY_PENDING_KEY);
+                sessionStorage.removeItem(VNPAY_REDIRECTING_KEY);
+            });
+            setError('VNPay payment was not completed. Your pending booking has been cancelled.');
         }
     }, []);
 
     useEffect(() => {
+        let isActive = true;
+
         const fetchDetails = async () => {
             if (!selectedSalon?._id) return;
-            setLoading(true);
+            setDetailsLoading(true);
             setError('');
             try {
                 const [serviceRes, staffRes] = await Promise.all([
@@ -94,16 +134,25 @@ const BookAppointment = () => {
                     axiosClient.get(`/api/staffs/public/${selectedSalon._id}`)
                 ]);
 
+                if (!isActive) return;
                 setServices(serviceRes.data?.data || []);
                 setStaffs(staffRes.data?.data || []);
             } catch (err) {
-                setError(err.response?.data?.message || 'Failed to load salon details.');
+                if (isActive) {
+                    setError(err.response?.data?.message || 'Failed to load salon details.');
+                }
             } finally {
-                setLoading(false);
+                if (isActive) {
+                    setDetailsLoading(false);
+                }
             }
         };
 
         fetchDetails();
+
+        return () => {
+            isActive = false;
+        };
     }, [selectedSalon]);
 
     useEffect(() => {
@@ -132,6 +181,20 @@ const BookAppointment = () => {
         }
     }, [bookedSlots, selectedTime, selectedService, selectedDate]);
 
+    useEffect(() => {
+        const draft = {
+            stepIndex,
+            selectedSalon,
+            selectedService,
+            selectedStaff,
+            selectedDate,
+            selectedTime,
+            note,
+            paymentMethod
+        };
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }, [stepIndex, selectedSalon, selectedService, selectedStaff, selectedDate, selectedTime, note, paymentMethod]);
+
     const resetBooking = () => {
         setSelectedSalon(null);
         setSelectedService(null);
@@ -145,7 +208,26 @@ const BookAppointment = () => {
         setBookedSlots([]);
         setSuccess('');
         setStepIndex(0);
+        sessionStorage.removeItem(DRAFT_KEY);
+        sessionStorage.removeItem(VNPAY_PENDING_KEY);
+        sessionStorage.removeItem(VNPAY_REDIRECTING_KEY);
     };
+
+    const handleSelectSalon = useCallback((salon) => {
+        if (!salon?._id) return;
+        if (selectedSalon?._id === salon._id) return;
+
+        setSelectedSalon(salon);
+        setSelectedService(null);
+        setSelectedStaff(null);
+        setServices([]);
+        setStaffs([]);
+        setSelectedDate('');
+        setSelectedTime('');
+        setSuccess('');
+        setPaymentMethod('CASH');
+        setBookedSlots([]);
+    }, [selectedSalon]);
 
     const isSlotUnavailable = (slot) => {
         if (!selectedDate || !selectedService?.duration) return false;
@@ -203,13 +285,19 @@ const BookAppointment = () => {
 
             if (paymentMethod === 'VNPAY') {
                 const paymentUrl = response.data?.paymentUrl;
+                const pendingId = response.data?.data?._id;
                 if (paymentUrl) {
+                    if (pendingId) {
+                        sessionStorage.setItem(VNPAY_PENDING_KEY, pendingId);
+                    }
+                    sessionStorage.setItem(VNPAY_REDIRECTING_KEY, '1');
                     window.location.href = paymentUrl;
                     return;
                 }
                 setError('Unable to start VNPay payment. Please try again.');
             } else {
                 setSuccess('Your appointment has been booked successfully.');
+                sessionStorage.removeItem(DRAFT_KEY);
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Booking failed. Please try again.');
@@ -222,7 +310,7 @@ const BookAppointment = () => {
         <>
             <h2 className="section-title">Pick a salon</h2>
             <p className="section-subtitle">Select an approved salon to get started.</p>
-            {loading ? (
+            {salonsLoading ? (
                 <p>Loading salons...</p>
             ) : (
                 <div className="selection-grid">
@@ -230,23 +318,12 @@ const BookAppointment = () => {
                         <div
                             key={salon._id}
                             className={`select-card ${selectedSalon?._id === salon._id ? 'selected' : ''}`}
-                            onClick={() => {
-                                setSelectedSalon(salon);
-                                setSelectedService(null);
-                                setSelectedStaff(null);
-                                setServices([]);
-                                setStaffs([]);
-                                setSelectedDate('');
-                                setSelectedTime('');
-                                setSuccess('');
-                                setPaymentMethod('CASH');
-                                setBookedSlots([]);
-                            }}
+                            onClick={() => handleSelectSalon(salon)}
                             role="button"
                             tabIndex={0}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter') {
-                                    setSelectedSalon(salon);
+                                    handleSelectSalon(salon);
                                 }
                             }}
                         >
@@ -268,7 +345,7 @@ const BookAppointment = () => {
         <>
             <h2 className="section-title">Choose a service</h2>
             <p className="section-subtitle">Select the treatment you want.</p>
-            {loading ? (
+            {detailsLoading ? (
                 <p>Loading services...</p>
             ) : (
                 <div className="selection-grid">
@@ -304,7 +381,7 @@ const BookAppointment = () => {
         <>
             <h2 className="section-title">Pick your stylist</h2>
             <p className="section-subtitle">Choose a stylist that matches your vibe.</p>
-            {loading ? (
+            {detailsLoading ? (
                 <p>Loading stylists...</p>
             ) : (
                 <div className="selection-grid">
