@@ -31,7 +31,12 @@ const BookingHistory = () => {
             setError('');
             try {
                 const res = await axiosClient.get('/api/appointments/my');
-                setItems(res.data?.data || []);
+                const sorted = [...(res.data?.data || [])].sort((a, b) => {
+                    const timeA = new Date(a.createdAt || a.startAt || 0).getTime();
+                    const timeB = new Date(b.createdAt || b.startAt || 0).getTime();
+                    return timeB - timeA;
+                });
+                setItems(sorted);
             } catch (err) {
                 setError(err.response?.data?.message || 'Failed to load booking history.');
             } finally {
