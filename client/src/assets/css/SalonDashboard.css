@@ -1,3 +1,5 @@
+service-name
+
 /* SalonDashboard.css */
 .salon-full-layout {
     background-color: #f8fafc;
@@ -251,6 +253,8 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 14px;
+    /* Increased font size */
 }
 
 .service-price {
@@ -446,7 +450,7 @@
 
 .filter-menu-item.selected {
     background: #eff6ff;
-    color: #2563eb;
+    color: #00897b;
     font-weight: 600;
 }
 
@@ -798,22 +802,4 @@ input:checked+.slider:before {
     border-left-color: #10b981;
     color: #064e3b;
     background: #ecfdf5;
-}
-
-.toast-notification.error {
-    border-left-color: #ef4444;
-    color: #7f1d1d;
-    background: #fef2f2;
-}
-
-@keyframes toastSlideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
 }

@@ -25,13 +25,15 @@
 }
 
 .logo-section {
-    font-size: 22px;
-    font-weight: 800;
-    color: #0d9488;
-    /* Màu xanh chủ đạo */
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #111827;
+    /* Dark grayish-black from AuthLayout */
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
+    /* Gap from AuthLayout */
+    text-decoration: none;
 }
 
 .nav-links {

@@ -3,6 +3,7 @@ import { Outlet, useMatch } from 'react-router-dom';
 import HeaderHome from '../../components/layout/HeaderHome';
 import ServiceManagement from './ServiceManagement';
 import SalonCalendar from './SalonCalendar';
+import Overview from './Overview';
 import '../../assets/css/SalonDashboard.css';
 
 const SalonDashboard = () => {
@@ -75,11 +76,7 @@ const SalonDashboard = () => {
                     ) : (
                         <>
                             {activeTab === 'overview' && (
-                                <div className="overview-container">
-                                    <div className="placeholder-card" style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <p>No Data</p>
-                                    </div>
-                                </div>
+                                <Overview onTabChange={setActiveTab} />
                             )}
                             {activeTab === 'services' && <ServiceManagement />}
                             {activeTab === 'calendar' && <SalonCalendar />}

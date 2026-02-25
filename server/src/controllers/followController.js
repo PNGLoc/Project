@@ -1,6 +1,7 @@
 import Follow from '../models/Follow.js';
 import Salon from '../models/Salon.js';
 import Staff from '../models/Staff.js';
+import User from '../models/User.js'; // Assuming User model is needed for population
 
 const ensureCustomerRole = (user) => {
   if (!user || user.role !== 'CUSTOMER') {
@@ -215,4 +216,55 @@ export const getMyStaffs = async (req, res) => {
   }
 };
 
+export const getFollowers = async (req, res) => {
+  try {
+    console.log('[GET FOLLOWERS] User:', { id: req.user._id, role: req.user.role });
+    let targetType;
+    let targetId;
 
+    if (req.user.role === 'SALON_OWNER') {
+      targetType = 'SALON';
+      // Find the salon owned by this user
+      const salon = await Salon.findOne({ ownerId: req.user._id });
+      console.log('[GET FOLLOWERS] Found Salon:', salon?._id);
+      if (!salon) {
+        return res.status(404).json({ message: 'Salon not found for this owner' });
+      }
+      targetId = salon._id;
+    } else if (req.user.role === 'STAFF') {
+      targetType = 'STAFF';
+      // Find the staff record for this user
+      const staff = await Staff.findOne({ userId: req.user._id });
+      console.log('[GET FOLLOWERS] Found Staff:', staff?._id);
+      if (!staff) {
+        return res.status(404).json({ message: 'Staff record not found for this user' });
+      }
+      targetId = staff._id;
+    } else {
+      console.log('[GET FOLLOWERS] Forbidden Role:', req.user.role);
+      return res.status(403).json({ message: 'Only Salon Owners and Staff can view their followers' });
+    }
+
+    const follows = await Follow.find({
+      targetType,
+      targetId,
+    })
+      .populate('followerId', 'fullName email avatar phone')
+      .sort({ createdAt: -1 });
+
+    console.log('[GET FOLLOWERS] Found Follows Count:', follows.length);
+
+    const followers = follows.map(f => ({
+      ...f.followerId.toObject(),
+      followedAt: f.createdAt
+    }));
+
+    res.json({
+      count: followers.length,
+      items: followers
+    });
+  } catch (error) {
+    console.error('[GET FOLLOWERS ERROR]', error);
+    res.status(500).json({ message: 'Server error while fetching followers' });
+  }
+};

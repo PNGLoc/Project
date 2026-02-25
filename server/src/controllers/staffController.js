@@ -127,12 +127,25 @@ export const createStaff = async (req, res) => {
 // @access  Private/SALON_OWNER
 export const getStaffs = async (req, res) => {
     try {
-        const salon = await Salon.findOne({ ownerId: req.user._id });
-        if (!salon) {
-            return res.status(404).json({ message: 'Salon not found' });
+        let salonId;
+
+        if (req.user.role === 'SALON_OWNER') {
+            const salon = await Salon.findOne({ ownerId: req.user._id });
+            if (!salon) {
+                return res.status(404).json({ message: 'Salon not found' });
+            }
+            salonId = salon._id;
+        } else if (req.user.role === 'STAFF') {
+            const staffRecord = await Staff.findOne({ userId: req.user._id });
+            if (!staffRecord) {
+                return res.status(404).json({ message: 'Staff record not found' });
+            }
+            salonId = staffRecord.salonId;
+        } else {
+            return res.status(403).json({ message: 'Unauthorized role' });
         }
 
-        const staffs = await Staff.find({ salonId: salon._id })
+        const staffs = await Staff.find({ salonId, isActive: true })
             .populate('userId', 'fullName email phone avatar')
             .sort({ createdAt: -1 });
 

@@ -314,12 +314,13 @@
 
 /* Nút Reject Đỏ Rose */
 .btn-reject-rose {
-    background: #e11d48;
-    color: white;
-    border: none;
+    background: white;
+    color: black;
+    border: 1px solid black;
     padding: 8px 14px;
     border-radius: 8px;
     font-weight: 600;
+    /* Remove bold */
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -327,7 +328,10 @@
 }
 
 .btn-reject-rose:hover {
-    background: #be123c;
+    background: #FFD700;
+    color: black;
+    border-color: #FFD700;
+    border: 1px solid black;
 }
 
 /* -------- Shared styles for Admin Users -------- */

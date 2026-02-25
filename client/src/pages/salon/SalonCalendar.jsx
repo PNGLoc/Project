@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axiosClient from '../../lib/axios';
 import '../../assets/css/SalonCalendar.css';
-import AppointmentModal from '../../components/booking/AppointmentModal';
 
 const SalonCalendar = () => {
     const [stylists, setStylists] = useState([]);
@@ -11,15 +10,6 @@ const SalonCalendar = () => {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const dateInputRef = useRef(null);
 
-    // Auth State
-    const userStr = localStorage.getItem('user');
-    const isStaff = userStr ? JSON.parse(userStr)?.role === 'STAFF' : false;
-
-    // Modal & Filter states
-    const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [filterStatus, setFilterStatus] = useState('all');
-
     const timeSlots = [
         '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
     ];
@@ -28,31 +18,6 @@ const SalonCalendar = () => {
     const fetchStylists = useCallback(async () => {
         try {
             setLoading(true);
-
-            if (isStaff) {
-                // For STAFF, we need their actual Staff _id (not User _id) to match appointments.
-                const response = await axiosClient.get('/api/staffs/me');
-                let staffsData = response.data?.data || response.data || [];
-                const userObj = JSON.parse(localStorage.getItem('user'));
-                const myStaffProfile = staffsData[0];
-
-                if (myStaffProfile) {
-                    setStylists([{
-                        id: myStaffProfile._id,
-                        name: myStaffProfile.fullName || userObj?.fullName || 'My Schedule',
-                        appointments: 0
-                    }]);
-                } else {
-                    setStylists([{
-                        id: userObj?._id,
-                        name: userObj?.fullName || 'My Schedule',
-                        appointments: 0
-                    }]);
-                }
-                return;
-            }
-
-            // Otherwise SALON_OWNER loads all staff
             const response = await axiosClient.get('/api/staffs');
             let staffsData = response.data?.data || response.data || [];
             if (Array.isArray(staffsData)) {
@@ -69,7 +34,7 @@ const SalonCalendar = () => {
         } finally {
             setLoading(false);
         }
-    }, [isStaff]);
+    }, []);
 
     useEffect(() => {
         fetchStylists();
@@ -98,7 +63,10 @@ const SalonCalendar = () => {
                 // Format time Slot (e.g., "09:00")
                 const timeSlot = `${String(startHour).padStart(2, '0')}:00`;
 
-                // Use CSS stacking instead of dynamic top/height computation
+                // Calculate position within the hour slot (1 hour = 80px)
+                const top = (startMins / 60) * 80;
+                const height = (durationMins / 60) * 80;
+
                 return {
                     id: app._id,
                     stylistId: app.staffId?._id || app.staffId,
@@ -106,7 +74,9 @@ const SalonCalendar = () => {
                     clientName: app.customerId?.fullName || app.clientName || 'Guest',
                     service: app.serviceSnapshot?.name || 'Service',
                     status: app.status.toLowerCase(),
-                    timeRange: `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    timeRange: `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+                    top: `${top + 4}px`, // +4 for cell padding
+                    height: `${height}px`
                 };
             });
 
@@ -123,12 +93,7 @@ const SalonCalendar = () => {
     }, [fetchAppointments]);
 
     const activeDateStr = selectedDate.toISOString().split('T')[0];
-
-    // Apply local filters for Status
-    const filteredAppointments = appointments.filter(app => {
-        if (filterStatus !== 'all' && app.status !== filterStatus) return false;
-        return true;
-    });
+    const filteredAppointments = appointments; // Already filtered by date from API
 
     // Calculate appointment counts per stylist for the active date
     const stylistsWithCounts = stylists.map(s => ({
@@ -154,20 +119,6 @@ const SalonCalendar = () => {
             month: 'long',
             day: 'numeric'
         });
-    };
-
-    const handleAppointmentClick = (appId) => {
-        setSelectedAppointmentId(appId);
-        setIsModalOpen(true);
-    };
-
-    const handleModalClose = () => {
-        setIsModalOpen(false);
-        setSelectedAppointmentId(null);
-    };
-
-    const handleUpdateSuccess = () => {
-        fetchAppointments(); // Refresh calendar data
     };
 
     const handlePrevDay = () => {
@@ -221,77 +172,58 @@ const SalonCalendar = () => {
     }
 
     return (
-        <div className="calendar-page">
+        <div className="calendar-page" style={{ paddingTop: '0' }}>
             {/* Header Area */}
-            <header className="calendar-header">
-                <div className="calendar-title-section">
-                    <h1>Calendar Scheduler</h1>
-                    <p>Manage appointments and stylist schedules</p>
-                </div>
+            <header className="calendar-header" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
                 <div className="calendar-actions">
-                    <div className="filter-dropdown-container">
-                        <button className="btn-filter" style={{ minWidth: '160px', justifyContent: 'space-between' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                                {filterStatus === 'all' ? 'All Statuses' : filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}
-                            </span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </button>
-                        <div className="filter-dropdown-menu admin-card" style={{ marginBottom: 0 }}>
-                            <div className="filter-option" onClick={() => setFilterStatus('all')}>All Statuses</div>
-                            <div className="filter-option" onClick={() => setFilterStatus('pending')}>Pending</div>
-                            <div className="filter-option" onClick={() => setFilterStatus('confirmed')}>Confirmed</div>
-                            <div className="filter-option" onClick={() => setFilterStatus('completed')}>Completed</div>
-                            <div className="filter-option" onClick={() => setFilterStatus('cancelled')}>Cancelled</div>
-                        </div>
-                    </div>
-                    {!isStaff && (
-                        <button className="btn-new">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            New Appointment
-                        </button>
-                    )}
+                    <button className="btn-filter">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        Filters
+                    </button>
+                    <button className="btn-new">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        New Appointment
+                    </button>
                 </div>
             </header>
 
-            {/* Date Navigator */}
-            <div className="admin-card">
-                <div className="admin-card-content date-navigator">
-                    <button className="nav-btn" onClick={handlePrevDay}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </button>
-
-                    <div className="date-picker-wrapper">
-                        <input
-                            type="date"
-                            ref={dateInputRef}
-                            className="hidden-date-input"
-                            value={inputFormattedDate}
-                            onChange={handleDateChange}
-                        />
-                        <button className="current-date-btn" onClick={triggerDatePicker}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            {formatDate(selectedDate)}
-                        </button>
-                    </div>
-
-                    <button className="nav-btn" onClick={handleNextDay}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
+            {/* Legend & Help */}
+            <div className="status-legend">
+                <div className="legend-items">
+                    <span className="legend-item"><span className="dot pending"></span> Status: Pending</span>
+                    <span className="legend-item"><span className="dot confirmed"></span> Confirmed</span>
+                    <span className="legend-item"><span className="dot completed"></span> Completed</span>
+                    <span className="legend-item"><span className="dot cancelled"></span> Cancelled</span>
+                </div>
+                <div className="drag-tip">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    Tip: Drag and drop appointments to reschedule
                 </div>
             </div>
 
-            {/* Legend & Help */}
-            <div className="status-legend">
-                <span className="legend-label">Status:</span>
-                <span className="badge pending">Pending</span>
-                <span className="badge confirmed">Confirmed</span>
-                <span className="badge completed">Completed</span>
-                <span className="badge cancelled">Cancelled</span>
+            {/* Date Navigator */}
+            <div className="date-navigator" style={{ marginBottom: '1.5rem' }}>
+                <button className="nav-btn" onClick={handlePrevDay}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
 
-                <span className="drag-tip">
-                    💡 Tip: Click on an appointment to view or edit details
-                </span>
+                <div className="date-picker-wrapper">
+                    <input
+                        type="date"
+                        ref={dateInputRef}
+                        className="hidden-date-input"
+                        value={inputFormattedDate}
+                        onChange={handleDateChange}
+                    />
+                    <button className="current-date-btn" onClick={triggerDatePicker}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        {formatDate(selectedDate)}
+                    </button>
+                </div>
+
+                <button className="nav-btn" onClick={handleNextDay}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
             </div>
 
             {/* Main Calendar Grid */}
@@ -302,29 +234,18 @@ const SalonCalendar = () => {
                     </div>
                 )}
                 <div className="calendar-grid" style={{ gridTemplateColumns: `100px repeat(${stylistsWithCounts.length}, 1fr)` }}>
-                    {/* Header Row */}
-                    <div className="grid-header-row">
-                        {/* Corner Header */}
-                        <div className="grid-header time-col">
-                            <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Time</span>
+                    {/* Corner Header */}
+                    <div className="grid-header">Time</div>
+
+                    {/* Staff Headers */}
+                    {stylistsWithCounts.map(stylist => (
+                        <div key={stylist.id} className="grid-header">
+                            <div className="staff-info">
+                                <span className="staff-name">{stylist.name}</span>
+                                <span className="staff-meta">{stylist.appointments} appointments</span>
+                            </div>
                         </div>
-
-                        {/* Staff Headers */}
-                        {stylistsWithCounts.map((stylist, index) => {
-                            // Cycle through some colors for the top border
-                            const colors = ['#0d9488', '#f472b6', '#eab308', '#a855f7'];
-                            const borderColor = colors[index % colors.length];
-
-                            return (
-                                <div key={stylist.id} className="grid-header" style={{ borderTop: `3px solid ${borderColor}` }}>
-                                    <div className="staff-info">
-                                        <span className="staff-name">{stylist.name}</span>
-                                        <span className="staff-meta">{stylist.appointments} appointments</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    ))}
 
                     {/* Time Slots & Appointments */}
                     {timeSlots.map(time => (
@@ -336,19 +257,14 @@ const SalonCalendar = () => {
                                         <div
                                             key={app.id}
                                             className={`appointment-card ${app.status}`}
-                                            style={{ cursor: isStaff ? 'default' : 'pointer' }}
-                                            onClick={() => {
-                                                if (!isStaff) handleAppointmentClick(app.id);
-                                            }}
+                                            style={{ top: app.top, height: app.height }}
                                         >
-                                            <span className="client-name" title={app.clientName}>{app.clientName}</span>
-                                            <span className="service-name" title={app.service}>{app.service}</span>
-                                            <div className="apt-meta">
-                                                <span className={`status-badge-inline ${app.status}`}>
-                                                    {app.status}
-                                                </span>
-                                                <span className="time-range">{app.timeRange}</span>
+                                            <span className="client-name">{app.clientName}</span>
+                                            <span className="service-name">{app.service}</span>
+                                            <div className={`status-badge ${app.status}`}>
+                                                {app.status}
                                             </div>
+                                            <span className="time-range">{app.timeRange}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -359,40 +275,24 @@ const SalonCalendar = () => {
             </div>
 
             {/* Footer Statistics */}
-            <div className="calendar-footer">
-                <div className="admin-card" style={{ marginBottom: 0 }}>
-                    <div className="stat-card-content">
-                        <span className="stat-value primary">{stats.total}</span>
-                        <span className="stat-label">Total Appointments</span>
-                    </div>
+            <footer className="calendar-footer">
+                <div className="stat-card">
+                    <span className="stat-value">{stats.total}</span>
+                    <span className="stat-label">Total Appointments</span>
                 </div>
-                <div className="admin-card" style={{ marginBottom: 0 }}>
-                    <div className="stat-card-content">
-                        <span className="stat-value">{stats.confirmed}</span>
-                        <span className="stat-label">Confirmed</span>
-                    </div>
+                <div className="stat-card">
+                    <span className="stat-value">{stats.confirmed}</span>
+                    <span className="stat-label">Confirmed</span>
                 </div>
-                <div className="admin-card" style={{ marginBottom: 0 }}>
-                    <div className="stat-card-content">
-                        <span className="stat-value yellow">{stats.pending}</span>
-                        <span className="stat-label">Pending</span>
-                    </div>
+                <div className="stat-card">
+                    <span className="stat-value">{stats.pending}</span>
+                    <span className="stat-label">Pending</span>
                 </div>
-                <div className="admin-card" style={{ marginBottom: 0 }}>
-                    <div className="stat-card-content">
-                        <span className="stat-value green">{stats.completed}</span>
-                        <span className="stat-label">Completed</span>
-                    </div>
+                <div className="stat-card">
+                    <span className="stat-value">{stats.completed}</span>
+                    <span className="stat-label">Completed</span>
                 </div>
-            </div>
-
-            {/* Premium Appointment Detail & Edit Modal */}
-            <AppointmentModal
-                isOpen={isModalOpen}
-                onClose={handleModalClose}
-                appointmentId={selectedAppointmentId}
-                onUpdateSuccess={handleUpdateSuccess}
-            />
+            </footer>
         </div>
     );
 };
