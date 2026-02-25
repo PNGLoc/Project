@@ -263,6 +263,34 @@ export const getCustomerAppointments = async (req, res) => {
     }
 };
 
+// @desc    Cancel pending VNPay appointment by customer
+// @route   PATCH /api/appointments/:id/cancel-vnpay
+// @access  Private/CUSTOMER
+export const cancelPendingVnpayAppointment = async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id);
+        if (!appointment) {
+            return res.status(404).json({ message: 'Appointment not found.' });
+        }
+
+        if (appointment.customerId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to cancel this appointment.' });
+        }
+
+        if (appointment.paymentMethod !== 'VNPAY' || appointment.paymentStatus === 'PAID') {
+            return res.status(400).json({ message: 'This appointment cannot be cancelled by VNPay rollback.' });
+        }
+
+        appointment.status = 'CANCELLED';
+        appointment.paymentStatus = 'UNPAID';
+        await appointment.save();
+
+        return res.json({ success: true, data: appointment });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
 // @desc    Get single appointment details
 // @route   GET /api/appointments/:id
 // @access  Private/SALON_OWNER, STAFF

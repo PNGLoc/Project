@@ -79,6 +79,10 @@ const BookingHistory = () => {
 
                         <div className="history-details">
                             <div>
+                                <span>Booked at</span>
+                                <strong>{formatDateTime(item.createdAt)}</strong>
+                            </div>
+                            <div>
                                 <span>Date & time</span>
                                 <strong>{formatDateTime(item.startAt)}</strong>
                             </div>
