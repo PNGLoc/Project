@@ -1,4 +1,4 @@
-/* BlogManagement.css */
+/* BlogManagement.css_LocPNG */
 .blog-management-container {
     max-width: 700px;
     margin: 0 auto;
@@ -300,5 +300,78 @@
 
 .blog-management-pagination button:disabled {
     opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.post-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    padding: 20px;
+}
+
+.post-confirm-modal {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px 22px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 15px 40px rgba(15, 23, 42, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.post-confirm-modal h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #0f172a;
+}
+
+.post-confirm-modal p {
+    margin: 0;
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.post-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.post-confirm-cancel,
+.post-confirm-delete {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.post-confirm-cancel {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #e2e8f0;
+}
+
+.post-confirm-cancel:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.post-confirm-delete {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.post-confirm-delete:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
 }

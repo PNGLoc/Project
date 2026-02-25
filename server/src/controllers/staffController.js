@@ -270,3 +270,25 @@ export const deleteStaff = async (req, res) => {
         res.status(500).json({ message: 'Lỗi server khi cập nhật trạng thái nhân viên' });
     }
 };
+
+// @desc    Lấy danh sách nhân viên public theo salon
+// @route   GET /api/staffs/public/:salonId
+// @access  Public
+// for booking LocPNG
+export const getPublicStaffsBySalon = async (req, res) => {
+    try {
+        const staffs = await Staff.find({
+            salonId: req.params.salonId,
+            isActive: true
+        }).sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            count: staffs.length,
+            data: staffs
+        });
+    } catch (error) {
+        console.error('[GET PUBLIC STAFFS ERROR]', error);
+        res.status(500).json({ message: error.message || 'Server error' });
+    }
+};

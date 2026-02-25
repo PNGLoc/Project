@@ -1,7 +1,8 @@
+//LocPNG
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePostsByAuthor, useDeletePost } from '../../features/posts/hooks/usePosts.js';
-import HeaderHome from '../../components/layout/HeaderHome.jsx';
+//import HeaderHome from '../../components/layout/HeaderHome.jsx';
 import { FiSearch, FiX } from 'react-icons/fi';
 import '../../assets/css/PostManagement.css';
 
@@ -17,6 +18,9 @@ const PostManagement = () => {
     const [order, setOrder] = useState('desc');
     const [searchQ, setSearchQ] = useState('');
     const [activeQuery, setActiveQuery] = useState('');
+    const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+    const [confirmDeleteTitle, setConfirmDeleteTitle] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const loadMyPosts = async () => {
         if (!currentUser._id) {
@@ -55,15 +59,30 @@ const PostManagement = () => {
         setActiveQuery('');
     };
 
-    const handleDelete = async (postId) => {
-        if (window.confirm('Are you sure you want to delete this post?')) {
-            try {
-                await deletePost(postId);
-                loadMyPosts();
-            } catch (err) {
-                console.error('Failed to delete post:', err);
-            }
+    const handleDelete = async () => {
+        if (!confirmDeleteId) return;
+        try {
+            setIsDeleting(true);
+            await deletePost(confirmDeleteId);
+            setConfirmDeleteId(null);
+            setConfirmDeleteTitle('');
+            loadMyPosts();
+        } catch (err) {
+            console.error('Failed to delete post:', err);
+        } finally {
+            setIsDeleting(false);
         }
+    };
+
+    const openDeleteConfirm = (post) => {
+        setConfirmDeleteId(post._id);
+        setConfirmDeleteTitle(post?.content?.substring(0, 80) || 'this post');
+    };
+
+    const closeDeleteConfirm = () => {
+        if (isDeleting) return;
+        setConfirmDeleteId(null);
+        setConfirmDeleteTitle('');
     };
 
     const formatDate = (dateStr) => {
@@ -178,7 +197,7 @@ const PostManagement = () => {
                             </button>
                             <button
                                 className="btn-delete"
-                                onClick={() => handleDelete(post._id)}
+                                onClick={() => openDeleteConfirm(post)}
                             >
                                 🗑️ Delete
                             </button>
@@ -212,6 +231,35 @@ const PostManagement = () => {
                     </div>
                 )}
             </div>
+
+            {confirmDeleteId && (
+                <div className="post-confirm-overlay" onClick={closeDeleteConfirm}>
+                    <div className="post-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                        <h3>Delete post?</h3>
+                        <p>
+                            This will permanently delete <strong>{confirmDeleteTitle}</strong>.
+                        </p>
+                        <div className="post-confirm-actions">
+                            <button
+                                type="button"
+                                className="post-confirm-cancel"
+                                onClick={closeDeleteConfirm}
+                                disabled={isDeleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="post-confirm-delete"
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                            >
+                                {isDeleting ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

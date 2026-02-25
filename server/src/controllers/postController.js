@@ -94,12 +94,9 @@ export const createPost = async (req, res) => {
                 return res.status(400).json({ message: 'Admin posts cannot tag staff' });
             }
         } else {
-            // Customer: optional images, must tag exactly 1 salon (check-in), cannot link service
+            // Customer/Staff: optional images, optional salon check-in, cannot link service
             if (linkedServiceIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot include linkedServiceId' });
-            }
-            if (taggedSalonIds.length !== 1) {
-                return res.status(400).json({ message: 'Customer posts must tag exactly 1 salon' });
             }
             if (taggedStaffIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot tag staff' });
@@ -177,10 +174,10 @@ export const createPost = async (req, res) => {
 export const getPosts = async (req, res) => {
     try {
         const {
-            authorType,         // 'Customer' or 'Salon'
+            authorType,           // 'Customer' or 'Salon'
             taggedSalonId,
             sortBy = 'createdAt', // 'createdAt', 'likes'
-            order = 'desc',      // 'asc' or 'desc'
+            order = 'desc',       // 'asc' or 'desc'
             page = 1,
             limit = 10
         } = req.query;
@@ -209,6 +206,10 @@ export const getPosts = async (req, res) => {
                 path: 'taggedStaffIds',
                 select: 'fullName userId',
                 populate: { path: 'userId', select: 'fullName avatar email phone' },
+            })
+            .populate({
+                path: 'comments.user',
+                select: 'fullName avatar',
             })
             .lean();
 
@@ -243,6 +244,10 @@ export const getPostById = async (req, res) => {
                 path: 'taggedStaffIds',
                 select: 'fullName userId',
                 populate: { path: 'userId', select: 'fullName avatar email phone' },
+            })
+            .populate({
+                path: 'comments.user',
+                select: 'fullName avatar',
             });
 
         if (!post) {
@@ -253,6 +258,104 @@ export const getPostById = async (req, res) => {
         const author = await resolveAuthor(post);
 
         res.json({ ...post.toObject(), author });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+// --- GET LOOKBOOK DETAIL (PUBLIC) ---
+export const getLookbookById = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id)
+            .populate('linkedServiceIds', 'name price duration image salonId')
+            .populate('linkedServiceId', 'name price duration image salonId')
+            .populate('taggedSalonIds', 'name images phone address')
+            .populate({
+                path: 'taggedStaffIds',
+                select: 'fullName userId',
+                populate: { path: 'userId', select: 'fullName avatar email phone' },
+            })
+            .populate({
+                path: 'comments.user',
+                select: 'fullName avatar',
+            });
+
+        if (!post) {
+            return res.status(404).json({ message: 'Lookbook not found' });
+        }
+
+        // Fetch author details
+        const author = await resolveAuthor(post);
+
+        res.json({ ...post.toObject(), author });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// --- TOGGLE LIKE ON POST ---
+export const toggleLikePost = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        const userId = req.user._id.toString();
+        const likedBy = Array.isArray(post.likedBy) ? post.likedBy : [];
+        const alreadyLiked = likedBy.some(id => id.toString() === userId);
+
+        if (alreadyLiked) {
+            post.likedBy = likedBy.filter(id => id.toString() !== userId);
+        } else {
+            post.likedBy.push(req.user._id);
+        }
+
+        post.likes = post.likedBy.length;
+        await post.save();
+
+        await post.populate({
+            path: 'comments.user',
+            select: 'fullName avatar',
+        });
+
+        res.json({
+            ...post.toObject(),
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// --- ADD COMMENT TO POST ---
+export const addCommentToPost = async (req, res) => {
+    try {
+        const { content } = req.body;
+        if (!content || !content.trim()) {
+            return res.status(400).json({ message: 'Comment content is required' });
+        }
+
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        post.comments.push({
+            user: req.user._id,
+            content: content.trim(),
+        });
+
+        await post.save();
+
+        await post.populate({
+            path: 'comments.user',
+            select: 'fullName avatar',
+        });
+
+        res.status(201).json({
+            comments: post.comments,
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -325,9 +428,6 @@ export const updatePost = async (req, res) => {
         } else {
             if (linkedServiceIds && linkedServiceIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot include linkedServiceId' });
-            }
-            if (taggedSalonIds !== undefined && taggedSalonIds.length !== 1) {
-                return res.status(400).json({ message: 'Customer posts must tag exactly 1 salon' });
             }
             if (taggedStaffIds !== undefined && taggedStaffIds.length > 0) {
                 return res.status(400).json({ message: 'Customer posts cannot tag staff' });

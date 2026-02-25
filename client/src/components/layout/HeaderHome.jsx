@@ -73,6 +73,8 @@ const HeaderHome = () => {
     const hasSalon = !!currentUser?.salonId;
     // User đã được Admin duyệt lên chức SALON_OWNER chưa?
     const isOfficialOwner = currentUser?.role === 'SALON_OWNER';
+    const isCustomer = currentUser?.role === 'CUSTOMER';
+    const isStaff = currentUser?.role === 'STAFF';
 
     return (
         <header className="header">
@@ -87,6 +89,7 @@ const HeaderHome = () => {
                 <nav className="nav-links">
                     <NavLink to="/" className={({ isActive }) => isActive ? "active" : ""}>Home</NavLink>
                     <NavLink to="/search">Search</NavLink>
+                    <NavLink to="/book-appointment">Book</NavLink>
                     <NavLink to="/lookbook">Lookbook</NavLink>
                     <NavLink to="/ai-analysis">AI Analysis</NavLink>
                 </nav>
@@ -130,25 +133,36 @@ const HeaderHome = () => {
                                     <Link to="/post/my-posts" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                         <FiBookOpen /> My Posts
                                     </Link>
-
+                                    {isCustomer && (
+                                        <>
+                                            <Link to="/booking-history" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                                <FiBookOpen /> My Bookings
+                                            </Link>
+                                        </>)
+                                    }
                                     {/* --- LOGIC HIỂN THỊ QUAN TRỌNG --- */}
                                     {isOfficialOwner ? (
                                         // Owner: show My Salon and My Staff
                                         <>
-                                            <Link to="/salon/dashboard" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                            <Link to="/salon" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                                 <GoBriefcase /> My Salon
                                             </Link>
                                             <Link to="/salon/staff" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                                 <FaUsers /> My Staff
                                             </Link>
                                         </>
+                                    ) : isStaff ? (
+                                        // Staff: show My Schedule
+                                        <Link to="/salon/schedule" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                            <FiBookOpen /> My Schedule
+                                        </Link>
                                     ) : hasSalon ? (
                                         // Registered but waiting approval
                                         <div className="dropdown-item" style={{ cursor: 'default', color: '#d97706' }}>
                                             <HiSparkles /> Pending Approval
                                         </div>
                                     ) : (
-                                        // No salon yet
+                                        // No salon yet (Customer/User)
                                         <Link to="/salon/register" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                             <GoBriefcase /> Become a Partner
                                         </Link>

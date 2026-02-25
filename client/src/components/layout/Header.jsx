@@ -25,6 +25,9 @@ const Header = () => {
                             {user.role === 'SALON_OWNER' && (
                                 <Link to="/salon/dashboard" className="header-link">My Salon</Link>
                             )}
+                            {user.role === 'STAFF' && (
+                                <Link to="/salon/schedule" className="header-link">My Schedule</Link>
+                            )}
                             {user.role === 'CUSTOMER' && (
                                 <Link to="/users/profile" className="header-link">My Profile</Link>
                             )}

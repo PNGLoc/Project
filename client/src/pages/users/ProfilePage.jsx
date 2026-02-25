@@ -1,7 +1,11 @@
+
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import authApi from '../../features/auth/api/authApi';
-import { FaUser, FaEdit, FaLock, FaInfoCircle, FaArrowLeft, FaIdCard } from 'react-icons/fa';
+import followApi from '../../features/social/api/followApi';
+import { FaUser, FaEdit, FaLock, FaIdCard, FaHeart } from 'react-icons/fa';
+import SalonCard from '../../components/salon/SalonCard';
+import '../../assets/css/ProfilePage.css';
 
 const ProfilePage = () => {
     const [searchParams] = useSearchParams();
@@ -17,6 +21,8 @@ const ProfilePage = () => {
         bio: '',
         dateOfBirth: ''
     });
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState('');
 
     // Password State
     const [passwordData, setPasswordData] = useState({
@@ -28,11 +34,34 @@ const ProfilePage = () => {
     // Error State
     const [errors, setErrors] = useState({});
 
+    // Following State
+    const [followedSalons, setFollowedSalons] = useState([]);
+    const [loadingFollows, setLoadingFollows] = useState(false);
+
     useEffect(() => {
         const tab = searchParams.get('tab');
         if (tab) setActiveTab(tab);
         fetchProfile();
     }, [searchParams]);
+
+    useEffect(() => {
+        if (activeTab === 'following' && user?.role === 'CUSTOMER') {
+            fetchFollowedSalons();
+        }
+    }, [activeTab, user]);
+
+    const fetchFollowedSalons = async () => {
+        try {
+            setLoadingFollows(true);
+            const data = await followApi.getMySalons();
+            setFollowedSalons(data.items || []);
+        } catch (error) {
+            console.error('[PROFILE] Failed to load followed salons', error);
+            setMessage({ type: 'error', text: 'Failed to load followed salons' });
+        } finally {
+            setLoadingFollows(false);
+        }
+    };
 
     const fetchProfile = async () => {
         try {
@@ -114,6 +143,15 @@ const ProfilePage = () => {
         return Object.keys(newErrors).length === 0;
     };
 
+    const handleAvatarChange = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        setAvatarFile(file);
+        const previewUrl = URL.createObjectURL(file);
+        setAvatarPreview(previewUrl);
+    };
+
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
         setMessage({ type: '', text: '' });
@@ -123,9 +161,23 @@ const ProfilePage = () => {
         }
 
         try {
+            // Upload avatar first if user selected a new image
+            if (avatarFile) {
+                const formDataAvatar = new FormData();
+                formDataAvatar.append('avatar', avatarFile);
+                const updatedUserWithAvatar = await authApi.updateAvatar(formDataAvatar);
+                setUser(updatedUserWithAvatar);
+                setAvatarFile(null);
+                if (avatarPreview) {
+                    URL.revokeObjectURL(avatarPreview);
+                    setAvatarPreview('');
+                }
+            }
+
             const updatedUser = await authApi.updateProfile(formData);
             setUser(updatedUser);
             setMessage({ type: 'success', text: 'Profile updated successfully' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.message || 'Update failed' });
         }
@@ -147,6 +199,7 @@ const ProfilePage = () => {
             });
             setMessage({ type: 'success', text: 'Password changed successfully' });
             setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         } catch (error) {
             setMessage({ type: 'error', text: error.response?.data?.message || 'Change password failed' });
         }
@@ -157,100 +210,68 @@ const ProfilePage = () => {
     return (
         <>
             {/* Header and home-container moved to MainLayout */}
-            <div className="container" style={{ alignItems: 'center', paddingTop: '20px', minHeight: 'calc(100vh - 80px)', flexDirection: 'column' }}>
-
-                {/* Back to Home Button */}
-                <div style={{ width: '100%', maxWidth: '1000px', marginBottom: '1rem' }}>
-                    <Link to="/" className="btn" style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '8px',
-                        background: 'transparent', color: 'var(--text-muted)',
-                        border: '1px solid var(--border-color)', padding: '8px 16px',
-                        width: 'auto'
-                    }}>
-                        <FaArrowLeft /> Back to Home
-                    </Link>
-                </div>
-
-                <div className="profile-wrapper" style={{ display: 'flex', width: '100%', maxWidth: '1000px', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <div className="container profile-page-container">
+                <div className="profile-wrapper">
 
                     {/* Sidebar / Tabs */}
-                    <div className="profile-sidebar" style={{ flex: '1', minWidth: '250px', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: 'var(--shadow-md)', height: 'fit-content' }}>
+                    <div className="profile-sidebar">
                         <div className="profile-menu">
                             <button
                                 onClick={() => setActiveTab('basic')}
-                                style={{
-                                    width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'basic' ? 'var(--bg-secondary)' : 'transparent',
-                                    textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
-                                    color: activeTab === 'basic' ? 'var(--primary-color)' : 'var(--text-main)',
-                                    fontWeight: activeTab === 'basic' ? '600' : '400',
-                                    display: 'flex', alignItems: 'center', gap: '10px'
-                                }}
+                                className={`profile-menu-button ${activeTab === 'basic' ? 'active' : ''}`}
                             >
                                 <FaUser /> Basic Info
                             </button>
                             <button
                                 onClick={() => setActiveTab('detail')}
-                                style={{
-                                    width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'detail' ? 'var(--bg-secondary)' : 'transparent',
-                                    textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
-                                    color: activeTab === 'detail' ? 'var(--primary-color)' : 'var(--text-main)',
-                                    fontWeight: activeTab === 'detail' ? '600' : '400',
-                                    display: 'flex', alignItems: 'center', gap: '10px'
-                                }}
+                                className={`profile-menu-button ${activeTab === 'detail' ? 'active' : ''}`}
                             >
                                 <FaIdCard /> Profile Detail
                             </button>
                             <button
                                 onClick={() => setActiveTab('update')}
-                                style={{
-                                    width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'update' ? 'var(--bg-secondary)' : 'transparent',
-                                    textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
-                                    color: activeTab === 'update' ? 'var(--primary-color)' : 'var(--text-main)',
-                                    fontWeight: activeTab === 'update' ? '600' : '400',
-                                    display: 'flex', alignItems: 'center', gap: '10px'
-                                }}
+                                className={`profile-menu-button ${activeTab === 'update' ? 'active' : ''}`}
                             >
                                 <FaEdit /> Update Profile
                             </button>
                             <button
                                 onClick={() => setActiveTab('security')}
-                                style={{
-                                    width: '100%', padding: '12px 15px', border: 'none', background: activeTab === 'security' ? 'var(--bg-secondary)' : 'transparent',
-                                    textAlign: 'left', borderRadius: '8px', cursor: 'pointer', marginBottom: '8px',
-                                    color: activeTab === 'security' ? 'var(--primary-color)' : 'var(--text-main)',
-                                    fontWeight: activeTab === 'security' ? '600' : '400',
-                                    display: 'flex', alignItems: 'center', gap: '10px'
-                                }}
+                                className={`profile-menu-button ${activeTab === 'security' ? 'active' : ''}`}
                             >
                                 <FaLock /> Security
                             </button>
+                            {user?.role === 'CUSTOMER' && (
+                                <button
+                                    onClick={() => setActiveTab('following')}
+                                    className={`profile-menu-button ${activeTab === 'following' ? 'active' : ''}`}
+                                >
+                                    <FaHeart /> Following
+                                </button>
+                            )}
                         </div>
                     </div>
 
                     {/* Main Content */}
-                    <div className="profile-content" style={{ flex: '3', minWidth: '300px', background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: 'var(--shadow-md)', minHeight: '600px' }}>
+                    <div className="profile-content">
                         {message.text && (
-                            <div className={message.type === 'error' ? 'error-message' : 'success-message'}>
+                            <div className={`profile-message ${message.type}`}>
                                 {message.text}
                             </div>
                         )}
 
                         {/* 1. Basic Info Tab */}
                         {activeTab === 'basic' && (
-                            <div style={{ textAlign: 'center' }}>
-                                <h2 style={{ marginBottom: '2rem', color: 'var(--primary-color)', textAlign: 'left' }}>Basic Information</h2>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                            <div>
+                                <h2 className="profile-section-title">Basic Information</h2>
+                                <div className="profile-basic-main">
                                     <img
                                         src={user?.avatar || 'https://via.placeholder.com/150'}
                                         alt="Profile"
-                                        style={{ width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--primary-color)', padding: '3px' }}
+                                        className="profile-avatar"
                                     />
-                                    <h2 style={{ fontSize: '1.8rem', fontWeight: '700' }}>{user?.fullName}</h2>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>{user?.email}</p>
-                                    <span style={{
-                                        fontSize: '0.9rem', padding: '4px 12px', borderRadius: '20px',
-                                        background: 'var(--bg-secondary)', color: 'var(--primary-color)', fontWeight: '600', textTransform: 'uppercase'
-                                    }}>
+                                    <h2 className="profile-name">{user?.fullName}</h2>
+                                    <p className="profile-email">{user?.email}</p>
+                                    <span className="profile-role-pill">
                                         {user?.role}
                                     </span>
                                 </div>
@@ -260,27 +281,27 @@ const ProfilePage = () => {
                         {/* 2. Profile Detail Tab */}
                         {activeTab === 'detail' && (
                             <div>
-                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Full Profile Details</h2>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem', fontSize: '1rem' }}>
-                                    <div style={{ color: 'var(--text-muted)' }}>Full Name:</div>
-                                    <div style={{ fontWeight: '500' }}>{user?.fullName}</div>
+                                <h2 className="profile-section-title">Full Profile Details</h2>
+                                <div className="profile-detail-grid">
+                                    <div className="profile-detail-label">Full Name:</div>
+                                    <div className="profile-detail-value">{user?.fullName}</div>
 
-                                    <div style={{ color: 'var(--text-muted)' }}>Email:</div>
-                                    <div style={{ fontWeight: '500' }}>{user?.email}</div>
+                                    <div className="profile-detail-label">Email:</div>
+                                    <div className="profile-detail-value">{user?.email}</div>
 
-                                    <div style={{ color: 'var(--text-muted)' }}>Phone:</div>
-                                    <div style={{ fontWeight: '500' }}>{user?.phone || 'Not set'}</div>
+                                    <div className="profile-detail-label">Phone:</div>
+                                    <div className="profile-detail-value">{user?.phone || 'Not set'}</div>
 
-                                    <div style={{ color: 'var(--text-muted)' }}>Date of Birth:</div>
-                                    <div style={{ fontWeight: '500' }}>
+                                    <div className="profile-detail-label">Date of Birth:</div>
+                                    <div className="profile-detail-value">
                                         {user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString('vi-VN') : 'Not set'}
                                     </div>
 
-                                    <div style={{ color: 'var(--text-muted)' }}>Account Created:</div>
-                                    <div style={{ fontWeight: '500' }}>{new Date(user?.createdAt).toLocaleDateString('vi-VN')}</div>
+                                    <div className="profile-detail-label">Account Created:</div>
+                                    <div className="profile-detail-value">{new Date(user?.createdAt).toLocaleDateString('vi-VN')}</div>
 
-                                    <div style={{ color: 'var(--text-muted)' }}>Bio:</div>
-                                    <div style={{ fontWeight: '500', lineHeight: '1.6' }}>{user?.bio || 'No bio yet...'}</div>
+                                    <div className="profile-detail-label">Bio:</div>
+                                    <div className="profile-detail-value" style={{ lineHeight: '1.6' }}>{user?.bio || 'No bio yet...'}</div>
                                 </div>
                             </div>
                         )}
@@ -288,53 +309,70 @@ const ProfilePage = () => {
                         {/* 3. Update Profile Tab (With Date Picker, No Avatar) */}
                         {activeTab === 'update' && (
                             <div>
-                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Update Information</h2>
+                                <h2 className="profile-section-title">Update Information</h2>
+
+                                <div className="profile-avatar-upload-wrapper">
+                                    <img
+                                        src={avatarPreview || user?.avatar || 'https://via.placeholder.com/150'}
+                                        alt="Avatar preview"
+                                        className="profile-avatar-upload-image"
+                                    />
+                                    <div className="profile-avatar-upload-actions">
+                                        <label htmlFor="avatar-input" className="profile-avatar-upload-button">
+                                            Change profile photo
+                                        </label>
+                                        <input
+                                            id="avatar-input"
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            onChange={handleAvatarChange}
+                                        />
+                                    </div>
+                                </div>
+
                                 <form onSubmit={handleUpdateProfile}>
-                                    <div className="form-group">
-                                        <label>Full Name</label>
+                                    <div className="profile-form-group">
+                                        <label className="profile-form-label">Full Name</label>
                                         <input
                                             type="text"
-                                            className="form-control"
-                                            style={errors.fullName ? { border: '1px solid red' } : {}}
+                                            className={`profile-form-control ${errors.fullName ? 'error' : ''}`}
                                             value={formData.fullName}
                                             onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                                         />
-                                        {errors.fullName && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.fullName}</span>}
+                                        {errors.fullName && <span className="profile-error-text">{errors.fullName}</span>}
                                     </div>
-                                    <div className="form-group">
-                                        <label>Phone Number</label>
+                                    <div className="profile-form-group">
+                                        <label className="profile-form-label">Phone Number</label>
                                         <input
                                             type="text"
-                                            className="form-control"
-                                            style={errors.phone ? { border: '1px solid red' } : {}}
+                                            className={`profile-form-control ${errors.phone ? 'error' : ''}`}
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                         />
-                                        {errors.phone && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.phone}</span>}
+                                        {errors.phone && <span className="profile-error-text">{errors.phone}</span>}
                                     </div>
-                                    <div className="form-group">
-                                        <label>Date of Birth</label>
+                                    <div className="profile-form-group">
+                                        <label className="profile-form-label">Date of Birth</label>
                                         <input
                                             type="date"
-                                            className="form-control"
-                                            style={errors.dateOfBirth ? { border: '1px solid red' } : {}}
+                                            className={`profile-form-control ${errors.dateOfBirth ? 'error' : ''}`}
                                             value={formData.dateOfBirth}
                                             onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
                                         />
-                                        {errors.dateOfBirth && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.dateOfBirth}</span>}
+                                        {errors.dateOfBirth && <span className="profile-error-text">{errors.dateOfBirth}</span>}
                                     </div>
-                                    <div className="form-group">
-                                        <label>Bio</label>
+                                    <div className="profile-form-group">
+                                        <label className="profile-form-label">Bio</label>
                                         <textarea
-                                            className="form-control"
+                                            className={`profile-form-control ${errors.bio ? 'error' : ''}`}
                                             rows="4"
-                                            style={Object.assign({ fontFamily: 'inherit' }, errors.bio ? { border: '1px solid red' } : {})}
                                             value={formData.bio}
                                             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                                         ></textarea>
-                                        {errors.bio && <span style={{ color: 'red', fontSize: '0.85rem' }}>{errors.bio}</span>}
+                                        {errors.bio && <span className="profile-error-text">{errors.bio}</span>}
                                     </div>
-                                    <button type="submit" className="btn" style={{ maxWidth: '200px' }}>Save Changes</button>
+                                    <button type="submit" className="btn profile-submit-btn">Save Changes</button>
                                 </form>
                             </div>
                         )}
@@ -342,41 +380,75 @@ const ProfilePage = () => {
                         {/* 4. Security Tab */}
                         {activeTab === 'security' && (
                             <div>
-                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Change Password</h2>
+                                <h2 className="profile-section-title">Change Password</h2>
                                 <form onSubmit={handleChangePassword}>
-                                    <div className="form-group">
-                                        <label>Current Password</label>
+                                    <div className="profile-form-group">
+                                        <label className="profile-form-label">Current Password</label>
                                         <input
                                             type="password"
-                                            className="form-control"
+                                            className="profile-form-control"
                                             value={passwordData.currentPassword}
                                             onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                                             required
                                         />
                                     </div>
-                                    <div className="form-group">
-                                        <label>New Password</label>
+                                    <div className="profile-form-group">
+                                        <label className="profile-form-label">New Password</label>
                                         <input
                                             type="password"
-                                            className="form-control"
+                                            className="profile-form-control"
                                             value={passwordData.newPassword}
                                             onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                                             required
                                             minLength="8"
                                         />
                                     </div>
-                                    <div className="form-group">
-                                        <label>Confirm New Password</label>
+                                    <div className="profile-form-group">
+                                        <label className="profile-form-label">Confirm New Password</label>
                                         <input
                                             type="password"
-                                            className="form-control"
+                                            className="profile-form-control"
                                             value={passwordData.confirmPassword}
                                             onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                                             required
                                         />
                                     </div>
-                                    <button type="submit" className="btn" style={{ maxWidth: '200px' }}>Update Password</button>
+                                    <button type="submit" className="btn profile-submit-btn">Update Password</button>
                                 </form>
+                            </div>
+                        )}
+
+                        {/* 5. Following Tab (Only for CUSTOMER) */}
+                        {activeTab === 'following' && user?.role === 'CUSTOMER' && (
+                            <div>
+                                <h2 className="profile-section-title">Salons You Follow</h2>
+                                {loadingFollows ? (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                                        Loading followed salons...
+                                    </div>
+                                ) : followedSalons.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                                        <p>You haven't followed any salons yet.</p>
+                                        <p style={{ marginTop: '8px', fontSize: '14px' }}>
+                                            Go to Home page to discover and follow salons!
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div style={{ 
+                                        display: 'grid', 
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                                        gap: '24px',
+                                        marginTop: '20px'
+                                    }}>
+                                        {followedSalons.map((salon) => (
+                                            <SalonCard 
+                                                key={salon._id} 
+                                                data={salon} 
+                                                onUnfollow={fetchFollowedSalons}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

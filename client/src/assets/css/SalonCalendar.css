@@ -1,0 +1,508 @@
+/* SalonCalendar.css */
+
+.calendar-page {
+    padding: 2rem 1rem;
+    background-color: #f8fafc;
+    /* bg-muted/30 equivalent */
+    min-height: 100vh;
+    width: 100%;
+    font-family: inherit;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.calendar-title-section h1 {
+    font-size: 1.875rem;
+    /* text-3xl */
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    margin-bottom: 0.5rem;
+}
+
+.calendar-title-section p {
+    color: #6b7280;
+    /* text-muted-foreground */
+    margin: 0;
+    font-size: 1rem;
+}
+
+.calendar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn-filter,
+.btn-new {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-filter {
+    background: white;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+}
+
+.btn-filter:hover {
+    background: #f3f4f6;
+}
+
+.btn-new {
+    background: var(--primary-color, #0d9488);
+    border: 1px solid transparent;
+    color: white;
+}
+
+.btn-new:hover {
+    background: var(--primary-hover, #0f766e);
+}
+
+/* Hover Dropdown Filter */
+.filter-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.filter-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    min-width: 180px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    z-index: 50;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-5px);
+    transition: all 0.2s ease;
+    padding: 0.25rem 0;
+}
+
+.filter-dropdown-container:hover .filter-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.filter-option {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #374151;
+    transition: background 0.15s;
+}
+
+.filter-option:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+/* Card Style */
+.admin-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    /* rounded-lg */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    /* shadow-sm */
+    margin-bottom: 1.5rem;
+}
+
+.admin-card-content {
+    padding: 1rem;
+}
+
+/* Date Navigator */
+.date-navigator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.nav-btn {
+    background: white;
+    border: 1px solid #e5e7eb;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #374151;
+    transition: all 0.2s;
+}
+
+.nav-btn:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.current-date-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    color: #111827;
+    font-size: 1.125rem;
+    /* text-lg */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.current-date-btn svg {
+    color: #6b7280;
+}
+
+.date-picker-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.hidden-date-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+/* Status Legend using Badges */
+.status-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.legend-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.badge.pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge.confirmed {
+    background-color: #e0f2fe;
+    /* Or primary/10 */
+    color: #0369a1;
+}
+
+.badge.completed {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.badge.cancelled {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.drag-tip {
+    margin-left: auto;
+    font-size: 0.75rem;
+    /* text-xs */
+    color: #6b7280;
+    /* text-muted-foreground */
+}
+
+/* Calendar Grid */
+.calendar-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.fetching-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.4);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    padding-top: 100px;
+}
+
+.mini-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #0d9488;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.calendar-grid {
+    display: grid;
+    /* Columns defined dynamically in inline-style */
+}
+
+/* Headers */
+.grid-header-row {
+    display: contents;
+    /* Allows grid children to sit directly in grid */
+}
+
+.grid-header {
+    background: #f8fafc;
+    /* bg-muted */
+    border-bottom: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    text-align: center;
+    padding: 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.grid-header.time-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.staff-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.staff-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    /* text-sm */
+    color: #111827;
+}
+
+.staff-meta {
+    font-size: 0.75rem;
+    /* text-xs */
+    color: #6b7280;
+    /* text-muted-foreground */
+    margin-top: 0.25rem;
+}
+
+/* Time Cells */
+.time-cell {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    background: rgba(248, 250, 252, 0.5);
+    /* bg-muted/50 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+.slot-cell {
+    border-bottom: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    min-height: 60px;
+    background: white;
+    transition: background-color 0.2s;
+    padding: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.slot-cell:hover {
+    background: rgba(248, 250, 252, 0.3);
+}
+
+/* Appointments */
+.appointment-card {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border-left: 4px solid transparent;
+    font-size: 0.75rem;
+    transition: opacity 0.2s, transform 0.2s;
+    overflow: hidden;
+    cursor: pointer;
+    width: 100%;
+}
+
+.appointment-card:hover {
+    opacity: 0.9;
+    z-index: 20 !important;
+}
+
+/* Colors from Figma */
+.appointment-card.pending {
+    background-color: #fef9c3;
+    /* bg-yellow-100 */
+    border-left-color: #facc15;
+    /* border-yellow-400 */
+    color: #854d0e;
+    /* text-yellow-800 */
+}
+
+.appointment-card.confirmed {
+    background-color: #e0f2fe;
+    /* bg-primary/10 approx */
+    border-left-color: #0284c7;
+    /* border-primary */
+    color: #0369a1;
+    /* text-primary */
+}
+
+.appointment-card.completed {
+    background-color: #dcfce7;
+    /* bg-green-100 */
+    border-left-color: #4ade80;
+    /* border-green-400 */
+    color: #166534;
+    /* text-green-800 */
+}
+
+.appointment-card.cancelled {
+    background-color: #f3f4f6;
+    /* bg-gray-100 */
+    border-left-color: #9ca3af;
+    /* border-gray-400 */
+    color: #6b7280;
+    /* text-gray-500 */
+}
+
+.client-name {
+    font-weight: 600;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* truncate */
+}
+
+.service-name {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10px;
+    /* text-[10px] */
+    margin-top: 2px;
+}
+
+.apt-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+.status-badge-inline {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 6px;
+    padding: 0 4px;
+    /* px-1 */
+    font-size: 9px;
+    /* text-[9px] */
+    font-weight: 600;
+    text-transform: capitalize;
+    background-color: rgba(255, 255, 255, 0.5);
+    /* secondary variant approx */
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.time-range {
+    font-size: 10px;
+    /* text-[10px] */
+}
+
+/* Footer Summary Cards */
+.calendar-footer {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .calendar-footer {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.stat-card-content {
+    padding: 1rem;
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    /* text-2xl */
+    font-weight: 700;
+}
+
+.stat-value.primary {
+    color: var(--primary-color, #0d9488);
+}
+
+.stat-value.yellow {
+    color: #ca8a04;
+    /* text-yellow-600 */
+}
+
+.stat-value.green {
+    color: #16a34a;
+    /* text-green-600 */
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    /* text-sm */
+    color: #6b7280;
+    /* text-muted-foreground */
+}
