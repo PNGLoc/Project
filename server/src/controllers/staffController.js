@@ -284,6 +284,53 @@ export const deleteStaff = async (req, res) => {
     }
 };
 
+// @desc    Lấy chi tiết nhân viên public (cho Staff Detail Page)
+// @route   GET /api/staffs/profile/:id
+// @access  Public
+export const getStaffDetailPublic = async (req, res) => {
+    try {
+        const staff = await Staff.findOne({
+            _id: req.params.id,
+            isActive: true
+        })
+            .populate('userId', 'fullName email phone avatar bio')
+            .populate('salonId', 'name address phone images');
+
+        if (!staff) {
+            return res.status(404).json({
+                success: false,
+                message: 'Staff not found'
+            });
+        }
+
+        // Lấy posts được tag staff này (portfolio)
+        const Post = (await import('../models/Post.js')).default;
+        const portfolioPosts = await Post.find({
+            taggedStaffIds: staff._id,
+            'images.0': { $exists: true }
+        })
+            .populate('authorId', 'fullName')
+            .select('images content createdAt')
+            .sort({ createdAt: -1 })
+            .limit(12)
+            .lean();
+
+        res.json({
+            success: true,
+            data: {
+                ...staff.toObject(),
+                portfolio: portfolioPosts
+            }
+        });
+    } catch (error) {
+        console.error('[GET STAFF DETAIL PUBLIC ERROR]', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Server error'
+        });
+    }
+};
+
 // @desc    Lấy danh sách nhân viên public theo salon
 // @route   GET /api/staffs/public/:salonId
 // @access  Public

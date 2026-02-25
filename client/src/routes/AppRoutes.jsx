@@ -14,6 +14,7 @@ import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
 import SalonRegistration from '../pages/salon/SalonRegistration';
 import SalonDetail from '../pages/salon/SalonDetail';
+import StaffDetail from '../pages/staff/StaffDetail';
 import PostDetail from '../pages/post/PostDetail';
 import LookbookDetail from '../pages/post/LookbookDetail';
 import PostForm from '../pages/post/PostForm';
@@ -44,6 +45,7 @@ const AppRoutes = () => {
                 {/* MENU */}
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/salon/:id" element={<SalonDetail />} />
+                <Route path="/staff/:id" element={<StaffDetail />} />
                 <Route path="/lookbook" element={<LookbookPage />} />
                 <Route path="/lookbook/:id" element={<LookbookDetail />} />
                 <Route path="/ai-analysis" element={<div>AI Analysis Page </div>} />

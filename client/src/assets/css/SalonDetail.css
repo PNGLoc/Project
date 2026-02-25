@@ -374,6 +374,10 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
+.salon-stylist-card-clickable {
+  cursor: pointer;
+}
+
 .salon-stylist-avatar-wrapper {
   width: 72px;
   height: 72px;

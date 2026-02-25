@@ -205,7 +205,11 @@ const SalonDetail = () => {
                     return (
                       <div
                         key={staff._id}
-                        className="salon-stylist-card"
+                        className="salon-stylist-card salon-stylist-card-clickable"
+                        onClick={() => navigate(`/staff/${staff._id}`)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === "Enter" && navigate(`/staff/${staff._id}`)}
                       >
                         <div className="salon-stylist-avatar-wrapper">
                           <img
