@@ -3,9 +3,10 @@ import {
     createStaff,
     getStaffs,
     getPublicStaffsBySalon,
+    getStaffDetailPublic,
     updateStaffSkills,
     updateStaffProfile,
-    deleteStaff // 1. BỔ SUNG IMPORT NÀY
+    deleteStaff
 } from '../controllers/staffController.js';
 import { protect, authorize } from '../middlewares/authMiddleware.js';
 
@@ -16,6 +17,8 @@ router.get('/test', (req, res) => {
     res.json({ message: 'Staff routes đang hoạt động!' });
 });
 
+// Public route: chi tiết staff (Staff Detail Page)
+router.get('/profile/:id', getStaffDetailPublic);
 // Public route: lấy danh sách staff theo salon (booking)
 router.get('/public/:salonId', getPublicStaffsBySalon);
 

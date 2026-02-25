@@ -1,0 +1,266 @@
+/* StaffDetail.css */
+
+.staff-detail-loading,
+.staff-detail-error {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+}
+.staff-detail-error {
+  color: #dc2626;
+}
+
+.staff-detail-page {
+  min-height: 100vh;
+  background: #fff;
+  padding-bottom: 3rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  overflow-x: hidden;
+}
+
+.staff-detail-back {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+}
+
+.staff-detail-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  color: #555;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+.staff-detail-back-btn:hover {
+  color: #009688;
+}
+
+/* Hero / Profile Header */
+.staff-detail-hero {
+  background: linear-gradient(135deg, #f0fdfa 0%, #f5f5f5 100%);
+  padding: 2.5rem 1.5rem 3rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.staff-detail-hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .staff-detail-hero-content {
+    flex-direction: row;
+    text-align: left;
+  }
+}
+
+.staff-detail-avatar-wrapper {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 4px solid #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.staff-detail-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.staff-detail-info {
+  flex: 1;
+}
+
+.staff-detail-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 0.25rem;
+}
+
+.staff-detail-role {
+  font-size: 1rem;
+  color: #009688;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.staff-detail-bio {
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  max-width: 480px;
+}
+
+.staff-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+@media (min-width: 640px) {
+  .staff-detail-actions {
+    justify-content: flex-start;
+  }
+}
+
+.staff-detail-salon-btn {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  background: #fff;
+  border: 2px solid #009688;
+  color: #009688;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.staff-detail-salon-btn:hover {
+  background: #009688;
+  color: #fff;
+}
+
+/* Sections */
+.staff-detail-main {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.staff-detail-section {
+  margin-bottom: 2.5rem;
+}
+
+.staff-detail-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #009688;
+  display: inline-block;
+}
+
+/* Skills */
+.staff-detail-skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.staff-detail-skill-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  transition: box-shadow 0.2s;
+}
+.staff-detail-skill-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.staff-detail-skill-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #009688;
+  margin-bottom: 0.35rem;
+}
+
+.staff-detail-skill-desc {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Portfolio */
+.staff-detail-portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .staff-detail-portfolio-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .staff-detail-portfolio-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.staff-detail-portfolio-item {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.staff-detail-portfolio-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.staff-detail-empty {
+  color: #9ca3af;
+  font-size: 0.95rem;
+}
+
+/* Salon section */
+.staff-detail-salon-section .staff-detail-salon-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.staff-detail-salon-section .staff-detail-salon-card:hover {
+  border-color: #009688;
+  box-shadow: 0 4px 12px rgba(0, 150, 136, 0.15);
+}
+
+.staff-detail-salon-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.staff-detail-salon-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 0.5rem;
+}
+
+.staff-detail-salon-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
