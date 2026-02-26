@@ -18,6 +18,18 @@ router.get('/test', (req, res) => {
 router.get('/profile/:id', getStaffDetailPublic);
 // Public route: lấy danh sách staff theo salon (booking)
 router.get('/public/:salonId', getPublicStaffsBySalon);
+// Route chính cho STAFF tự xem thông tin của mình
+router.get('/me', protect, authorize('STAFF', 'SALON_OWNER'), async (req, res) => {
+    try {
+        const staff = await import('../models/Staff.js').then(module => module.default.findOne({ userId: req.user._id }));
+        if (!staff) {
+            return res.status(404).json({ message: 'Staff profile not found' });
+        }
+        res.json({ success: true, data: [staff] }); // Wrap in array to match frontend expectation
+    } catch (error) {
+        res.status(500).json({ message: error.message || 'Server error' });
+    }
+});
 
 // Chặn các route bên dưới chỉ cho OWNER
 router.use(protect, authorize('SALON_OWNER'));
