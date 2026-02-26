@@ -225,8 +225,6 @@ const SalonCalendar = () => {
             {/* Header Area */}
             <header className="calendar-header">
                 <div className="calendar-title-section">
-                    <h1>Calendar Scheduler</h1>
-                    <p>Manage appointments and stylist schedules</p>
                 </div>
                 <div className="calendar-actions">
                     <div className="filter-dropdown-container">
