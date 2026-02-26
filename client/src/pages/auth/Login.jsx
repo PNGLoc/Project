@@ -12,20 +12,6 @@ function Login() {
             title="WELCOME BACK"
             subtitle="Please login to your account"
         >
-            {sessionExpired && (
-                <div style={{
-                    backgroundColor: '#fee2e2',
-                    color: '#b91c1c',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    marginBottom: '20px',
-                    fontSize: '0.875rem',
-                    textAlign: 'center',
-                    border: '1px solid #fca5a5'
-                }}>
-                    Your session has expired. Please log in again.
-                </div>
-            )}
             <LoginForm />
             <div style={{ marginTop: '20px' }}>
                 <p style={{ color: '#6b7280' }}>

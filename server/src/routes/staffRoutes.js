@@ -9,14 +9,11 @@ import {
     deleteStaff
 } from '../controllers/staffController.js';
 import { protect, authorize } from '../middlewares/authMiddleware.js';
-
 const router = express.Router();
-
 // Test route
 router.get('/test', (req, res) => {
     res.json({ message: 'Staff routes đang hoạt động!' });
 });
-
 // Public route: chi tiết staff (Staff Detail Page)
 router.get('/profile/:id', getStaffDetailPublic);
 // Public route: lấy danh sách staff theo salon (booking)
