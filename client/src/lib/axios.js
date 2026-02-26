@@ -39,9 +39,9 @@ axiosClient.interceptors.response.use(
             localStorage.removeItem('user');
 
             // Redirect to login if not already there to prevent infinite loops
-            if (window.location.pathname !== '/login') {
-                window.location.href = '/login?session_expired=true';
-            }
+            // if (window.location.pathname !== '/login') {
+            //     window.location.href = '/login?session_expired=true';
+            // }
         }
         return Promise.reject(error);
     }
