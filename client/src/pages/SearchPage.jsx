@@ -14,10 +14,10 @@ const FILTER_DEFAULTS = {
 };
 const CATEGORIES = ['Hair', 'Nails', 'Spa', 'Massage', 'Facial', 'Makeup'];
 const RATINGS = [
-    { label: '4.5+ Stars', value: 4.5 },
     { label: '4+ Stars', value: 4 },
-    { label: '3.5+ Stars', value: 3.5 },
     { label: '3+ Stars', value: 3 },
+    { label: '2+ Stars', value: 2 },
+    { label: '1+ Stars', value: 1 },
 ];
 
 const SearchPage = () => {
@@ -34,8 +34,12 @@ const SearchPage = () => {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const cat = params.get('category') || '';
+        const query = params.get('q') || '';
+
         setCategory(cat);
-        if (cat) setSearch('');
+        setSearch(query);
+
+        if (cat) setSearch(''); // Category search takes precedence and clears text search
         setPage(1);
     }, [location.search]);
 

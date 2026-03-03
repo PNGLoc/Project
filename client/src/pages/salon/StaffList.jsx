@@ -25,6 +25,16 @@ function StaffList() {
     fetchStaffs();
   }, []);
 
+  // Listen for external events indicating staff list changed (e.g. after adding a staff)
+  useEffect(() => {
+    const handler = () => {
+      fetchStaffs();
+    };
+
+    window.addEventListener('staff:added', handler);
+    return () => window.removeEventListener('staff:added', handler);
+  }, []);
+
   const fetchStaffs = async () => {
     try {
       setLoading(true);
@@ -117,13 +127,13 @@ function StaffList() {
 
   const handleSaveChanges = async () => {
     if (!editName.trim()) return setValidationError('Full Name is required.');
-    if (!editPhone.trim()) {
-      return setValidationError('Phone number is required.');
-    }
-    const cleanedPhone = editPhone.replace(/\D/g, '');
-    if (cleanedPhone.length !== 10 || !/^\d{10}$/.test(cleanedPhone)) {
-      return setValidationError('Phone number must be exactly 10 digits (e.g. 0901234567).');
-    }
+   if (!editPhone.trim()) {
+    return setValidationError('Phone number is required.');
+  }
+  const cleanedPhone = editPhone.replace(/\D/g, '');
+  if (cleanedPhone.length !== 10 || !/^\d{10}$/.test(cleanedPhone)) {
+    return setValidationError('Phone number must be exactly 10 digits (e.g. 0901234567).');
+  }
     if (!editSkills.trim()) return setValidationError('Skills are required.');
 
     try {
@@ -150,11 +160,11 @@ function StaffList() {
       setStaffs(staffs.map(s =>
         s._id === selectedStaff._id
           ? {
-            ...s,
-            fullName: editName,
-            skills: updatedSkills,
-            userId: { ...s.userId, phone: editPhone }
-          }
+              ...s,
+              fullName: editName,
+              skills: updatedSkills,
+              userId: { ...s.userId, phone: editPhone }
+            }
           : s
       ));
 
@@ -168,7 +178,7 @@ function StaffList() {
 
   return (
     <>
-
+    
       <div className="staff-management-container">
         <h1 className="staff-management-title">Staff Management</h1>
         <p className="staff-management-subtitle">Manage your salon staff members.</p>
