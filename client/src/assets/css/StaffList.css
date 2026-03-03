@@ -36,6 +36,16 @@
   font-size: 16px;
 }
 
+.staff-filter-select,
+.staff-sort-select {
+  padding: 12px 16px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  height: 46px;            /* Quan trọng */
+  box-sizing: border-box;
+}
+
 .staff-add-button {
   padding: 12px 24px;
   background: #000;

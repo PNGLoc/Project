@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import '../assets/css/HomePage.css';
 import SalonCard from '../components/salon/SalonCard';
@@ -13,6 +13,17 @@ import { HiSparkles } from 'react-icons/hi';
 
 
 const HomePage = () => {
+    const navigate = useNavigate();
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchTerm.trim()) {
+            navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+        } else {
+            navigate('/search');
+        }
+    };
 
     const userString = localStorage.getItem('user'); // 1. Lấy chuỗi thô
 
@@ -59,11 +70,16 @@ const HomePage = () => {
                     <h1>Discover Your Perfect<br /><span className="highlight">Beauty Experience</span></h1>
                     <p>Connect with top-rated salons, spas, and stylists in your area</p>
 
-                    <div className="search-bar">
+                    <form className="search-bar" onSubmit={handleSearch}>
                         <FiSearch className="search-icon" />
-                        <input type="text" placeholder="Search for services, salons..." />
-                        <button>Search</button>
-                    </div>
+                        <input
+                            type="text"
+                            placeholder="Search for services, salons..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <button type="submit">Search</button>
+                    </form>
 
                     <div className="quick-tags">
                         <span className="tag"><FiMapPin /> Near Me</span>
@@ -84,7 +100,7 @@ const HomePage = () => {
                     {categories.map((item) => (
                         <Link
                             key={item.id}
-                            to={`/search?category=${encodeURIComponent(item.name.toLowerCase())}`}
+                            to={`/search?category=${item.name}`}
                             className="cat-card"
                             style={{ textDecoration: 'none', color: 'inherit' }}
                         >
