@@ -29,6 +29,7 @@ import StaffList from "../pages/salon/StaffList";
 import BookAppointment from '../pages/booking/BookAppointment';
 import BookingHistory from '../pages/booking/BookingHistory';
 import SalonCalendar from '../pages/salon/SalonCalendar';
+import MyCoupon from '../pages/salon/MyCoupon';
 
 import MainLayout from '../components/layout/MainLayout';
 
@@ -77,6 +78,7 @@ const AppRoutes = () => {
                         <Route path="staff" element={<StaffList />} />
                         <Route path="calendar" element={<SalonCalendar />} />
                     </Route>
+                    <Route path="/salon/coupons" element={<MyCoupon />} />
                 </Route>
 
                 {/* Role: SALON_OWNER & STAFF (View Schedule) */}
