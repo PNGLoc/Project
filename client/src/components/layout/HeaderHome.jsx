@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { HiSparkles } from 'react-icons/hi';
 import { GoBriefcase, GoPerson } from 'react-icons/go';
-import { FiBookOpen } from 'react-icons/fi';
+import { FiBookOpen, FiTag } from 'react-icons/fi';
 import { FaUsers } from 'react-icons/fa';
 import '../../assets/css/HeaderHome.css';
 
@@ -153,6 +153,9 @@ const HeaderHome = () => {
                                             </Link>
                                             <Link to="/salon/staff" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                                 <FaUsers /> My Staff
+                                            </Link>
+                                            <Link to="/salon/coupons" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                                <FiTag /> My Coupons
                                             </Link>
                                         </>
                                     ) : isStaff ? (

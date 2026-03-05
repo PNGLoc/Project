@@ -388,6 +388,15 @@
     font-weight: 600;
 }
 
+.status-upcoming-pill {
+    background: #dbeafe;
+    color: #2563eb;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
 .pagination-row {
     display: flex;
     justify-content: space-between;
