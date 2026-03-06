@@ -71,7 +71,7 @@ const StaffForm = () => {
             });
 
             alert('Staff added successfully! Login credentials have been sent to their email.');
-            navigate('/salon/staff');
+            navigate('/stafflist');
         } catch (err) {
             // Error từ server sẽ được hook xử lý và trả về trong `error`
             // Không cần làm gì thêm ở đây

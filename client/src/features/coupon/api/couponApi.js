@@ -5,6 +5,10 @@ const couponApi = {
     const response = await axiosClient.get('/api/coupons', { params });
     return response.data;
   },
+  getSalonCoupons: async (salonId, params = {}) => {
+    const response = await axiosClient.get(`/api/salons/${salonId}/coupons`, { params });
+    return response.data;
+  },
   getCouponById: async (id) => {
     const response = await axiosClient.get(`/api/coupons/${id}`);
     return response.data;

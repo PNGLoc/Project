@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import authApi from '../../features/auth/api/authApi';
 import followApi from '../../features/social/api/followApi';
-import { FaUser, FaEdit, FaLock, FaIdCard, FaHeart } from 'react-icons/fa';
+import userCouponApi from '../../features/coupon/api/userCouponApi';
+import { FaUser, FaEdit, FaLock, FaIdCard, FaHeart, FaTag } from 'react-icons/fa';
 import SalonCard from '../../components/salon/SalonCard';
 import '../../assets/css/ProfilePage.css';
 
@@ -38,6 +39,11 @@ const ProfilePage = () => {
     const [followedSalons, setFollowedSalons] = useState([]);
     const [loadingFollows, setLoadingFollows] = useState(false);
 
+    // Collected Coupons State
+    const [collectedCoupons, setCollectedCoupons] = useState([]);
+    const [loadingCoupons, setLoadingCoupons] = useState(false);
+    const [discardingId, setDiscardingId] = useState(null);
+
     useEffect(() => {
         const tab = searchParams.get('tab');
         if (tab) setActiveTab(tab);
@@ -49,6 +55,40 @@ const ProfilePage = () => {
             fetchFollowedSalons();
         }
     }, [activeTab, user]);
+
+    const fetchCollectedCoupons = async () => {
+        try {
+            setLoadingCoupons(true);
+            const data = await userCouponApi.getMyCollectedCoupons();
+            setCollectedCoupons(data.items || []);
+        } catch (err) {
+            console.error('[PROFILE] Failed to load collected coupons', err);
+            setMessage({ type: 'error', text: 'Failed to load collected coupons' });
+            setCollectedCoupons([]);
+        } finally {
+            setLoadingCoupons(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'coupons' && user?.role === 'CUSTOMER') {
+            fetchCollectedCoupons();
+        }
+    }, [activeTab, user]);
+
+    const handleDiscardCoupon = async (collectedId) => {
+        try {
+            setDiscardingId(collectedId);
+            await userCouponApi.discardCollectedCoupon(collectedId);
+            setCollectedCoupons((prev) => prev.filter((i) => i._id !== collectedId));
+            setMessage({ type: 'success', text: 'Coupon discarded successfully' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        } catch (err) {
+            setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to discard coupon' });
+        } finally {
+            setDiscardingId(null);
+        }
+    };
 
     const fetchFollowedSalons = async () => {
         try {
@@ -241,12 +281,20 @@ const ProfilePage = () => {
                                 <FaLock /> Security
                             </button>
                             {user?.role === 'CUSTOMER' && (
-                                <button
-                                    onClick={() => setActiveTab('following')}
-                                    className={`profile-menu-button ${activeTab === 'following' ? 'active' : ''}`}
-                                >
-                                    <FaHeart /> Following
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => setActiveTab('coupons')}
+                                        className={`profile-menu-button ${activeTab === 'coupons' ? 'active' : ''}`}
+                                    >
+                                        <FaTag /> Collected Coupons
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('following')}
+                                        className={`profile-menu-button ${activeTab === 'following' ? 'active' : ''}`}
+                                    >
+                                        <FaHeart /> Following
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -418,7 +466,68 @@ const ProfilePage = () => {
                             </div>
                         )}
 
-                        {/* 5. Following Tab (Only for CUSTOMER) */}
+                        {/* 5. Collected Coupons Tab (Only for CUSTOMER) */}
+                        {activeTab === 'coupons' && user?.role === 'CUSTOMER' && (
+                            <div>
+                                <h2 className="profile-section-title">Collected Coupons</h2>
+                                <p style={{ color: '#6b7280', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+                                    Coupons you have saved for later use. Use them when booking at the salon.
+                                </p>
+                                {loadingCoupons ? (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                                        Loading collected coupons...
+                                    </div>
+                                ) : collectedCoupons.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                                        <p>You haven&apos;t collected any coupons yet.</p>
+                                        <p style={{ marginTop: '8px', fontSize: '14px' }}>
+                                            Visit a salon page to discover and save coupons!
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="profile-coupons-grid">
+                                        {collectedCoupons.map((item) => {
+                                            const coupon = item.coupon;
+                                            const salon = item.salon || coupon?.salonId;
+                                            if (!coupon) return null;
+                                            const discountText = coupon.discountType === 'PERCENTAGE'
+                                                ? `${coupon.discountValue}%`
+                                                : `${coupon.discountValue?.toLocaleString('vi-VN')} VND`;
+                                            const now = new Date();
+                                            const end = new Date(coupon.endDate);
+                                            const isExpired = end < now;
+                                            return (
+                                                <div key={item._id} className="profile-coupon-card">
+                                                    <div className="profile-coupon-header">
+                                                        <span className="profile-coupon-code">{coupon.code}</span>
+                                                        <span className={`profile-coupon-status ${isExpired ? 'expired' : 'active'}`}>
+                                                            {isExpired ? 'Expired' : 'Valid'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="profile-coupon-discount">{discountText} off</div>
+                                                    {salon?.name && (
+                                                        <div className="profile-coupon-salon">at {salon.name}</div>
+                                                    )}
+                                                    <div className="profile-coupon-validity">
+                                                        Valid until: {new Date(coupon.endDate).toLocaleDateString('vi-VN')}
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className="profile-coupon-discard-btn"
+                                                        onClick={() => handleDiscardCoupon(item._id)}
+                                                        disabled={discardingId === item._id}
+                                                    >
+                                                        {discardingId === item._id ? 'Removing...' : 'Discard'}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* 6. Following Tab (Only for CUSTOMER) */}
                         {activeTab === 'following' && user?.role === 'CUSTOMER' && (
                             <div>
                                 <h2 className="profile-section-title">Salons You Follow</h2>

@@ -6,13 +6,14 @@ import {
   MapPin,
   Phone,
   Clock,
-  Wifi,
-  Car,
-  CreditCard,
   Check,
   Share2,
   Heart,
+  Tag,
+  Gift,
 } from "lucide-react";
+import couponApi from "../../features/coupon/api/couponApi";
+import userCouponApi from "../../features/coupon/api/userCouponApi";
 // tab UI implemented inline below (no external components needed)
 import "../../assets/css/SalonDetail.css";
 
@@ -23,6 +24,23 @@ const SalonDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("services");
+  const [coupons, setCoupons] = useState([]);
+  const [couponsLoading, setCouponsLoading] = useState(false);
+  const [couponStatusFilter, setCouponStatusFilter] = useState("ALL");
+  const [couponSortBy, setCouponSortBy] = useState("endDate");
+  const [couponSortOrder, setCouponSortOrder] = useState("asc");
+  const [collectedCouponIds, setCollectedCouponIds] = useState(new Set());
+  const [collectingId, setCollectingId] = useState(null);
+  const [couponToast, setCouponToast] = useState({ type: "", message: "" });
+
+  const currentUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  })();
+  const isCustomer = currentUser?.role === "CUSTOMER";
 
   useEffect(() => {
     const fetchSalon = async () => {
@@ -42,6 +60,75 @@ const SalonDetail = () => {
     };
     fetchSalon();
   }, [id]);
+
+  useEffect(() => {
+    if (activeTab !== "coupons" || !id) return;
+    const fetchSalonCoupons = async () => {
+      try {
+        setCouponsLoading(true);
+        const params = {};
+        if (couponStatusFilter !== "ALL") params.status = couponStatusFilter;
+        params.sortBy = couponSortBy;
+        params.sortOrder = couponSortOrder;
+        const data = await couponApi.getSalonCoupons(id, params);
+        setCoupons(data.coupons || []);
+      } catch (err) {
+        console.error("Lỗi tải coupons:", err);
+        setCoupons([]);
+      } finally {
+        setCouponsLoading(false);
+      }
+    };
+    fetchSalonCoupons();
+  }, [id, activeTab, couponStatusFilter, couponSortBy, couponSortOrder]);
+
+  useEffect(() => {
+    if (activeTab !== "coupons" || !isCustomer) return;
+    const fetchCollectedCoupons = async () => {
+      try {
+        const data = await userCouponApi.getMyCollectedCoupons();
+        const items = data.items || [];
+        const ids = new Set(items.map((i) => i.coupon?._id).filter(Boolean));
+        setCollectedCouponIds(ids);
+      } catch {
+        setCollectedCouponIds(new Set());
+      }
+    };
+    fetchCollectedCoupons();
+  }, [activeTab, isCustomer]);
+
+  const showCouponToast = (type, message) => {
+    setCouponToast({ type, message });
+    setTimeout(() => setCouponToast({ type: "", message: "" }), 3000);
+  };
+
+  const handleCollectCoupon = async (couponId) => {
+    if (!isCustomer) {
+      navigate("/login");
+      return;
+    }
+    try {
+      setCollectingId(couponId);
+      await userCouponApi.collectCoupon(couponId);
+      setCollectedCouponIds((prev) => new Set([...prev, couponId]));
+      showCouponToast("success", "Đã lưu coupon vào tài khoản!");
+    } catch (err) {
+      showCouponToast("error", err.response?.data?.message || "Không thể lưu coupon");
+    } finally {
+      setCollectingId(null);
+    }
+  };
+
+  const getCouponStatus = (coupon) => {
+    if (!coupon.isActive) return { label: "Inactive", class: "coupon-status-inactive" };
+    const now = new Date();
+    const start = new Date(coupon.startDate);
+    const end = new Date(coupon.endDate);
+    if (now < start) return { label: "Upcoming", class: "coupon-status-upcoming" };
+    if (now > end) return { label: "Expired", class: "coupon-status-expired" };
+    if (coupon.usedCount >= coupon.usageLimit) return { label: "Used Up", class: "coupon-status-expired" };
+    return { label: "Active", class: "coupon-status-active" };
+  };
 
   const handleTabChange = (value) => {
     console.log("Tab changed to:", value); // Debug để kiểm tra tab có chuyển không
@@ -69,7 +156,7 @@ const SalonDetail = () => {
  
 
   const handleBookAppointment = () => {
-    navigate(`/booking?salonId=${salon._id}`);
+    navigate("/book-appointment");
   };
 
   return (
@@ -153,6 +240,12 @@ const SalonDetail = () => {
           >
             Stylists
           </button>
+          <button
+            onClick={() => handleTabChange('coupons')}
+            className={`salon-tab-btn${activeTab === 'coupons' ? ' active' : ''}`}
+          >
+            Coupons
+          </button>
         </div>
 
         <div className="mt-6">
@@ -188,6 +281,102 @@ const SalonDetail = () => {
               ) : (
                 <div className="text-center py-16 text-gray-500">
                   Chưa có dịch vụ nào
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'coupons' && (
+            <>
+              {couponToast.message && (
+                <div className={`salon-coupon-toast ${couponToast.type}`}>
+                  {couponToast.message}
+                </div>
+              )}
+              <div className="salon-coupons-filters">
+                <select
+                  value={couponStatusFilter}
+                  onChange={(e) => setCouponStatusFilter(e.target.value)}
+                  className="salon-coupon-select"
+                >
+                  <option value="ALL">All status</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="UPCOMING">Upcoming</option>
+                  <option value="EXPIRED">Expired</option>
+                  <option value="USED_UP">Used Up</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+                <select
+                  value={`${couponSortBy}-${couponSortOrder}`}
+                  onChange={(e) => {
+                    const [field, order] = e.target.value.split('-');
+                    setCouponSortBy(field);
+                    setCouponSortOrder(order);
+                  }}
+                  className="salon-coupon-select"
+                >
+                  <option value="endDate-asc">Expiring Soon</option>
+                  <option value="endDate-desc">Expiring Later</option>
+                  <option value="discountValue-desc">Highest Discount</option>
+                  <option value="discountValue-asc">Lowest Discount</option>
+                  <option value="createdAt-desc">Newest First</option>
+                </select>
+              </div>
+              {couponsLoading ? (
+                <div className="text-center py-16 text-gray-500">Đang tải coupons...</div>
+              ) : coupons.length === 0 ? (
+                <div className="text-center py-16 text-gray-500">
+                  Chưa có coupon nào
+                </div>
+              ) : (
+                <div className="salon-coupons-grid">
+                  {coupons.map((coupon) => {
+                    const status = getCouponStatus(coupon);
+                    const discountText =
+                      coupon.discountType === 'PERCENTAGE'
+                        ? `${coupon.discountValue}%`
+                        : `${coupon.discountValue?.toLocaleString('vi-VN')} VND`;
+                    const isCollected = collectedCouponIds.has(coupon._id);
+                    const canCollect = isCustomer && status.label === 'Active' && !isCollected;
+                    return (
+                      <div key={coupon._id} className="salon-coupon-card">
+                        <div className="salon-coupon-header">
+                          <span className="salon-coupon-code">
+                            <Tag className="w-4 h-4" /> {coupon.code}
+                          </span>
+                          <span className={`salon-coupon-status ${status.class}`}>{status.label}</span>
+                        </div>
+                        <div className="salon-coupon-discount">{discountText} off</div>
+                        {coupon.minPurchaseAmount > 0 && (
+                          <div className="salon-coupon-min">
+                            Min: {coupon.minPurchaseAmount.toLocaleString('vi-VN')} VND
+                          </div>
+                        )}
+                        <div className="salon-coupon-validity">
+                          Valid: {new Date(coupon.startDate).toLocaleDateString('vi-VN')} - {new Date(coupon.endDate).toLocaleDateString('vi-VN')}
+                        </div>
+                        {canCollect && (
+                          <button
+                            type="button"
+                            className="salon-coupon-collect-btn"
+                            onClick={() => handleCollectCoupon(coupon._id)}
+                            disabled={collectingId === coupon._id}
+                          >
+                            <Gift className="w-4 h-4" />
+                            {collectingId === coupon._id ? 'Đang lưu...' : 'Lưu coupon'}
+                          </button>
+                        )}
+                        {isCollected && (
+                          <span className="salon-coupon-collected-badge">
+                            <Check className="w-4 h-4" /> Đã lưu
+                          </span>
+                        )}
+                        {isCustomer && status.label !== 'Active' && !isCollected && (
+                          <span className="salon-coupon-unavailable">Không thể lưu</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>
