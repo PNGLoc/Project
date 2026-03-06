@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, useMatch } from 'react-router-dom';
+import React, { useState } from 'react';
 import HeaderHome from '../../components/layout/HeaderHome';
 import ServiceManagement from './ServiceManagement';
 import SalonCalendar from './SalonCalendar';
@@ -9,14 +8,12 @@ import '../../assets/css/SalonDashboard.css';
 const SalonDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const user = JSON.parse(localStorage.getItem('user'));
-    const isStaffRoute = useMatch('/salon/staff') || useMatch('/salon/staff/*');
     const isStaffUser = user?.role === 'STAFF';
 
     return (
         <div className="salon-full-layout">
             <main className="salon-main-wrapper">
-                {!isStaffRoute && (
-                    <header className="dashboard-top-bar">
+                <header className="dashboard-top-bar">
                         <div className="dynamic-title">
                             {!isStaffUser && (activeTab === 'overview' ? (
                                 <>
@@ -68,20 +65,13 @@ const SalonDashboard = () => {
                         </nav>
                         <div className="header-balance-div"></div>
                     </header>
-                )}
 
                 <div className="content-render-area">
-                    {isStaffRoute ? (
-                        <Outlet />
-                    ) : (
-                        <>
-                            {activeTab === 'overview' && (
-                                <Overview onTabChange={setActiveTab} />
-                            )}
-                            {activeTab === 'services' && <ServiceManagement />}
-                            {activeTab === 'calendar' && <SalonCalendar />}
-                        </>
+                    {activeTab === 'overview' && (
+                        <Overview onTabChange={setActiveTab} />
                     )}
+                    {activeTab === 'services' && <ServiceManagement />}
+                    {activeTab === 'calendar' && <SalonCalendar />}
                 </div>
             </main>
         </div>

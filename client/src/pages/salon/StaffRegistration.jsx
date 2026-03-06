@@ -19,7 +19,7 @@ function StaffRegistration() {
                     <div style={{ marginTop: '30px', textAlign: 'center' }}>
                         <p style={{ color: '#6b7280', fontSize: '16px' }}>
                             <Link 
-                                to="/salon/dashboard" 
+                                to="/salon" 
                                 style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: '500' }}
                             >
                                 ← Back to Dashboard

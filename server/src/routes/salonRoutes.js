@@ -7,6 +7,7 @@ import {
     registerSalon, approveSalon, rejectSalon, getAllSalons, getPendingSalons,
     getSalonDetails
 } from '../controllers/salonController.js';
+import { getSalonCoupons } from '../controllers/salonCouponController.js';
 
 import { fileURLToPath } from 'url';
 
@@ -39,6 +40,8 @@ const upload = multer({ storage: storage });
 router.get('/', getAllSalons);
 // public detail endpoint used by SalonDetail page
 router.get('/:id/details', getSalonDetails);
+// public coupons for salon (filter/sort supported)
+router.get('/:id/coupons', getSalonCoupons);
 router.post('/register', protect, upload.single('image'), registerSalon); // 'image' phải khớp với field bên Frontend gửi lên
 router.get('/pending', protect, getPendingSalons);
 router.patch('/approve/:id', protect, approveSalon);

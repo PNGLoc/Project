@@ -151,7 +151,7 @@ const HeaderHome = () => {
                                             <Link to="/salon" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                                 <GoBriefcase /> My Salon
                                             </Link>
-                                            <Link to="/salon/staff" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                            <Link to="/stafflist" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
                                                 <FaUsers /> My Staff
                                             </Link>
                                             <Link to="/salon/coupons" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>

@@ -206,7 +206,7 @@ function StaffList() {
               <option value="status_inactive_first">Inactive First</option>
             </select>
           </div>
-          <Link to="/salon/staff/add">
+          <Link to="/stafflist/add">
             <button className="staff-add-button">+ Add New Staff</button>
           </Link>
         </div>
@@ -258,7 +258,7 @@ function StaffList() {
                       onClick={() => handleDelete(staff._id, staff.isActive)}
                       className={staff.isActive ? 'staff-btn-delete' : 'staff-btn-restore'}
                     >
-                      {staff.isActive ? 'Delete' : 'Restore'}
+                      {staff.isActive ? 'Ban' : 'Unban'}
                     </button>
                   </td>
                 </tr>

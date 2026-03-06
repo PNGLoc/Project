@@ -220,6 +220,92 @@
   background: #ccfbf1;
 }
 
+/* Collected Coupons grid */
+.profile-coupons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.profile-coupon-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-coupon-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.profile-coupon-code {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.profile-coupon-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.profile-coupon-status.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.profile-coupon-status.expired {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.profile-coupon-discount {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.profile-coupon-salon {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.profile-coupon-validity {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.profile-coupon-discard-btn {
+  margin-top: 8px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid #e11d48;
+  color: #e11d48;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.profile-coupon-discard-btn:hover:not(:disabled) {
+  background: #e11d48;
+  color: #fff;
+}
+
+.profile-coupon-discard-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .profile-wrapper {
     flex-direction: column;

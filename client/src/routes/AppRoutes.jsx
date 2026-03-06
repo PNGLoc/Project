@@ -73,11 +73,11 @@ const AppRoutes = () => {
                 {/* Role: SALON_OWNER */}
                 <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>
                     <Route path="/salon" element={<SalonDashboard />}>
-                        <Route path="staff/add" element={<StaffRegistration />} />
                         <Route path="dashboard" element={<SalonDashboard />} />
-                        <Route path="staff" element={<StaffList />} />
                         <Route path="calendar" element={<SalonCalendar />} />
                     </Route>
+                    <Route path="/stafflist" element={<StaffList />} />
+                    <Route path="/stafflist/add" element={<StaffRegistration />} />
                     <Route path="/salon/coupons" element={<MyCoupon />} />
                 </Route>
 
