@@ -506,3 +506,49 @@
     color: #6b7280;
     /* text-muted-foreground */
 }
+
+/* Drag & Drop Styles */
+.drag-indicator {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.2);
+    user-select: none;
+    transition: color 0.2s;
+}
+
+.appointment-card:hover .drag-indicator {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.appointment-card.opacity-50 {
+    opacity: 0.5 !important;
+    pointer-events: none;
+}
+
+.slot-cell {
+    min-height: 80px;
+    transition: background-color 0.2s ease;
+    padding: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.calendar-grid {
+    user-select: none;
+    /* Prevent text selection during drag */
+}
+
+.fetching-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+}

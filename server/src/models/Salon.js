@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const salonSchema = new mongoose.Schema({
-    // 1. Liên kết với chủ sở hữu (Bảng Users)
+    // 1. Link to Owner (User collection)
     ownerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -9,61 +9,61 @@ const salonSchema = new mongoose.Schema({
         unique: true
     },
 
-    // 2. Thông tin cơ bản
+    // 2. Basic Info
     name: { type: String, required: true },
-    phone: { type: String, required: true }, // SĐT Hotline của tiệm
+    phone: { type: String, required: true }, // Salon Hotline Phone
 
-    // 3. Địa chỉ chi tiết (Dạng Object như tài liệu yêu cầu)
+    // 3. Detailed Address
     address: {
         street: String,
         district: String,
         city: { type: String, default: 'TP. Hồ Chí Minh' }
     },
 
-    // 4. Vị trí bản đồ (GeoJSON để tìm kiếm theo bán kính)
+    // 4. Map Location (GeoJSON for radius search)
     location: {
         type: { type: String, enum: ['Point'], default: 'Point' },
-        coordinates: { type: [Number], default: [0, 0] } // [Kinh độ, Vĩ độ]
+        coordinates: { type: [Number], default: [0, 0] } // [Longitude, Latitude]
     },
 
-    // 5. Hình ảnh (Dùng mảng images thay vì 1 string đơn lẻ)
+    // 5. Images (Array of image paths)
     images: [String],
 
-    // 6. Trạng thái vận hành (QUAN TRỌNG)
-    isApproved: { type: Boolean, default: false }, // Admin duyệt mới lên sàn
-    isActive: { type: Boolean, default: false },   // Chủ tiệm tự đóng/mở cửa
-    rejectionReason: String,                       // Lý do từ chối nếu có
+    // 6. Operation Status
+    isApproved: { type: Boolean, default: false }, // Requires Admin approval
+    isActive: { type: Boolean, default: false },   // Owner can toggle open/closed
+    rejectionReason: String,                       // Rejection reason if any
 
-    // 7. Giờ mở cửa (Cấu hình ca làm việc)
+    // 7. Opening Hours
     workingHours: [{
-        day: Number,  // 0: CN, 1: T2...
+        day: Number,  // 0: Sun, 1: Mon...
         open: String, // "08:00"
         close: String // "20:00"
     }],
 
-    // 8. Dữ liệu hiển thị (Thừa hưởng từ bản cũ)
+    // 8. Display Data
     rating: { type: Number, default: 0 },
     reviews: { type: Number, default: 0 }
 
 }, {
-    timestamps: true, // Tự động tạo createdAt, updatedAt
+    timestamps: true, // Automatically create createdAt, updatedAt
     collection: 'salon'
 });
 
 salonSchema.index({ ownerId: 1 }, { unique: false });
 
-// Index địa lý để hỗ trợ tìm Salon gần đây
+// Geospatial index for nearby salon search
 salonSchema.index({ location: "2dsphere" });
 
 salonSchema.post('save', async function (doc) {
     try {
-        // Tự động tìm thằng User chủ sở hữu và gắn ID của cái Salon này vào
+        // Automatically link the Salon ID to the Owner (User)
         await mongoose.model('User').findByIdAndUpdate(doc.ownerId, {
             salonId: doc._id
         });
-        console.log("Đã cập nhật salonId cho User thành công!");
+        console.log("Successfully updated salonId for User!");
     } catch (err) {
-        console.error("Lỗi cập nhật salonId cho User:", err);
+        console.error("Error updating salonId for User:", err);
     }
 });
 

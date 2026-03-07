@@ -30,6 +30,7 @@ import BookAppointment from '../pages/booking/BookAppointment';
 import BookingHistory from '../pages/booking/BookingHistory';
 import SalonCalendar from '../pages/salon/SalonCalendar';
 import MyCoupon from '../pages/salon/MyCoupon';
+import SalonBookingHistory from '../pages/salon/BookingHistory';
 
 import MainLayout from '../components/layout/MainLayout';
 
@@ -70,12 +71,10 @@ const AppRoutes = () => {
                     <Route path="/book-appointment" element={<BookAppointment />} />
                     <Route path="/booking-history" element={<BookingHistory />} />
                 </Route>
-                {/* Role: SALON_OWNER */}
-                <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER']} />}>
-                    <Route path="/salon" element={<SalonDashboard />}>
-                        <Route path="dashboard" element={<SalonDashboard />} />
-                        <Route path="calendar" element={<SalonCalendar />} />
-                    </Route>
+                {/* Role: SALON_OWNER & STAFF */}
+                <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER', 'STAFF']} />}>
+                    <Route path="/salon" element={<SalonDashboard />} />
+                    <Route path="/salon/dashboard" element={<SalonDashboard />} />
                     <Route path="/stafflist" element={<StaffList />} />
                     <Route path="/stafflist/add" element={<StaffRegistration />} />
                     <Route path="/salon/coupons" element={<MyCoupon />} />
@@ -102,7 +101,7 @@ const AppRoutes = () => {
             </Route>
 
             {/* 404 - NOT FOUND */}
-            <Route path="*" element={<div>404 - Không tìm thấy trang</div>} />
+            <Route path="*" element={<div>404 - Page Not Found</div>} />
         </Routes>
     );
 };

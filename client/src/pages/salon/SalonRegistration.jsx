@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import '../../assets/css/SalonRegistration.css';
 import HeaderHome from '../../components/layout/HeaderHome';
 
 const SalonRegistration = () => {
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(false); // Thêm loading state
+    const [isLoading, setIsLoading] = useState(false); // Loading state
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
@@ -20,15 +21,15 @@ const SalonRegistration = () => {
         const { name, value } = e.target;
 
         if (name === 'city') {
-            // Chỉ lọc bỏ số cho riêng ô City
+            // Filter out numbers for City field
             const cleanValue = value.replace(/\d/g, '');
             setFormData({ ...formData, [name]: cleanValue });
         } else if (name === 'phone') {
-            // Chỉ cho phép nhập số cho ô Phone
+            // Only allow digits for Phone field
             const cleanPhone = value.replace(/\D/g, '');
             setFormData({ ...formData, [name]: cleanPhone });
         } else {
-            // Các ô khác (name, street, district) giữ nguyên
+            // Other fields (name, street, district) remain same
             setFormData({ ...formData, [name]: value });
         }
     };
@@ -36,7 +37,7 @@ const SalonRegistration = () => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Xóa URL ảo cũ để tránh rò rỉ bộ nhớ
+            // Revoke old object URL to avoid memory leaks
             if (formData.image) {
                 URL.revokeObjectURL(URL.createObjectURL(formData.image));
             }
@@ -48,31 +49,31 @@ const SalonRegistration = () => {
         e.preventDefault();
 
         if (/\d/.test(formData.city)) {
-            alert("City name cannot contain numbers.");
+            toast.warning("City name cannot contain numbers.");
             return;
         }
 
         const phoneRegex = /^[0-9]{10,11}$/;
         if (!phoneRegex.test(formData.phone)) {
-            alert("Invalid phone number. Please enter a valid 10 or 11 digit phone number.");
+            toast.warning("Invalid phone number. Please enter a valid 10 or 11 digit phone number.");
             return;
         }
 
-        // 2. Kiểm tra bắt buộc nhập District và City
+        // Required check for District and City
         if (!formData.district.trim() || !formData.city.trim()) {
-            alert("Please enter both District and City");
+            toast.warning("Please enter both District and City");
             return;
         }
-        setIsLoading(true); // Bắt đầu loading
+        setIsLoading(true); // Start loading
 
         try {
-            // 1. Lấy token từ localStorage
+            // 1. Get token from localStorage
             const userStr = localStorage.getItem('user');
             const user = userStr ? JSON.parse(userStr) : null;
             const token = localStorage.getItem('token');
 
             if (!token) {
-                alert("Session expired. Please login again.");
+                toast.error("Session expired. Please login again.");
                 navigate('/login');
                 return;
             }
@@ -96,39 +97,38 @@ const SalonRegistration = () => {
                 }
             });
 
-            // --- 4. XỬ LÝ SAU KHI THÀNH CÔNG (QUAN TRỌNG) ---
+            // --- 4. POST-SUCCESS HANDLING ---
             if (response.status === 201) {
-                // A. Cập nhật LocalStorage: Thêm salonId vào user hiện tại
+                // A. Update LocalStorage: Add salonId to current user
                 const updatedUser = {
                     ...user,
-                    salonId: response.data._id // ID của salon vừa tạo
-                    // Lưu ý: Không đổi role ở đây, để Backend lo hoặc Admin duyệt xong mới đổi
+                    salonId: response.data._id // Newly created salon ID
                 };
                 localStorage.setItem('user', JSON.stringify(updatedUser));
 
-                // B. Bắn tín hiệu để Header cập nhật giao diện ngay lập tức
+                // B. Dispatch event for Header to update UI immediately
                 window.dispatchEvent(new Event('userUpdated'));
 
-                // C. Thông báo và chuyển hướng
-                alert("Registration successful! Your application is under review.");
+                // C. Notify and redirect
+                toast.success("Registration successful! Your application is under review.");
                 navigate('/');
             }
 
         } catch (error) {
-            console.error("Lỗi đăng ký:", error.response?.data);
+            console.error("Registration error:", error.response?.data);
 
-            // Xử lý lỗi trùng lặp (Duplicate Key)
+            // Handle duplicate key error
             if (error.response?.data?.error === "DUPLICATE_OWNER" || error.response?.status === 400) {
-                alert(error.response?.data?.message || "You have already registered a salon.");
+                toast.error(error.response?.data?.message || "You have already registered a salon.");
             } else if (error.response?.status === 401) {
-                alert("Session expired. Please login again.");
+                toast.error("Session expired. Please login again.");
                 navigate('/login');
             } else {
                 const serverMessage = error.response?.data?.message || "An error occurred. Please try again later.";
-                alert(serverMessage);
+                toast.error(serverMessage);
             }
         } finally {
-            setIsLoading(false); // Tắt loading dù thành công hay thất bại
+            setIsLoading(false); // Stop loading regardless of outcome
         }
     };
 

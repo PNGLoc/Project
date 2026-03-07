@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { useLookbookById } from '../../features/posts/hooks/usePosts.js';
 import postApi from '../../features/posts/api/postApi.js';
 import '../../assets/css/LookbookDetail.css'; // We'll create this CSS
@@ -61,7 +62,7 @@ const LookbookDetail = () => {
 
     const handleToggleLike = async () => {
         if (!currentUser._id) {
-            alert('Please login to like this lookbook.');
+            toast.info('Please login to like this lookbook.');
             return;
         }
         try {
@@ -81,7 +82,7 @@ const LookbookDetail = () => {
     const handleAddComment = async (e) => {
         e.preventDefault();
         if (!currentUser._id) {
-            alert('Please login to comment.');
+            toast.info('Please login to comment.');
             return;
         }
         if (!newComment.trim()) return;

@@ -2,8 +2,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axiosClient from '../../lib/axios';
+import { toast } from 'react-toastify';
 
 import '../../assets/css/StaffList.css'; // Import CSS
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 function StaffList() {
   const [staffs, setStaffs] = useState([]);
@@ -20,6 +22,12 @@ function StaffList() {
   const [editPhone, setEditPhone] = useState('');
   const [editSkills, setEditSkills] = useState('');
   const [validationError, setValidationError] = useState('');
+
+  // Confirm Modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    pendingData: null
+  });
 
   useEffect(() => {
     fetchStaffs();
@@ -48,7 +56,7 @@ function StaffList() {
     }
   };
 
-  // Tìm kiếm + Lọc + Sắp xếp theo tên, email HOẶC skill
+  // Search + Filter + Sort by name, email OR skill
   const filteredStaffs = (() => {
     const searchLower = search.toLowerCase().trim();
 
@@ -97,17 +105,29 @@ function StaffList() {
     return list;
   })();
 
-  const handleDelete = async (staffId, currentStatus) => {
+  const handleDelete = (staffId, currentStatus) => {
     const actionText = currentStatus ? 'deactivate' : 'reactivate';
-    if (!window.confirm(`Are you sure you want to ${actionText} this staff member?`)) return;
+    setConfirmModal({
+      isOpen: true,
+      pendingData: { staffId, currentStatus },
+      title: `${currentStatus ? 'Ban' : 'Unban'} Staff`,
+      message: `Are you sure you want to ${actionText} this staff member?`
+    });
+  };
+
+  const executeDelete = async () => {
+    if (!confirmModal.pendingData) return;
+    const { staffId } = confirmModal.pendingData;
 
     try {
+      setConfirmModal({ ...confirmModal, isOpen: false });
       await axiosClient.delete(`/api/staffs/${staffId}`);
       setStaffs(staffs.map(s =>
         s._id === staffId ? { ...s, isActive: !s.isActive } : s
       ));
+      toast.success('Staff status updated successfully!');
     } catch (err) {
-      alert('Failed to update staff status');
+      toast.error('Failed to update staff status');
     }
   };
 
@@ -127,13 +147,13 @@ function StaffList() {
 
   const handleSaveChanges = async () => {
     if (!editName.trim()) return setValidationError('Full Name is required.');
-   if (!editPhone.trim()) {
-    return setValidationError('Phone number is required.');
-  }
-  const cleanedPhone = editPhone.replace(/\D/g, '');
-  if (cleanedPhone.length !== 10 || !/^\d{10}$/.test(cleanedPhone)) {
-    return setValidationError('Phone number must be exactly 10 digits (e.g. 0901234567).');
-  }
+    if (!editPhone.trim()) {
+      return setValidationError('Phone number is required.');
+    }
+    const cleanedPhone = editPhone.replace(/\D/g, '');
+    if (cleanedPhone.length !== 10 || !/^\d{10}$/.test(cleanedPhone)) {
+      return setValidationError('Phone number must be exactly 10 digits (e.g. 0901234567).');
+    }
     if (!editSkills.trim()) return setValidationError('Skills are required.');
 
     try {
@@ -160,16 +180,16 @@ function StaffList() {
       setStaffs(staffs.map(s =>
         s._id === selectedStaff._id
           ? {
-              ...s,
-              fullName: editName,
-              skills: updatedSkills,
-              userId: { ...s.userId, phone: editPhone }
-            }
+            ...s,
+            fullName: editName,
+            skills: updatedSkills,
+            userId: { ...s.userId, phone: editPhone }
+          }
           : s
       ));
 
       setModalOpen(false);
-      alert('Staff updated successfully!');
+      toast.success('Staff updated successfully!');
     } catch (err) {
       console.error(err);
       setValidationError(err.response?.data?.message || 'Failed to update staff');
@@ -178,7 +198,7 @@ function StaffList() {
 
   return (
     <>
-    
+
       <div className="staff-management-container">
         <h1 className="staff-management-title">Staff Management</h1>
         <p className="staff-management-subtitle">Manage your salon staff members.</p>
@@ -345,6 +365,16 @@ function StaffList() {
             ← Back to Dashboard
           </Link>
         </div>
+
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          onConfirm={executeDelete}
+          onCancel={() => setConfirmModal({ isOpen: false, pendingData: null })}
+          confirmText={confirmModal.pendingData?.currentStatus ? 'Ban Staff' : 'Unban Staff'}
+          type={confirmModal.pendingData?.currentStatus ? 'danger' : 'primary'}
+        />
       </div>
     </>
   );

@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '../../lib/axios';
-import { toast } from 'react-toastify'; // Assume toast is available or use simple alert
+import { toast } from 'react-toastify';
+import ConfirmModal from '../ui/ConfirmModal';
+import './AppointmentModal.css';
 
 const AppointmentModal = ({ isOpen, onClose, appointmentId, onUpdateSuccess }) => {
     const [appointment, setAppointment] = useState(null);
     const [loading, setLoading] = useState(false);
     const [updating, setUpdating] = useState(false);
+
+    // Confirm Modal state
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { }
+    });
 
     // Editable fields
     const [status, setStatus] = useState('');
@@ -65,20 +75,27 @@ const AppointmentModal = ({ isOpen, onClose, appointmentId, onUpdateSuccess }) =
         }
     };
 
-    const handleDelete = async () => {
-        if (!window.confirm('Are you sure you want to completely cancel and remove this schedule?')) return;
-
-        try {
-            setUpdating(true);
-            setError('');
-            await axiosClient.delete(`/api/appointments/${appointmentId}`);
-            onUpdateSuccess();
-            onClose();
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to delete schedule.');
-        } finally {
-            setUpdating(false);
-        }
+    const handleDelete = () => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Cancel Appointment',
+            message: 'Are you sure you want to completely cancel and remove this appointment?',
+            onConfirm: async () => {
+                try {
+                    setUpdating(true);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                    await axiosClient.delete(`/api/appointments/${appointmentId}`);
+                    toast.success('Appointment cancelled successfully');
+                    onUpdateSuccess();
+                    onClose();
+                } catch (err) {
+                    console.error('Delete error:', err);
+                    setError(err.response?.data?.message || 'Failed to delete schedule.');
+                } finally {
+                    setUpdating(false);
+                }
+            }
+        });
     };
 
     if (!isOpen) return null;
@@ -194,6 +211,16 @@ const AppointmentModal = ({ isOpen, onClose, appointmentId, onUpdateSuccess }) =
                         </div>
                     </form>
                 ) : null}
+
+                <ConfirmModal
+                    isOpen={confirmModal.isOpen}
+                    title={confirmModal.title}
+                    message={confirmModal.message}
+                    onConfirm={confirmModal.onConfirm}
+                    onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                    confirmText="Cancel Appointment"
+                    type="danger"
+                />
             </div>
         </div>
     );

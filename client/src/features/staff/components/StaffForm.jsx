@@ -1,4 +1,5 @@
 // src/features/staff/components/StaffForm.jsx
+import { toast } from 'react-toastify';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRegisterStaff } from '../hooks/useRegisterStaff';
@@ -70,7 +71,7 @@ const StaffForm = () => {
                 password
             });
 
-            alert('Staff added successfully! Login credentials have been sent to their email.');
+            toast.success('Staff added successfully! Login credentials have been sent to their email.');
             navigate('/stafflist');
         } catch (err) {
             // Error từ server sẽ được hook xử lý và trả về trong `error`

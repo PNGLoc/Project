@@ -20,11 +20,11 @@ const StaffDetail = () => {
         if (res.data.success) {
           setStaffData(res.data.data);
         } else {
-          setError(res.data.message || "Không thể tải thông tin staff");
+          setError(res.data.message || "Unable to load staff information");
         }
       } catch (err) {
-        console.error("Lỗi lấy chi tiết staff:", err);
-        setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.");
+        console.error("Error fetching staff details:", err);
+        setError("An error occurred while loading data. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -41,7 +41,7 @@ const StaffDetail = () => {
   if (loading) {
     return (
       <div className="staff-detail-loading">
-        Đang tải thông tin stylist...
+        Loading stylist information...
       </div>
     );
   }
@@ -49,7 +49,7 @@ const StaffDetail = () => {
   if (error || !staffData) {
     return (
       <div className="staff-detail-error">
-        {error || "Không tìm thấy stylist"}
+        {error || "Stylist not found"}
       </div>
     );
   }
@@ -69,10 +69,10 @@ const StaffDetail = () => {
         <button
           onClick={() => navigate(-1)}
           className="staff-detail-back-btn"
-          aria-label="Quay lại"
+          aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Quay lại</span>
+          <span>Back</span>
         </button>
       </div>
 
@@ -97,7 +97,7 @@ const StaffDetail = () => {
                 onClick={handleBookAtSalon}
                 className="staff-detail-salon-btn"
               >
-                Xem salon
+                View Salon
               </button>
             </div>
           </div>
@@ -108,7 +108,7 @@ const StaffDetail = () => {
       <div className="staff-detail-main max-w-4xl mx-auto px-4 py-12">
         {/* Skills Section - always show */}
         <section className="staff-detail-section">
-          <h2 className="staff-detail-section-title">Kỹ năng & Chuyên môn</h2>
+          <h2 className="staff-detail-section-title">Skills & Expertise</h2>
           {skills.length > 0 ? (
             <div className="staff-detail-skills-grid">
               {skills.map((skill, idx) => (
@@ -121,7 +121,7 @@ const StaffDetail = () => {
               ))}
             </div>
           ) : (
-            <p className="staff-detail-empty">Chưa có kỹ năng nào.</p>
+            <p className="staff-detail-empty">No skills listed.</p>
           )}
         </section>
 
@@ -143,14 +143,14 @@ const StaffDetail = () => {
               )}
             </div>
           ) : (
-            <p className="staff-detail-empty">Chưa có hình ảnh portfolio.</p>
+            <p className="staff-detail-empty">No portfolio images.</p>
           )}
         </section>
 
         {/* Salon info */}
         {salon.name && (
           <section className="staff-detail-section staff-detail-salon-section">
-            <h2 className="staff-detail-section-title">Làm việc tại</h2>
+            <h2 className="staff-detail-section-title">Works at</h2>
             <div
               className="staff-detail-salon-card"
               onClick={handleBookAtSalon}
