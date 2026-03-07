@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axiosClient from '../../lib/axios';
+import { toast } from 'react-toastify';
 import '../../assets/css/SalonCalendar.css';
 import AppointmentModal from '../../components/booking/AppointmentModal';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DndProvider } from 'react-dnd';
+import DraggableAppointment from '../../components/booking/DraggableAppointment';
+import DroppableSlot from '../../components/booking/DroppableSlot';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const SalonCalendar = () => {
     const [stylists, setStylists] = useState([]);
@@ -20,9 +26,24 @@ const SalonCalendar = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [filterStatus, setFilterStatus] = useState('all');
 
+    // Confirm Modal state
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        pendingData: null
+    });
+
     const timeSlots = [
         '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
     ];
+
+    // Helper to get YYYY-MM-DD in local time
+    const getLocalYYYYMMDD = (date) => {
+        if (!date) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
     // Fetch staffs from API
     const fetchStylists = useCallback(async () => {
@@ -81,7 +102,7 @@ const SalonCalendar = () => {
 
         try {
             setFetchingAppointments(true);
-            const dateStr = selectedDate.toISOString().split('T')[0];
+            const dateStr = getLocalYYYYMMDD(selectedDate);
             const response = await axiosClient.get(`/api/appointments/salon?date=${dateStr}`);
 
             const rawData = response.data?.data || [];
@@ -122,7 +143,7 @@ const SalonCalendar = () => {
         fetchAppointments();
     }, [fetchAppointments]);
 
-    const activeDateStr = selectedDate.toISOString().split('T')[0];
+    const activeDateStr = getLocalYYYYMMDD(selectedDate);
 
     // Apply local filters for Status
     const filteredAppointments = appointments.filter(app => {
@@ -166,6 +187,59 @@ const SalonCalendar = () => {
         setSelectedAppointmentId(null);
     };
 
+    const handleAppointmentDrop = (appointmentId, timeString, stylistId) => {
+        setConfirmModal({
+            isOpen: true,
+            pendingData: { appointmentId, timeString, stylistId }
+        });
+    };
+
+    const confirmReschedule = async () => {
+        if (!confirmModal.pendingData) return;
+
+        const { appointmentId, timeString, stylistId } = confirmModal.pendingData;
+
+        try {
+            setFetchingAppointments(true);
+            setConfirmModal({ isOpen: false, pendingData: null });
+
+            // Construct new start time: use local date parts from selectedDate and time parts from timeString
+            const [hours, minutes] = timeString.split(':');
+            const newDate = new Date(
+                selectedDate.getFullYear(),
+                selectedDate.getMonth(),
+                selectedDate.getDate(),
+                parseInt(hours, 10),
+                parseInt(minutes, 10),
+                0,
+                0
+            );
+
+            // Rule 4: Block rescheduling to the past
+            const now = new Date();
+            if (newDate < now) {
+                toast.warning('Cannot reschedule appointments to a past time slot.');
+                setFetchingAppointments(false);
+                return;
+            }
+
+            // Send PUT request
+            await axiosClient.put(`/api/appointments/${appointmentId}`, {
+                startAt: newDate.toISOString(),
+                staffId: stylistId
+            });
+
+            toast.success('Appointment rescheduled successfully!');
+            // Refetch
+            fetchAppointments();
+        } catch (err) {
+            console.error('Failed to reschedule', err);
+            toast.error(err.response?.data?.message || 'Failed to reschedule appointment.');
+            setFetchingAppointments(false);
+            setConfirmModal({ isOpen: false, pendingData: null });
+        }
+    };
+
     const handleUpdateSuccess = () => {
         fetchAppointments(); // Refresh calendar data
     };
@@ -201,7 +275,7 @@ const SalonCalendar = () => {
     };
 
     // Format date for input value (YYYY-MM-DD)
-    const inputFormattedDate = selectedDate.toISOString().split('T')[0];
+    const inputFormattedDate = getLocalYYYYMMDD(selectedDate);
 
     if (loading) {
         return (
@@ -221,177 +295,209 @@ const SalonCalendar = () => {
     }
 
     return (
-        <div className="calendar-page">
-            {/* Header Area */}
-            <header className="calendar-header">
-                <div className="calendar-title-section">
-                </div>
-                <div className="calendar-actions">
-                    <div className="filter-dropdown-container">
-                        <button className="btn-filter" style={{ minWidth: '160px', justifyContent: 'space-between' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                                {filterStatus === 'all' ? 'All Statuses' : filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}
-                            </span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </button>
-                        <div className="filter-dropdown-menu admin-card" style={{ marginBottom: 0 }}>
-                            <div className="filter-option" onClick={() => setFilterStatus('all')}>All Statuses</div>
-                            <div className="filter-option" onClick={() => setFilterStatus('pending')}>Pending</div>
-                            <div className="filter-option" onClick={() => setFilterStatus('confirmed')}>Confirmed</div>
-                            <div className="filter-option" onClick={() => setFilterStatus('completed')}>Completed</div>
-                            <div className="filter-option" onClick={() => setFilterStatus('cancelled')}>Cancelled</div>
-                        </div>
+        <DndProvider backend={HTML5Backend}>
+            <div className="calendar-page">
+                {/* Header Area */}
+                <header className="calendar-header">
+                    <div className="calendar-title-section">
                     </div>
-                    {!isStaff && (
-                        <button className="btn-new">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            New Appointment
+                    <div className="calendar-actions">
+                        <div className="filter-dropdown-container">
+                            <button className="btn-filter" style={{ minWidth: '160px', justifyContent: 'space-between' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                    {filterStatus === 'all' ? 'All Statuses' : filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}
+                                </span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div className="filter-dropdown-menu admin-card" style={{ marginBottom: 0 }}>
+                                <div className="filter-option" onClick={() => setFilterStatus('all')}>All Statuses</div>
+                                <div className="filter-option" onClick={() => setFilterStatus('pending')}>Pending</div>
+                                <div className="filter-option" onClick={() => setFilterStatus('confirmed')}>Confirmed</div>
+                                <div className="filter-option" onClick={() => setFilterStatus('completed')}>Completed</div>
+                                <div className="filter-option" onClick={() => setFilterStatus('cancelled')}>Cancelled</div>
+                            </div>
+                        </div>
+                        {!isStaff && (
+                            <button className="btn-new">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                New Appointment
+                            </button>
+                        )}
+                    </div>
+                </header>
+
+                {/* Date Navigator */}
+                <div className="admin-card">
+                    <div className="admin-card-content date-navigator">
+                        <button className="nav-btn" onClick={handlePrevDay}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
                         </button>
+
+                        <div className="date-picker-wrapper">
+                            <input
+                                type="date"
+                                ref={dateInputRef}
+                                className="hidden-date-input"
+                                value={inputFormattedDate}
+                                onChange={handleDateChange}
+                            />
+                            <button className="current-date-btn" onClick={triggerDatePicker}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                {formatDate(selectedDate)}
+                            </button>
+                        </div>
+
+                        <button className="nav-btn" onClick={handleNextDay}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Legend & Help */}
+                <div className="status-legend">
+                    <span className="legend-label">Status:</span>
+                    <span className="badge pending">Pending</span>
+                    <span className="badge confirmed">Confirmed</span>
+                    <span className="badge completed">Completed</span>
+                    <span className="badge cancelled">Cancelled</span>
+
+                    <span className="drag-tip">
+                        💡 Tip: Click on an appointment to view or edit details
+                    </span>
+                </div>
+
+                {/* Main Calendar Grid */}
+                <div className="calendar-container" style={{ position: 'relative' }}>
+                    {fetchingAppointments && (
+                        <div className="fetching-overlay">
+                            <div className="mini-spinner"></div>
+                        </div>
                     )}
-                </div>
-            </header>
+                    <div className="calendar-grid" style={{ gridTemplateColumns: `100px repeat(${stylistsWithCounts.length}, 1fr)` }}>
+                        {/* Header Row */}
+                        <div className="grid-header-row">
+                            {/* Corner Header */}
+                            <div className="grid-header time-col">
+                                <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Time</span>
+                            </div>
 
-            {/* Date Navigator */}
-            <div className="admin-card">
-                <div className="admin-card-content date-navigator">
-                    <button className="nav-btn" onClick={handlePrevDay}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </button>
+                            {/* Staff Headers */}
+                            {stylistsWithCounts.map((stylist, index) => {
+                                // Cycle through some colors for the top border
+                                const colors = ['#0d9488', '#f472b6', '#eab308', '#a855f7'];
+                                const borderColor = colors[index % colors.length];
 
-                    <div className="date-picker-wrapper">
-                        <input
-                            type="date"
-                            ref={dateInputRef}
-                            className="hidden-date-input"
-                            value={inputFormattedDate}
-                            onChange={handleDateChange}
-                        />
-                        <button className="current-date-btn" onClick={triggerDatePicker}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            {formatDate(selectedDate)}
-                        </button>
-                    </div>
-
-                    <button className="nav-btn" onClick={handleNextDay}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                </div>
-            </div>
-
-            {/* Legend & Help */}
-            <div className="status-legend">
-                <span className="legend-label">Status:</span>
-                <span className="badge pending">Pending</span>
-                <span className="badge confirmed">Confirmed</span>
-                <span className="badge completed">Completed</span>
-                <span className="badge cancelled">Cancelled</span>
-
-                <span className="drag-tip">
-                    💡 Tip: Click on an appointment to view or edit details
-                </span>
-            </div>
-
-            {/* Main Calendar Grid */}
-            <div className="calendar-container" style={{ position: 'relative' }}>
-                {fetchingAppointments && (
-                    <div className="fetching-overlay">
-                        <div className="mini-spinner"></div>
-                    </div>
-                )}
-                <div className="calendar-grid" style={{ gridTemplateColumns: `100px repeat(${stylistsWithCounts.length}, 1fr)` }}>
-                    {/* Header Row */}
-                    <div className="grid-header-row">
-                        {/* Corner Header */}
-                        <div className="grid-header time-col">
-                            <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Time</span>
+                                return (
+                                    <div key={stylist.id} className="grid-header" style={{ borderTop: `3px solid ${borderColor}` }}>
+                                        <div className="staff-info">
+                                            <span className="staff-name">{stylist.name}</span>
+                                            <span className="staff-meta">{stylist.appointments} appointments</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
-                        {/* Staff Headers */}
-                        {stylistsWithCounts.map((stylist, index) => {
-                            // Cycle through some colors for the top border
-                            const colors = ['#0d9488', '#f472b6', '#eab308', '#a855f7'];
-                            const borderColor = colors[index % colors.length];
+                        {/* Time Slots & Appointments */}
+                        {timeSlots.map(time => (
+                            <React.Fragment key={time}>
+                                <div className="time-cell">{time}</div>
+                                {stylistsWithCounts.map(stylist => {
+                                    const appointmentsInSlot = getAppointmentsForSlot(stylist.id, time);
 
-                            return (
-                                <div key={stylist.id} className="grid-header" style={{ borderTop: `3px solid ${borderColor}` }}>
-                                    <div className="staff-info">
-                                        <span className="staff-name">{stylist.name}</span>
-                                        <span className="staff-meta">{stylist.appointments} appointments</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                    // Check if this slot is in the past
+                                    const now = new Date();
+                                    const isToday = getLocalYYYYMMDD(selectedDate) === getLocalYYYYMMDD(now);
+                                    let isPast = false;
+                                    if (isToday) {
+                                        const [h, m] = time.split(':');
+                                        const slotDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(h), parseInt(m));
+                                        isPast = slotDate < now;
+                                    } else if (selectedDate < now) {
+                                        // If viewing a previous day (not likely in normal use but for safety)
+                                        isPast = true;
+                                    }
 
-                    {/* Time Slots & Appointments */}
-                    {timeSlots.map(time => (
-                        <React.Fragment key={time}>
-                            <div className="time-cell">{time}</div>
-                            {stylistsWithCounts.map(stylist => (
-                                <div key={`${stylist.id}-${time}`} className="slot-cell">
-                                    {getAppointmentsForSlot(stylist.id, time).map(app => (
-                                        <div
-                                            key={app.id}
-                                            className={`appointment-card ${app.status}`}
-                                            style={{ cursor: isStaff ? 'default' : 'pointer' }}
-                                            onClick={() => {
-                                                if (!isStaff) handleAppointmentClick(app.id);
-                                            }}
+                                    return (
+                                        <DroppableSlot
+                                            key={`${stylist.id}-${time}`}
+                                            time={time}
+                                            stylistId={stylist.id}
+                                            onDrop={handleAppointmentDrop}
+                                            isOccupied={appointmentsInSlot.length > 0}
+                                            isPast={isPast}
                                         >
-                                            <span className="client-name" title={app.clientName}>{app.clientName}</span>
-                                            <span className="service-name" title={app.service}>{app.service}</span>
-                                            <div className="apt-meta">
-                                                <span className={`status-badge-inline ${app.status}`}>
-                                                    {app.status}
-                                                </span>
-                                                <span className="time-range">{app.timeRange}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
-                        </React.Fragment>
-                    ))}
+                                            {appointmentsInSlot.map(app => (
+                                                <div
+                                                    key={app.id}
+                                                    onClick={() => {
+                                                        // Draggable sets its own events, but we also want click to open modal
+                                                        if (!isStaff) handleAppointmentClick(app.id);
+                                                    }}
+                                                    style={{ cursor: isStaff ? 'default' : 'pointer' }}
+                                                >
+                                                    <DraggableAppointment
+                                                        appointment={app}
+                                                        isStaff={isStaff}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </DroppableSlot>
+                                    );
+                                })}
+                            </React.Fragment>
+                        ))}
+                    </div>
                 </div>
-            </div>
 
-            {/* Footer Statistics */}
-            <div className="calendar-footer">
-                <div className="admin-card" style={{ marginBottom: 0 }}>
-                    <div className="stat-card-content">
-                        <span className="stat-value primary">{stats.total}</span>
-                        <span className="stat-label">Total Appointments</span>
+                {/* Footer Statistics */}
+                <div className="calendar-footer">
+                    <div className="admin-card" style={{ marginBottom: 0 }}>
+                        <div className="stat-card-content">
+                            <span className="stat-value primary">{stats.total}</span>
+                            <span className="stat-label">Total Appointments</span>
+                        </div>
+                    </div>
+                    <div className="admin-card" style={{ marginBottom: 0 }}>
+                        <div className="stat-card-content">
+                            <span className="stat-value">{stats.confirmed}</span>
+                            <span className="stat-label">Confirmed</span>
+                        </div>
+                    </div>
+                    <div className="admin-card" style={{ marginBottom: 0 }}>
+                        <div className="stat-card-content">
+                            <span className="stat-value yellow">{stats.pending}</span>
+                            <span className="stat-label">Pending</span>
+                        </div>
+                    </div>
+                    <div className="admin-card" style={{ marginBottom: 0 }}>
+                        <div className="stat-card-content">
+                            <span className="stat-value green">{stats.completed}</span>
+                            <span className="stat-label">Completed</span>
+                        </div>
                     </div>
                 </div>
-                <div className="admin-card" style={{ marginBottom: 0 }}>
-                    <div className="stat-card-content">
-                        <span className="stat-value">{stats.confirmed}</span>
-                        <span className="stat-label">Confirmed</span>
-                    </div>
-                </div>
-                <div className="admin-card" style={{ marginBottom: 0 }}>
-                    <div className="stat-card-content">
-                        <span className="stat-value yellow">{stats.pending}</span>
-                        <span className="stat-label">Pending</span>
-                    </div>
-                </div>
-                <div className="admin-card" style={{ marginBottom: 0 }}>
-                    <div className="stat-card-content">
-                        <span className="stat-value green">{stats.completed}</span>
-                        <span className="stat-label">Completed</span>
-                    </div>
-                </div>
-            </div>
 
-            {/* Premium Appointment Detail & Edit Modal */}
-            <AppointmentModal
-                isOpen={isModalOpen}
-                onClose={handleModalClose}
-                appointmentId={selectedAppointmentId}
-                onUpdateSuccess={handleUpdateSuccess}
-            />
-        </div>
+                {/* Premium Appointment Detail & Edit Modal */}
+                <AppointmentModal
+                    isOpen={isModalOpen}
+                    onClose={handleModalClose}
+                    appointmentId={selectedAppointmentId}
+                    onUpdateSuccess={handleUpdateSuccess}
+                />
+
+                <ConfirmModal
+                    isOpen={confirmModal.isOpen}
+                    title="Confirm Reschedule"
+                    message="Are you sure you want to move this appointment to a new time slot or stylist?"
+                    onConfirm={confirmReschedule}
+                    onCancel={() => setConfirmModal({ isOpen: false, pendingData: null })}
+                    confirmText="Reschedule"
+                    cancelText="Keep as is"
+                />
+            </div>
+        </DndProvider>
     );
 };
 

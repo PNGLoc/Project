@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FiMapPin } from 'react-icons/fi';
 import { FaStar } from 'react-icons/fa';
 import { HiSparkles } from 'react-icons/hi';
 import '../../assets/css/SalonCard.css';
+import ConfirmModal from '../ui/ConfirmModal';
 import { useFollow } from '../../features/social/hooks/useFollow';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,9 +16,9 @@ const SalonCard = ({ data, onUnfollow }) => {
 
     // --- PHẦN XỬ LÝ HIỂN THỊ CATEGORY ĐỘNG ---
     // data.categories được Backend (salonController) trả về dưới dạng mảng ["Hair", "Nails"]
-    const categoryDisplay = data.categories && data.categories.length > 0 
-        ? data.categories.join(' & ') 
-        : "Beauty Salon"; 
+    const categoryDisplay = data.categories && data.categories.length > 0
+        ? data.categories.join(' & ')
+        : "Beauty Salon";
 
     const currentUser = (() => {
         try {
@@ -37,15 +38,21 @@ const SalonCard = ({ data, onUnfollow }) => {
 
     const { isFollowing, loading, toggleFollow } = useFollow('SALON', data?._id, handleToggleCallback);
 
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
     const handleFollowClick = (e) => {
         e.stopPropagation();
         if (!isCustomer) return;
 
         if (isFollowing) {
-            const ok = window.confirm('Bạn có chắc chắn muốn bỏ Follow salon này không?');
-            if (!ok) return;
+            setIsConfirmOpen(true);
+        } else {
+            toggleFollow();
         }
+    };
 
+    const confirmUnfollow = () => {
+        setIsConfirmOpen(false);
         toggleFollow();
     };
 
@@ -59,7 +66,7 @@ const SalonCard = ({ data, onUnfollow }) => {
 
     return (
         <div className="salon-card">
-            <div className="salon-image" onClick={handleDetailsClick} style={{cursor:'pointer'}}>
+            <div className="salon-image" onClick={handleDetailsClick} style={{ cursor: 'pointer' }}>
                 <img src={imageUrl} alt={data.name} />
 
                 {data.isApproved && (
@@ -73,8 +80,8 @@ const SalonCard = ({ data, onUnfollow }) => {
             <div className="salon-info">
                 <div className="salon-header-row">
                     <div className="salon-header">
-                        <h3 className="salon-name" onClick={handleDetailsClick} style={{cursor:'pointer'}}>{data.name}</h3>
-                        
+                        <h3 className="salon-name" onClick={handleDetailsClick} style={{ cursor: 'pointer' }}>{data.name}</h3>
+
                         {/* THAY ĐỔI TẠI ĐÂY: Hiển thị danh mục động */}
                         <p className="salon-type">{categoryDisplay}</p>
                     </div>
@@ -103,6 +110,16 @@ const SalonCard = ({ data, onUnfollow }) => {
 
                 <button className="details-btn" onClick={handleDetailsClick}>View Details</button>
             </div>
+
+            <ConfirmModal
+                isOpen={isConfirmOpen}
+                title="Unfollow Salon"
+                message={`Are you sure you want to stop following "${data.name}"?`}
+                onConfirm={confirmUnfollow}
+                onCancel={() => setIsConfirmOpen(false)}
+                confirmText="Unfollow"
+                type="danger"
+            />
         </div>
     );
 };

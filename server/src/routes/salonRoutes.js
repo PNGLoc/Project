@@ -1,11 +1,11 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path'; // Thêm cái này để dùng path.join
+import path from 'path'; // Path module for path.join
 import fs from 'fs';
 import { protect } from '../middlewares/authMiddleware.js';
 import {
     registerSalon, approveSalon, rejectSalon, getAllSalons, getPendingSalons,
-    getSalonDetails
+    getSalonDetails, getDashboardStats
 } from '../controllers/salonController.js';
 import { getSalonCoupons } from '../controllers/salonCouponController.js';
 
@@ -17,16 +17,15 @@ const __dirname = path.dirname(__filename);
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Đường dẫn từ: Project/server/src/routes
-        // Nhảy 3 cấp (../../../) để ra Project/
+        // Path resolution: project root -> client/public/assets/salon/temp
         const uploadPath = path.resolve(__dirname, '../../../client/public/assets/salon/temp');
 
-        // Tạo folder nếu chưa có
+        // Create folder if not exists
         if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
         }
 
-        console.log("-> Multer chuẩn bị lưu vào:", uploadPath);
+        console.log("-> Multer saving to:", uploadPath);
         cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
@@ -42,7 +41,9 @@ router.get('/', getAllSalons);
 router.get('/:id/details', getSalonDetails);
 // public coupons for salon (filter/sort supported)
 router.get('/:id/coupons', getSalonCoupons);
-router.post('/register', protect, upload.single('image'), registerSalon); // 'image' phải khớp với field bên Frontend gửi lên
+// private dashboard stats for salon owner
+router.get('/dashboard/stats', protect, getDashboardStats);
+router.post('/register', protect, upload.single('image'), registerSalon); // 'image' field must match frontend FormData
 router.get('/pending', protect, getPendingSalons);
 router.patch('/approve/:id', protect, approveSalon);
 router.delete('/reject/:id', protect, rejectSalon);

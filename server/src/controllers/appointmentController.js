@@ -211,28 +211,79 @@ export const getSalonAppointments = async (req, res) => {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
-        const { date, staffId, status } = req.query;
+        const {
+            date,
+            startDate,
+            endDate,
+            staffId,
+            status,
+            customerName,
+            serviceName,
+            sortBy,
+            order = 'desc'
+        } = req.query;
+
         let query = { salonId };
 
+        // Lọc theo trạng thái
         if (status) {
             query.status = status;
         }
 
+        // Lọc theo ngày (cụ thể 1 ngày hoặc khoảng ngày)
         if (date) {
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
+            const startOfDay = new Date(`${date}T00:00:00+07:00`);
+            const endOfDay = new Date(`${date}T23:59:59+07:00`);
             query.startAt = { $gte: startOfDay, $lte: endOfDay };
+        } else if (startDate || endDate) {
+            query.startAt = {};
+            if (startDate) query.startAt.$gte = new Date(`${startDate}T00:00:00+07:00`);
+            if (endDate) query.startAt.$lte = new Date(`${endDate}T23:59:59+07:00`);
         }
 
+        // Lọc theo nhân viên
         if (staffId) {
             query.staffId = staffId;
         }
 
+        // Lọc theo tên dịch vụ (trong snapshot)
+        if (serviceName) {
+            query['serviceSnapshot.name'] = { $regex: serviceName, $options: 'i' };
+        }
+
+        // Lọc theo tên khách hàng (cần tìm ID khách hàng trước)
+        if (customerName) {
+            const users = await User.find({
+                fullName: { $regex: customerName, $options: 'i' },
+                role: 'CUSTOMER'
+            }).select('_id');
+            const userIds = users.map(u => u._id);
+            query.customerId = { $in: userIds };
+        }
+
+        // Xử lý sắp xếp
+        let sortOptions = {};
+        if (sortBy) {
+            const sortOrder = order === 'asc' ? 1 : -1;
+            if (sortBy === 'customer') {
+                // Sắp xếp theo khách hàng trong find() là khó, thường làm ở client hoặc dùng aggregate
+                // Ở đây ta mặc định sắp xếp theo startAt nếu không xử lý đặc biệt được
+                sortOptions.startAt = sortOrder;
+            } else if (sortBy === 'service') {
+                sortOptions['serviceSnapshot.name'] = sortOrder;
+            } else if (sortBy === 'staff') {
+                sortOptions['staffSnapshot.fullName'] = sortOrder;
+            } else {
+                sortOptions[sortBy] = sortOrder;
+            }
+        } else {
+            sortOptions.startAt = -1; // Mặc định mới nhất lên đầu
+        }
+
         const appointments = await Appointment.find(query)
             .populate('customerId', 'fullName email phone')
-            .sort({ startAt: 1 });
+            .populate('staffId', 'fullName')
+            .sort(sortOptions);
 
         res.json({
             success: true,
@@ -337,6 +388,14 @@ export const updateAppointment = async (req, res) => {
             return res.status(404).json({ message: 'Appointment not found.' });
         }
 
+        // Anti-Fraud Validation: Lock modifications for COMPLETED or CANCELLED appointments
+        if (appointment.status === 'COMPLETED') {
+            return res.status(400).json({ message: 'Cannot modify a completed appointment.' });
+        }
+        if (appointment.status === 'CANCELLED') {
+            return res.status(400).json({ message: 'Cannot modify a cancelled appointment.' });
+        }
+
         // Check permissions
         let hasAccess = false;
         let isOwner = false;
@@ -412,6 +471,11 @@ export const deleteAppointment = async (req, res) => {
 
         if (!appointment) {
             return res.status(404).json({ message: 'Appointment not found.' });
+        }
+
+        // Anti-Fraud Validation: Prevent deletion of COMPLETED appointments
+        if (appointment.status === 'COMPLETED') {
+            return res.status(400).json({ message: 'Cannot delete a completed appointment.' });
         }
 
         // Check permissions

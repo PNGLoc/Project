@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FollowersList from '../../features/social/components/FollowersList';
 import followApi from '../../features/social/api/followApi';
 import { FiGrid, FiUsers, FiBarChart2, FiBell, FiArrowRight, FiInfo, FiLayers } from 'react-icons/fi';
+import PartnerDashboard from './PartnerDashboard';
 import '../../assets/css/Overview.css';
 
 const Overview = ({ onTabChange }) => {
@@ -25,16 +26,7 @@ const Overview = ({ onTabChange }) => {
             case 'followers':
                 return <FollowersList onCountUpdate={setFollowerCount} />;
             default:
-                return (
-                    <div className="no-data-state">
-                        <div className="no-data-content">
-                            <div className="no-data-icon-bg">
-                                <FiInfo />
-                            </div>
-                            <h2>No Data</h2>
-                        </div>
-                    </div>
-                );
+                return <PartnerDashboard onNavigate={onTabChange} />;
         }
     };
 

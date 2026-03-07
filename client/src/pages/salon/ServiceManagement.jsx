@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { FiEdit, FiFilter, FiChevronDown } from 'react-icons/fi';
 import axiosClient from '../../lib/axios';
+import { toast } from 'react-toastify';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 import '../../assets/css/SalonDashboard.css';
 
 // Quản lý dịch vụ (Service Management) cho Salon Owner
@@ -22,6 +24,15 @@ const ServiceManagement = () => {
         type: 'SINGLE', comboItems: []
     });
 
+    // Confirm Modal state
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        pendingData: null,
+        title: '',
+        message: '',
+        onConfirm: () => { }
+    });
+
     // Biến số thành chuỗi có dấu phẩy: 100000 -> "100,000"
     const formatNumber = (num) => {
         if (!num) return "";
@@ -41,12 +52,12 @@ const ServiceManagement = () => {
             const data = res.data?.data || (Array.isArray(res.data) ? res.data : []);
             setServices(data);
         } catch (error) {
-            console.error("Lỗi tải danh sách:", error);
+            console.error("Fetch services error:", error);
             if (error.response?.status === 401) {
-                alert("Phiên đăng nhập đã hết hạn hoặc không có quyền. Vui lòng đăng nhập lại.");
+                toast.error("Session expired or unauthorized. Please login again.");
             } else {
-                const msg = error.response?.data?.message || "Không thể tải danh sách dịch vụ. Vui lòng kiểm tra lại Salon của bạn.";
-                alert("Lỗi: " + msg);
+                const msg = error.response?.data?.message || "Could not load services list. Please check your salon status.";
+                toast.error("Error: " + msg);
             }
         } finally {
             setLoading(false);
@@ -58,7 +69,7 @@ const ServiceManagement = () => {
             const res = await axiosClient.get('/api/categories');
             setCategories(res.data?.data || []);
         } catch (error) {
-            console.error("Lỗi tải danh mục:", error);
+            console.error("Fetch categories error:", error);
         }
     }, []);
 
@@ -93,7 +104,7 @@ const ServiceManagement = () => {
 
         // Kiểm tra tên không chứa số (Validation)
         if (/\d/.test(formData.name)) {
-            alert("Service name cannot contain numbers");
+            toast.warning("Service name cannot contain numbers");
             return;
         }
 
@@ -125,19 +136,24 @@ const ServiceManagement = () => {
         }
     };
 
-    const handleHide = async (id) => {
-        if (window.confirm("Are you sure you want to hide this service?")) {
-            try {
-                await axiosClient.patch(`/api/services/${id}/hide`, {});
-                setNotification({ type: 'success', message: 'Service hidden successfully!' });
-                fetchServices();
-                setTimeout(() => setNotification(null), 5000);
-            } catch (error) {
-                const errorMsg = error.response?.data?.message || error.message;
-                setNotification({ type: 'error', message: 'Could not hide service: ' + errorMsg });
-                setTimeout(() => setNotification(null), 5000);
+    const handleHide = (id) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Hide Service',
+            message: 'Are you sure you want to hide this service from the public menu?',
+            onConfirm: async () => {
+                try {
+                    await axiosClient.patch(`/api/services/${id}/hide`, {});
+                    toast.success('Service hidden successfully!');
+                    fetchServices();
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                } catch (error) {
+                    const errorMsg = error.response?.data?.message || error.message;
+                    toast.error('Could not hide service: ' + errorMsg);
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
             }
-        }
+        });
     };
 
     const handleCreateCategory = async (e) => {
@@ -277,7 +293,7 @@ const ServiceManagement = () => {
                             <tr>
                                 <th>Service Name</th>
                                 <th>Category</th>
-                                <th>Price (VNĐ)</th>
+                                <th>Price (VND)</th>
                                 <th>Duration</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -299,7 +315,7 @@ const ServiceManagement = () => {
                                             {categories.find(c => c._id === s.categoryId)?.name || 'Uncategorized'}
                                         </span>
                                     </td>
-                                    <td>{Number(s.price).toLocaleString()} VNĐ</td>
+                                    <td>{Number(s.price).toLocaleString()} VND</td>
                                     <td>{s.duration} min</td>
                                     <td>
                                         <span className={`status-badge ${s.isActive ? 'status-active' : 'status-hidden'}`}>
@@ -372,7 +388,7 @@ const ServiceManagement = () => {
                                                         }}
                                                     />
                                                     <span className="combo-item-name">{s.name}</span>
-                                                    <span className="combo-item-price">{formatNumber(s.price)} VNĐ</span>
+                                                    <span className="combo-item-price">{formatNumber(s.price)} VND</span>
                                                 </div>
                                             </label>
                                         ))}
@@ -413,15 +429,15 @@ const ServiceManagement = () => {
                             </div>
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label>Price (VNĐ)</label>
+                                    <label>Price (VND)</label>
                                     <input
                                         type="text"
                                         required
                                         placeholder="e.g., 100,000"
-                                        /* Dùng Intl để ép định dạng 3 chữ số một dấu phẩy */
+                                        /* Use Intl to force comma formatting every 3 digits */
                                         value={formData.price ? new Intl.NumberFormat('en-US').format(formData.price) : ''}
                                         onChange={(e) => {
-                                            // Chặn đứng các ký tự không phải số, chỉ lấy số thuần túy
+                                            // Block non-numeric characters, only allow raw numbers
                                             const rawValue = e.target.value.replace(/\D/g, "");
                                             setFormData({ ...formData, price: rawValue });
                                         }}
@@ -510,20 +526,25 @@ const ServiceManagement = () => {
                                             <button
                                                 className="btn-reject-rose"
                                                 style={{ padding: '4px 8px', fontSize: '12px' }}
-                                                onClick={async () => {
-                                                    if (window.confirm("Are you sure you want to delete this category?")) {
-                                                        try {
-                                                            await axiosClient.delete(`/api/categories/${cat._id}`);
-                                                            fetchCategories();
-                                                            fetchServices(); // Cập nhật lại danh sách dịch vụ để hiện thị Uncategorized mới
-                                                            setNotification({ type: 'success', message: 'Category deleted successfully!' });
-                                                            setTimeout(() => setNotification(null), 5000);
-                                                        } catch (error) {
-                                                            const errorMsg = error.response?.data?.message || "Delete failed";
-                                                            setNotification({ type: 'error', message: 'Error: ' + errorMsg });
-                                                            setTimeout(() => setNotification(null), 5000);
+                                                onClick={() => {
+                                                    setConfirmModal({
+                                                        isOpen: true,
+                                                        title: 'Delete Category',
+                                                        message: `Are you sure you want to delete the category "${cat.name}"? This will not delete the services, but they will become uncategorized.`,
+                                                        onConfirm: async () => {
+                                                            try {
+                                                                await axiosClient.delete(`/api/categories/${cat._id}`);
+                                                                fetchCategories();
+                                                                fetchServices();
+                                                                toast.success('Category deleted successfully!');
+                                                                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                                                            } catch (error) {
+                                                                const errorMsg = error.response?.data?.message || "Delete failed";
+                                                                toast.error('Error: ' + errorMsg);
+                                                                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                                                            }
                                                         }
-                                                    }
+                                                    });
                                                 }}
                                             >Delete</button>
                                         </li>
@@ -534,6 +555,16 @@ const ServiceManagement = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                confirmText={confirmModal.title.includes('Delete') ? 'Delete' : 'Confirm'}
+                type={confirmModal.title.includes('Delete') || confirmModal.title.includes('Hide') ? 'danger' : 'primary'}
+            />
         </div>
     );
 };

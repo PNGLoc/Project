@@ -2,10 +2,20 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { TfiCheck } from "react-icons/tfi";
 import { TfiClose } from "react-icons/tfi";
+import { toast } from 'react-toastify';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const PendingApplications = () => {
     const [salons, setSalons] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Confirm Modal state
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { }
+    });
     const [processingId, setProcessingId] = useState(null);
 
     useEffect(() => {
@@ -30,7 +40,7 @@ const PendingApplications = () => {
         } catch (error) {
             console.error("Error fetching list:", error);
             if (error.response?.status === 401) {
-                alert("Session expired. Please login again.");
+                toast.error("Session expired. Please login again.");
                 window.location.href = '/login';
             }
         } finally {
@@ -38,49 +48,57 @@ const PendingApplications = () => {
         }
     };
 
-    const handleApprove = async (id) => {
-        if (!window.confirm("Are you sure you want to approve this Salon?")) return;
-        const userStr = localStorage.getItem('user');
-        const user = userStr ? JSON.parse(userStr) : null;
+    const handleApprove = (id) => {
         const token = localStorage.getItem('token');
+        if (!token) { toast.error("Please login again!"); return; }
 
-        if (!token) { alert("Please login again!"); return; }
-        setProcessingId(id);
-
-        try {
-            await axios.patch(`http://127.0.0.1:5000/api/salons/approve/${id}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            alert("Approved successfully!");
-            setSalons(prevSalons => prevSalons.filter(salon => salon._id !== id));
-        } catch (error) {
-            alert("Approval error: " + (error.response?.data?.message || error.message));
-            fetchSalons();
-        } finally {
-            setProcessingId(null);
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: 'Approve Salon',
+            message: 'Are you sure you want to approve this Salon application?',
+            onConfirm: async () => {
+                setProcessingId(id);
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                try {
+                    await axios.patch(`http://127.0.0.1:5000/api/salons/approve/${id}`, {}, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    toast.success("Approved successfully!");
+                    setSalons(prevSalons => prevSalons.filter(salon => salon._id !== id));
+                } catch (error) {
+                    toast.error("Approval error: " + (error.response?.data?.message || error.message));
+                    fetchSalons();
+                } finally {
+                    setProcessingId(null);
+                }
+            }
+        });
     };
 
-    const handleReject = async (id) => {
-        if (!window.confirm("This action will permanently delete the application. Continue?")) return;
-        const userStr = localStorage.getItem('user');
-        const user = userStr ? JSON.parse(userStr) : null;
+    const handleReject = (id) => {
         const token = localStorage.getItem('token');
+        if (!token) { toast.error("Please login again!"); return; }
 
-        if (!token) { alert("Please login again!"); return; }
-        setProcessingId(id);
-
-        try {
-            await axios.delete(`http://127.0.0.1:5000/api/salons/reject/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            alert("Application rejected!");
-            setSalons(prevSalons => prevSalons.filter(salon => salon._id !== id));
-        } catch (error) {
-            alert("Rejection error: " + (error.response?.data?.message || error.message));
-        } finally {
-            setProcessingId(null);
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: 'Reject Application',
+            message: 'This action will permanently delete the application. Continue?',
+            onConfirm: async () => {
+                setProcessingId(id);
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                try {
+                    await axios.delete(`http://127.0.0.1:5000/api/salons/reject/${id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    toast.success("Application rejected!");
+                    setSalons(prevSalons => prevSalons.filter(salon => salon._id !== id));
+                } catch (error) {
+                    toast.error("Rejection error: " + (error.response?.data?.message || error.message));
+                } finally {
+                    setProcessingId(null);
+                }
+            }
+        });
     };
 
     const formatAddress = (addr) => {
@@ -166,6 +184,16 @@ const PendingApplications = () => {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                confirmText={confirmModal.title.includes('Reject') ? 'Reject' : 'Approve'}
+                type={confirmModal.title.includes('Reject') ? 'danger' : 'primary'}
+            />
         </div>
     );
 };
