@@ -108,7 +108,7 @@ const SalonCard = ({ data, onUnfollow }) => {
                     </div>
                 </div>
 
-                <button className="details-btn" onClick={handleDetailsClick}>View Details</button>
+                <button className="details-btn" onClick={handleDetailsClick}>Book Now</button>
             </div>
 
             <ConfirmModal

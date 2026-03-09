@@ -5,12 +5,17 @@ import {
     getCouponById,
     createCoupon,
     updateCoupon,
-    deleteCoupon
+    deleteCoupon,
+    getAllPublicCoupons
 } from '../controllers/couponController.js';
 
 const router = express.Router();
 
-// All routes require authentication and SALON_OWNER role
+
+// Public route
+router.get('/public', getAllPublicCoupons);
+
+// All routes below require authentication and SALON_OWNER role
 router.use(protect);
 router.use(authorize('SALON_OWNER'));
 

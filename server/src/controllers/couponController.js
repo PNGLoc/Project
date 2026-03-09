@@ -371,3 +371,65 @@ export const deleteCoupon = async (req, res) => {
     }
 };
 
+// @desc    Get all active coupons from all salons (Public)
+// @route   GET /api/coupons/public
+// @access  Public
+export const getAllPublicCoupons = async (req, res) => {
+    try {
+        const { search, discountType, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 20 } = req.query;
+
+        const now = new Date();
+        const filter = {
+            isActive: true,
+            startDate: { $lte: now },
+            endDate: { $gte: now }
+        };
+
+        // Search by code
+        if (search && search.trim()) {
+            filter.code = { $regex: search.trim(), $options: 'i' };
+        }
+
+        if (discountType && ['PERCENTAGE', 'FIXED_AMOUNT'].includes(discountType)) {
+            filter.discountType = discountType;
+        }
+
+        // Only show coupons that haven't reached their usage limit
+        filter.$expr = { $lt: ['$usedCount', '$usageLimit'] };
+
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 20;
+        const skip = (pageNum - 1) * limitNum;
+
+        const sortOptions = {};
+        if (sortBy === 'discountValue') {
+            sortOptions.discountValue = sortOrder === 'asc' ? 1 : -1;
+        } else if (sortBy === 'endDate') {
+            sortOptions.endDate = sortOrder === 'asc' ? 1 : -1;
+        } else {
+            sortOptions.createdAt = sortOrder === 'asc' ? 1 : -1;
+        }
+
+        const [total, coupons] = await Promise.all([
+            Coupon.countDocuments(filter),
+            Coupon.find(filter)
+                .populate('salonId', 'name address images')
+                .sort(sortOptions)
+                .skip(skip)
+                .limit(limitNum)
+        ]);
+
+        res.json({
+            coupons,
+            pagination: {
+                total,
+                page: pageNum,
+                limit: limitNum,
+                pages: Math.ceil(total / limitNum)
+            }
+        });
+    } catch (error) {
+        console.error('[GET PUBLIC COUPONS ERROR]', error);
+        res.status(500).json({ message: 'Server error: ' + error.message });
+    }
+};

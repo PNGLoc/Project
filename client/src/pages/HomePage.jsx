@@ -9,7 +9,7 @@ import { TbMassage } from 'react-icons/tb';
 import { MdFaceRetouchingNatural } from 'react-icons/md';
 import HeaderHome from "../components/layout/HeaderHome";
 import axios from 'axios';
-import { HiSparkles } from 'react-icons/hi';
+import { HiSparkles, HiTicket } from 'react-icons/hi';
 
 
 const HomePage = () => {
@@ -82,7 +82,8 @@ const HomePage = () => {
                     </form>
 
                     <div className="quick-tags">
-                        <span className="tag"><FiMapPin /> Near Me</span>
+                        <span className="tag" onClick={() => navigate('/search')}><FiMapPin /> Near Me</span>
+                        <span className="tag" onClick={() => navigate('/coupons')}><HiTicket /> Coupons</span>
                         <span className="tag"><HiSparkles /> AI Reccommendations</span>
                     </div>
                 </div>
