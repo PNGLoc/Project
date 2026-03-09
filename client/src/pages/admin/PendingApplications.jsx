@@ -4,10 +4,20 @@ import { TfiCheck } from "react-icons/tfi";
 import { TfiClose } from "react-icons/tfi";
 import { toast } from 'react-toastify';
 import ConfirmModal from '../../components/ui/ConfirmModal';
+import '../../assets/css/AdminDashboard.css';
 
 const PendingApplications = () => {
     const [salons, setSalons] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const timeAgo = (date) => {
+        const s = Math.floor((Date.now() - new Date(date)) / 1000);
+        if (s < 60) return `${s}s ago`;
+        if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+        if (s < 86400) return `${Math.floor(s / 3600)} hour${Math.floor(s / 3600) > 1 ? 's' : ''} ago`;
+        const days = Math.floor(s / 86400);
+        return `${days} day${days > 1 ? 's' : ''} ago`;
+    };
 
     // Confirm Modal state
     const [confirmModal, setConfirmModal] = useState({
@@ -122,7 +132,7 @@ const PendingApplications = () => {
             {/* Header của phần bảng */}
             <div className="table-header-row">
                 <h3>Pending Salon Approvals</h3>
-                <span className="count-badge">{salons.length} Pending</span>
+                <span className="status-pending-pill">{salons.length} Pending</span>
             </div>
 
             <div className="table-responsive">
@@ -131,7 +141,9 @@ const PendingApplications = () => {
                         <tr>
                             <th>Salon Name</th>
                             <th>Owner</th>
+                            <th>Email</th>
                             <th>Location</th>
+                            <th>Category</th>
                             <th>Submitted</th>
                             <th>Status</th>
                             <th style={{ textAlign: 'right' }}>Actions</th>
@@ -147,8 +159,10 @@ const PendingApplications = () => {
                                 <tr key={salon._id}>
                                     <td className="font-semibold">{salon.name}</td>
                                     <td>{salon.ownerId?.fullName || 'N/A'}</td>
+                                    <td style={{ color: '#0d9488', fontSize: 13 }}>{salon.ownerId?.email || 'N/A'}</td>
                                     <td>{formatAddress(salon.address)}</td>
-                                    <td className="text-gray">{new Date(salon.createdAt).toLocaleDateString()}</td>
+                                    <td><span className="category-pill">{salon.categories?.[0] || 'General'}</span></td>
+                                    <td className="text-gray">{timeAgo(salon.createdAt)}</td>
                                     <td><span className="status-pending-pill">Pending</span></td>
                                     <td>
                                         <div className="action-group" style={{ justifyContent: 'flex-end' }}>
