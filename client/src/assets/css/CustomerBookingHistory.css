@@ -1,0 +1,566 @@
+/* client/src/assets/css/CustomerBookingHistory.css */
+
+.customer-history-view {
+    background-color: #ffffff;
+    /* White background as requested */
+    min-height: 100vh;
+    padding: 40px 20px;
+    max-width: 1100px;
+    /* Wider container */
+    margin: 0 auto;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.history-header-section {
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+.history-header-section h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.history-header-section p {
+    color: #666;
+    font-size: 16px;
+}
+
+/* Tabs */
+.status-tabs-container {
+    background: #fff;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 70px;
+    /* Offset to stay below sticky header */
+    z-index: 10;
+}
+
+.status-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 10px 0;
+}
+
+.status-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.tab-btn:hover {
+    color: #008080;
+    /* Salon main green */
+}
+
+.tab-btn.active {
+    color: #008080;
+    font-weight: 700;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: #008080;
+}
+
+/* Filter Bar */
+.history-filter-container {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    padding: 8px;
+    border-radius: 100px;
+    margin-bottom: 40px;
+    gap: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+}
+
+.filter-search-wrapper,
+.filter-sort-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 100px;
+    padding: 0 16px;
+    height: 48px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.filter-search-wrapper {
+    flex: 2.5;
+}
+
+.filter-sort-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.filter-sort-trigger {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    justify-content: space-between;
+}
+
+.chevron-icon {
+    color: #94a3b8;
+    transition: transform 0.3s;
+}
+
+.chevron-icon.rotate {
+    transform: rotate(180deg);
+}
+
+.custom-sort-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    left: 0;
+    background: #fff;
+    border: 1px solid #f1f5f9;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    padding: 8px;
+    animation: menuFadeIn 0.2s ease-out;
+}
+
+@keyframes menuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menu-item {
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.menu-item:hover {
+    background: #f1f5f9;
+    color: #008080;
+}
+
+.menu-item.selected {
+    background: #f0fdf4;
+    color: #008080;
+    font-weight: 600;
+}
+
+.filter-search-wrapper:focus-within,
+.filter-sort-wrapper:focus-within {
+    background: #fff;
+    border-color: #008080;
+    box-shadow: 0 0 0 4px rgba(0, 128, 128, 0.05);
+}
+
+.filter-icon {
+    color: #008080;
+    font-size: 1.1rem;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.filter-search-wrapper input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.btn-reset-filters {
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 100px;
+    /* Made fully rounded */
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-reset-filters:hover {
+    background: #f8fafc;
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+
+/* End of Filter Styles */
+
+.btn-reset-filters:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #94a3b8;
+}
+
+/* Booking Card */
+.booking-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #edf2f2;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.booking-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 128, 128, 0.08);
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #fafcfc;
+    border-bottom: 1px solid #f0f5f5;
+}
+
+.salon-brand-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.salon-brand-info:hover .salon-name {
+    color: #008080;
+    text-decoration: underline;
+}
+
+.pin-icon {
+    color: #008080;
+}
+
+.salon-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #1a1a1a;
+    transition: color 0.2s;
+}
+
+.status-label {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+
+.status-pending {
+    background: #fff8e6;
+    color: #ffab00;
+}
+
+.status-confirmed {
+    background: #e6f7f7;
+    color: #008080;
+}
+
+.status-completed {
+    background: #e6fcf5;
+    color: #00c853;
+}
+
+.status-cancelled {
+    background: #fff5f5;
+    color: #ff5252;
+}
+
+.card-body {
+    display: flex;
+    padding: 20px;
+    gap: 20px;
+    align-items: center;
+}
+
+.salon-thumbnail {
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f0f3f3;
+}
+
+.salon-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    font-size: 30px;
+}
+
+.booking-details {
+    flex: 1;
+}
+
+.service-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 10px 0;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.mini-icon {
+    color: #999;
+}
+
+.price-side {
+    text-align: right;
+    padding-left: 20px;
+    border-left: 1px solid #eee;
+}
+
+.price-label {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.price-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #008080;
+}
+
+.card-footer {
+    padding: 16px 20px;
+    background: #fff;
+    border-top: 1px dashed #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-left {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+}
+
+.success-note {
+    color: #00c853;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cancel-note {
+    color: #ff5252;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.footer-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-action {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.btn-action.primary {
+    background-color: #008080;
+    color: #fff;
+    border: none;
+}
+
+.btn-action.primary:hover {
+    background-color: #006666;
+}
+
+.btn-action.secondary {
+    background-color: #fff;
+    color: #555;
+    border: 1px solid #ddd;
+}
+
+.btn-action.secondary:hover {
+    background-color: #f5f7f7;
+    border-color: #ccc;
+}
+
+.btn-action.danger {
+    background-color: #fff1f0;
+    color: #f5222d;
+    border: 1px solid #ffa39e;
+}
+
+.btn-action.danger:hover {
+    background-color: #f5222d;
+    color: #fff;
+    border-color: #f5222d;
+}
+
+/* States */
+.list-loading {
+    padding: 60px 0;
+    text-align: center;
+}
+
+.green-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #008080;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.list-empty {
+    text-align: center;
+    padding: 80px 40px;
+    background: #fff;
+    border-radius: 20px;
+    border: 2px dashed #e1e8e8;
+}
+
+.empty-icon {
+    font-size: 64px;
+    color: #008080;
+    opacity: 0.2;
+    margin-bottom: 20px;
+}
+
+.list-empty h3 {
+    font-size: 20px;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+}
+
+.list-empty p {
+    color: #666;
+    margin-bottom: 24px;
+}
+
+.btn-book-now {
+    display: inline-block;
+    background: #008080;
+    color: #fff;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.btn-book-now:hover {
+    background: #006666;
+}
+
+@media (max-width: 600px) {
+    .card-body {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .salon-thumbnail {
+        width: 100%;
+        height: 150px;
+    }
+
+    .price-side {
+        border-left: none;
+        padding-left: 0;
+        margin-top: 15px;
+        text-align: left;
+    }
+
+    .footer-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .btn-action {
+        width: 100%;
+        justify-content: center;
+    }
+}

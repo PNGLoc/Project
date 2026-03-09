@@ -32,6 +32,15 @@ const DRAFT_KEY = 'booking_draft_v1';
 const VNPAY_PENDING_KEY = 'vnpay_pending_appointment_id';
 const VNPAY_REDIRECTING_KEY = 'vnpay_redirecting';
 
+const getImageUrl = (image) => {
+    if (!image) return null;
+    let imgPath = Array.isArray(image) ? image[0] : image;
+    if (!imgPath) return null;
+    if (imgPath.startsWith('http')) return imgPath;
+    const sanitizedPath = imgPath.startsWith('/') ? imgPath.substring(1) : imgPath;
+    return `http://localhost:5000/${sanitizedPath.replace(/\\/g, '/')}`;
+};
+
 const BookAppointment = () => {
     const [stepIndex, setStepIndex] = useState(0);
     const [salons, setSalons] = useState([]);
@@ -327,6 +336,13 @@ const BookAppointment = () => {
                                 }
                             }}
                         >
+                            <div className="card-image" style={{ height: '120px', width: '100%', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#f0f0f0' }}>
+                                {getImageUrl(salon.images) ? (
+                                    <img src={getImageUrl(salon.images)} alt={salon.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc' }}>No Image</div>
+                                )}
+                            </div>
                             <div className="card-title">{salon.name}</div>
                             <div className="card-meta">{salon.address?.district || 'Ho Chi Minh City'}</div>
                             <div className="card-meta">{salon.address?.street || 'Full address available after selection'}</div>
@@ -466,9 +482,18 @@ const BookAppointment = () => {
             <h2 className="section-title">Review & Pay</h2>
             <p className="section-subtitle">Confirm the details and choose your payment method.</p>
             <div className="summary-grid">
-                <div className="summary-item">
+                <div className="summary-item" style={{ alignItems: 'center' }}>
                     <span>Salon</span>
-                    <span>{selectedSalon?.name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {getImageUrl(selectedSalon?.images) && (
+                            <img 
+                                src={getImageUrl(selectedSalon.images)} 
+                                alt="Salon" 
+                                style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} 
+                            />
+                        )}
+                        <span>{selectedSalon?.name}</span>
+                    </div>
                 </div>
                 <div className="summary-item">
                     <span>Service</span>

@@ -27,7 +27,7 @@ import SearchPage from '../pages/SearchPage';
 import ProfilePage from '../pages/users/ProfilePage';
 import StaffList from "../pages/salon/StaffList";
 import BookAppointment from '../pages/booking/BookAppointment';
-import BookingHistory from '../pages/booking/BookingHistory';
+import CustomerBookingHistory from '../pages/booking/CustomerBookingHistory';
 import SalonCalendar from '../pages/salon/SalonCalendar';
 import MyCoupon from '../pages/salon/MyCoupon';
 import SalonBookingHistory from '../pages/salon/BookingHistory';
@@ -68,7 +68,7 @@ const AppRoutes = () => {
                 <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']} />}>
                     <Route path="/salon/register" element={<SalonRegistration />} />
                     <Route path="/book-appointment" element={<BookAppointment />} />
-                    <Route path="/booking-history" element={<BookingHistory />} />
+                    <Route path="/booking-history" element={<CustomerBookingHistory />} />
                 </Route>
                 {/* Role: SALON_OWNER & STAFF */}
                 <Route element={<ProtectedRoute allowedRoles={['SALON_OWNER', 'STAFF']} />}>

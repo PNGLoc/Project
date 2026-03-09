@@ -75,6 +75,11 @@ export const createAppointment = async (req, res) => {
             },
             staffSnapshot: {
                 fullName: staff.fullName
+            },
+            salonSnapshot: {
+                name: salon.name,
+                address: `${salon.address.street}, ${salon.address.district}, ${salon.address.city}`,
+                image: salon.images && salon.images.length > 0 ? salon.images[0] : ''
             }
         });
 
@@ -302,9 +307,37 @@ export const getSalonAppointments = async (req, res) => {
 // @access  Private/CUSTOMER
 export const getCustomerAppointments = async (req, res) => {
     try {
-        const appointments = await Appointment.find({ customerId: req.user._id })
-            .populate('salonId', 'name address')
-            .sort({ startAt: -1 });
+        const { status, startDate, endDate, sortBy, order = 'desc', salonName } = req.query;
+        let query = { customerId: req.user._id };
+
+        if (status) {
+            query.status = status;
+        }
+
+        if (startDate || endDate) {
+            query.startAt = {};
+            if (startDate) query.startAt.$gte = new Date(startDate);
+            if (endDate) query.startAt.$lte = new Date(endDate);
+        }
+
+        if (salonName) {
+            const salons = await Salon.find({
+                name: { $regex: salonName, $options: 'i' }
+            }).select('_id');
+            const salonIds = salons.map(s => s._id);
+            query.salonId = { $in: salonIds };
+        }
+
+        let sortOptions = {};
+        if (sortBy) {
+            sortOptions[sortBy] = order === 'asc' ? 1 : -1;
+        } else {
+            sortOptions.startAt = -1;
+        }
+
+        const appointments = await Appointment.find(query)
+            .populate('salonId', 'name address images')
+            .sort(sortOptions);
 
         return res.json({
             success: true,
@@ -352,6 +385,52 @@ export const cancelPendingVnpayAppointment = async (req, res) => {
         }
 
         return res.json({ success: true, data: appointment });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
+// @desc    Cancel appointment by customer (Only for PENDING status)
+// @route   PATCH /api/appointments/:id/cancel
+// @access  Private/CUSTOMER
+export const cancelCustomerAppointment = async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id);
+        if (!appointment) {
+            return res.status(404).json({ message: 'Appointment not found.' });
+        }
+
+        // Kiểm tra quyền sở hữu
+        if (appointment.customerId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to cancel this appointment.' });
+        }
+
+        // Chỉ cho phép hủy nếu đơn vẫn đang đợi xác nhận
+        if (appointment.status !== 'PENDING') {
+            return res.status(400).json({ message: 'Only pending appointments can be cancelled.' });
+        }
+
+        appointment.status = 'CANCELLED';
+        await appointment.save();
+
+        // Gửi thông báo cho Salon Owner
+        const salon = await Salon.findById(appointment.salonId);
+        if (salon) {
+            await Notification.create({
+                recipient: salon.ownerId,
+                sender: req.user._id,
+                type: 'BOOKING_CANCELLED',
+                title: 'Booking Cancelled by Customer',
+                message: `Customer ${req.user.fullName} cancelled appointment for "${appointment.serviceSnapshot.name}" at ${new Date(appointment.startAt).toLocaleString()}`,
+                data: { appointmentId: appointment._id }
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: 'Appointment cancelled successfully.',
+            data: appointment
+        });
     } catch (error) {
         return res.status(500).json({ message: error.message || 'Server error' });
     }

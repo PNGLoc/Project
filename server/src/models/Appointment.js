@@ -66,6 +66,11 @@ const appointmentSchema = new mongoose.Schema({
     },
     staffSnapshot: {
         fullName: String
+    },
+    salonSnapshot: {
+        name: String,
+        address: String,
+        image: String
     }
 }, {
     timestamps: true
