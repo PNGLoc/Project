@@ -4,6 +4,7 @@ import { HiSparkles } from 'react-icons/hi';
 import { GoBriefcase, GoPerson } from 'react-icons/go';
 import { FiBookOpen, FiTag } from 'react-icons/fi';
 import { FaUsers } from 'react-icons/fa';
+import NotificationBell from './NotificationBell';
 import '../../assets/css/HeaderHome.css';
 
 const HeaderHome = () => {
@@ -101,6 +102,7 @@ const HeaderHome = () => {
 
                 {/* Actions */}
                 <div className="auth-actions">
+                    {currentUser && <NotificationBell />}
                     {currentUser ? (
                         <div className="user-dropdown-container" ref={dropdownRef}>
                             {/* Avatar Trigger */}

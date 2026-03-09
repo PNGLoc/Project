@@ -3,6 +3,8 @@ import Service from '../models/Service.js';
 import Staff from '../models/Staff.js';
 import Salon from '../models/Salon.js';
 import Transaction from '../models/Transaction.js';
+import Notification from '../models/Notification.js';
+import User from '../models/User.js';
 import { buildVnpayUrl } from '../utils/vnpay.js';
 
 // @desc    Create appointment
@@ -336,6 +338,19 @@ export const cancelPendingVnpayAppointment = async (req, res) => {
         appointment.paymentStatus = 'UNPAID';
         await appointment.save();
 
+        // Gửi thông báo cho Salon Owner
+        const salon = await Salon.findById(appointment.salonId);
+        if (salon) {
+            await Notification.create({
+                recipient: salon.ownerId,
+                sender: req.user._id,
+                type: 'BOOKING_CANCELLED',
+                title: 'Appointment Cancelled',
+                message: `Customer ${req.user.fullName} has cancelled their appointment for "${appointment.serviceSnapshot.name}" scheduled at ${new Date(appointment.startAt).toLocaleString()}.`,
+                data: { appointmentId: appointment._id }
+            });
+        }
+
         return res.json({ success: true, data: appointment });
     } catch (error) {
         return res.status(500).json({ message: error.message || 'Server error' });
@@ -493,6 +508,16 @@ export const deleteAppointment = async (req, res) => {
         }
 
         await appointment.deleteOne();
+
+        // Gửi thông báo cho Khách hàng
+        await Notification.create({
+            recipient: appointment.customerId,
+            sender: req.user._id,
+            type: 'BOOKING_CANCELLED',
+            title: 'Your Appointment was Cancelled',
+            message: `Your appointment for "${appointment.serviceSnapshot.name}" at ${new Date(appointment.startAt).toLocaleString()} has been cancelled by the salon.`,
+            data: { appointmentId: appointment._id }
+        });
 
         res.json({ success: true, message: 'Appointment deleted successfully.', data: appointment });
     } catch (error) {
