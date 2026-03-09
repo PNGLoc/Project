@@ -1,17 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiFilter, FiCalendar, FiTag, FiClock, FiChevronDown } from 'react-icons/fi';
 import { HiTicket } from 'react-icons/hi';
 import { toast } from 'react-toastify';
+import userCouponApi from '../features/coupon/api/userCouponApi';
 import '../assets/css/SearchPage.css'; // Use SearchPage styles for consistency
 
 const CouponPage = () => {
+    const navigate = useNavigate();
     const [coupons, setCoupons] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterType, setFilterType] = useState('');
     const [sortBy, setSortBy] = useState('createdAt');
     const [sortOrder, setSortOrder] = useState('desc');
     const [pagination, setPagination] = useState({ total: 0 });
+    const [collectingId, setCollectingId] = useState(null);
+    const [collectedCouponIds, setCollectedCouponIds] = useState(new Set());
+
+    const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
     // Menu visibility state
     const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -24,6 +31,22 @@ const CouponPage = () => {
     useEffect(() => {
         fetchCoupons();
     }, [filterType, sortBy, sortOrder]);
+
+    useEffect(() => {
+        if (currentUser?.role === 'CUSTOMER') {
+            fetchCollectedCoupons();
+        }
+    }, [currentUser?.role]);
+
+    const fetchCollectedCoupons = async () => {
+        try {
+            const data = await userCouponApi.getMyCollectedCoupons();
+            const ids = new Set(data.items.map(item => item.coupon._id));
+            setCollectedCouponIds(ids);
+        } catch (error) {
+            console.error('Error fetching collected coupons:', error);
+        }
+    };
 
     // Click outside listener
     useEffect(() => {
@@ -58,9 +81,32 @@ const CouponPage = () => {
         }
     };
 
-    const handleCopy = (code, salonName) => {
-        navigator.clipboard.writeText(code);
-        toast.success(`Copied code ${code}! Use it at ${salonName}`);
+    const handleCollect = async (couponId) => {
+        if (!currentUser) {
+            toast.info('Please login to collect coupons');
+            navigate('/login', { state: { from: '/coupons' } });
+            return;
+        }
+
+        if (currentUser.role !== 'CUSTOMER') {
+            toast.warning('Only customers can collect coupons');
+            return;
+        }
+
+        try {
+            setCollectingId(couponId);
+            await userCouponApi.collectCoupon(couponId);
+            setCollectedCouponIds(prev => {
+                const newSet = new Set(prev);
+                newSet.add(couponId);
+                return newSet;
+            });
+            toast.success('Coupon collected successfully! Check your profile.');
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to collect coupon');
+        } finally {
+            setCollectingId(null);
+        }
     };
 
     const formatDate = (dateString) => {
@@ -282,13 +328,29 @@ const CouponPage = () => {
                                     </div>
                                 </div>
 
-                                <button
-                                    className="btn"
-                                    style={{ marginTop: '0.5rem', background: 'var(--primary-color)', color: '#fff', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-                                    onClick={() => handleCopy(coupon.code, coupon.salonId?.name || 'Partner Salon')}
-                                >
-                                    Copy Code
-                                </button>
+                                {(() => {
+                                    const isCollected = collectedCouponIds.has(coupon._id);
+                                    const isLoading = collectingId === coupon._id;
+                                    return (
+                                        <button
+                                            className="btn"
+                                            style={{
+                                                marginTop: '0.5rem',
+                                                background: isLoading || isCollected ? '#cbd5e1' : 'var(--primary-color)',
+                                                color: '#fff',
+                                                border: 'none',
+                                                padding: '10px',
+                                                borderRadius: '8px',
+                                                cursor: isLoading || isCollected ? 'not-allowed' : 'pointer',
+                                                fontWeight: 'bold'
+                                            }}
+                                            onClick={() => handleCollect(coupon._id)}
+                                            disabled={isLoading || isCollected}
+                                        >
+                                            {isLoading ? 'Collecting...' : isCollected ? 'Collected' : 'Collect Coupon'}
+                                        </button>
+                                    );
+                                })()}
                             </div>
                         ))
                     ) : (
