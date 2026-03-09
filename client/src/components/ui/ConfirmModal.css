@@ -39,6 +39,23 @@
     margin: 0;
     color: #4b5563;
     line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.confirm-modal-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #374151;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.confirm-modal-input:focus {
+    border-color: #0d9488;
 }
 
 .confirm-modal-footer {
@@ -91,6 +108,13 @@
 .confirm-btn-action.danger:hover {
     background: #dc2626;
     transform: translateY(-1px);
+}
+
+.confirm-btn-action.disabled {
+    background: #94a3b8 !important;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none;
 }
 
 @keyframes fadeIn {

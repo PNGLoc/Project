@@ -14,6 +14,7 @@ const PendingApplications = () => {
         isOpen: false,
         title: '',
         message: '',
+        showInput: false,
         onConfirm: () => { }
     });
     const [processingId, setProcessingId] = useState(null);
@@ -82,13 +83,15 @@ const PendingApplications = () => {
         setConfirmModal({
             isOpen: true,
             title: 'Reject Application',
-            message: 'This action will permanently delete the application. Continue?',
-            onConfirm: async () => {
+            message: 'Please provide a reason for rejecting this application:',
+            showInput: true,
+            onConfirm: async (reason) => {
                 setProcessingId(id);
                 setConfirmModal(prev => ({ ...prev, isOpen: false }));
                 try {
                     await axios.delete(`http://127.0.0.1:5000/api/salons/reject/${id}`, {
-                        headers: { Authorization: `Bearer ${token}` }
+                        headers: { Authorization: `Bearer ${token}` },
+                        data: { reason }
                     });
                     toast.success("Application rejected!");
                     setSalons(prevSalons => prevSalons.filter(salon => salon._id !== id));
@@ -189,10 +192,12 @@ const PendingApplications = () => {
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
                 message={confirmModal.message}
+                showInput={confirmModal.showInput}
                 onConfirm={confirmModal.onConfirm}
                 onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
                 confirmText={confirmModal.title.includes('Reject') ? 'Reject' : 'Approve'}
                 type={confirmModal.title.includes('Reject') ? 'danger' : 'primary'}
+                isRequired={confirmModal.showInput}
             />
         </div>
     );

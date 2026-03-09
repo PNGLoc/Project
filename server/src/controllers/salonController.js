@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import Service from '../models/Service.js';
 import Staff from '../models/Staff.js';
 import Category from '../models/Category.js';
+import Notification from '../models/Notification.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -99,7 +100,19 @@ export const approveSalon = async (req, res) => {
             { isApproved: true, images: finalImages },
             { new: true }
         );
-        if (updatedSalon) await User.findByIdAndUpdate(updatedSalon.ownerId, { role: 'SALON_OWNER' });
+        if (updatedSalon) {
+            await User.findByIdAndUpdate(updatedSalon.ownerId, { role: 'SALON_OWNER' });
+            
+            // Gửi thông báo phê duyệt
+            await Notification.create({
+                recipient: updatedSalon.ownerId,
+                sender: req.user._id,
+                type: 'SALON_APPROVAL',
+                title: 'Congratulations! Your salon has been approved',
+                message: `Your salon registration for "${updatedSalon.name}" has been approved by the admin. You can now start managing your salon.`,
+                data: { salonId: updatedSalon._id }
+            });
+        }
         res.json({ message: "Approved!", salon: updatedSalon });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -109,14 +122,36 @@ export const approveSalon = async (req, res) => {
 // --- 3. Từ chối ---
 export const rejectSalon = async (req, res) => {
     try {
+        const { reason } = req.body;
+        if (!reason || !reason.trim()) {
+            return res.status(400).json({ message: "Rejection reason is required." });
+        }
         const salon = await Salon.findById(req.params.id);
-        if (salon?.images) {
+        
+        if (!salon) return res.status(404).json({ message: "Salon not found" });
+
+        if (salon.images) {
             salon.images.forEach(img => {
                 const p = path.join(TEMP_DIR, path.basename(img));
                 if (fs.existsSync(p)) fs.unlinkSync(p);
             });
         }
+
+        const ownerId = salon.ownerId;
+        const salonName = salon.name;
+
         await Salon.findByIdAndDelete(req.params.id);
+
+        // Gửi thông báo từ chối
+        await Notification.create({
+            recipient: ownerId,
+            sender: req.user._id,
+            type: 'SALON_REJECTION',
+            title: 'Sorry! Your salon registration was rejected',
+            message: `Your salon registration for "${salonName}" has been rejected. Reason: ${reason || 'No specific reason provided.'}`,
+            data: { reason }
+        });
+
         res.json({ message: "Rejected" });
     } catch (error) {
         res.status(500).json({ message: error.message });
