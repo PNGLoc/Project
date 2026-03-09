@@ -31,6 +31,7 @@ import BookingHistory from '../pages/booking/BookingHistory';
 import SalonCalendar from '../pages/salon/SalonCalendar';
 import MyCoupon from '../pages/salon/MyCoupon';
 import SalonBookingHistory from '../pages/salon/BookingHistory';
+import CouponPage from '../pages/CouponPage';
 
 import MainLayout from '../components/layout/MainLayout';
 
@@ -41,10 +42,8 @@ const AppRoutes = () => {
             <Route element={<MainLayout />}>
                 {/* --- NHÓM PUBLIC --- */}
                 <Route path="/" element={<HomePage />} />
+                <Route path="/coupons" element={<CouponPage />} />
                 <Route path="/post/:id" element={<PostDetail />} />
-                {/* <Route path="/salons" element={<AllSalons />} /> */}
-
-                {/* MENU */}
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/salon/:id" element={<SalonDetail />} />
                 <Route path="/staff/:id" element={<StaffDetail />} />

@@ -95,6 +95,7 @@ const HeaderHome = () => {
                         </>)
                     }
                     <NavLink to="/lookbook">Lookbook</NavLink>
+                    <NavLink to="/coupons">Coupons</NavLink>
                     <NavLink to="/ai-analysis">AI Analysis</NavLink>
                 </nav>
 
