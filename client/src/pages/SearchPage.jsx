@@ -146,7 +146,13 @@ const SearchPage = () => {
                 <div className="search-page-loading">Loading amazing salons...</div>
             ) : (
                 <div className="search-page-salon-grid">
-                    {salons.map(salon => <SalonCard key={salon._id} data={salon} />)}
+                    {salons.map(salon => (
+                        <SalonCard
+                            key={salon._id}
+                            data={salon}
+                            showChatButton={false}
+                        />
+                    ))}
                 </div>
             )}
 

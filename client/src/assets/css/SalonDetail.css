@@ -54,6 +54,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  height: fit-content;
 }
 
 .btn-book-appointment:hover {

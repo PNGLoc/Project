@@ -4,12 +4,24 @@ import ServiceManagement from './ServiceManagement';
 import SalonCalendar from './SalonCalendar';
 import Overview from './Overview';
 import BookingHistory from './BookingHistory';
+import ChatWidget from '../../components/chat/ChatWidget';
+import { MessageCircle } from 'lucide-react';
 import '../../assets/css/SalonDashboard.css';
+import '../../components/chat/ChatWidget.css';
 
 const SalonDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
+    const [isChatOpen, setIsChatOpen] = useState(false);
     const user = JSON.parse(localStorage.getItem('user'));
     const isStaffUser = user?.role === 'STAFF';
+    const isSalonUser = user?.role === 'SALON_OWNER' || user?.role === 'STAFF';
+
+    const handleChatClick = () => {
+        if (!isSalonUser) {
+            return;
+        }
+        setIsChatOpen(true);
+    };
 
     return (
         <div className="salon-full-layout">
@@ -87,6 +99,25 @@ const SalonDashboard = () => {
                     {activeTab === 'history' && <BookingHistory />}
                 </div>
             </main>
+
+            {/* Floating Message Button for Salon */}
+            {isSalonUser && (
+                <>
+                    <button
+                        className="chat-floating-btn"
+                        onClick={handleChatClick}
+                        title="Messages"
+                    >
+                        <MessageCircle size={24} />
+                    </button>
+                    {isChatOpen && (
+                        <ChatWidget
+                            userRole={user.role}
+                            onClose={() => setIsChatOpen(false)}
+                        />
+                    )}
+                </>
+            )}
         </div>
     );
 };
