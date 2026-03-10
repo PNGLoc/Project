@@ -68,6 +68,10 @@ const userSchema = new mongoose.Schema({
     otpExpires: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    salonId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Salon'
+    }
 }, {
     timestamps: true,
 });

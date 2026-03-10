@@ -11,9 +11,11 @@ import {
   Heart,
   Tag,
   Gift,
+  MessageCircle,
 } from "lucide-react";
 import couponApi from "../../features/coupon/api/couponApi";
 import userCouponApi from "../../features/coupon/api/userCouponApi";
+import ChatWidget from "../../components/chat/ChatWidget";
 // tab UI implemented inline below (no external components needed)
 import "../../assets/css/SalonDetail.css";
 
@@ -32,6 +34,7 @@ const SalonDetail = () => {
   const [collectedCouponIds, setCollectedCouponIds] = useState(new Set());
   const [collectingId, setCollectingId] = useState(null);
   const [couponToast, setCouponToast] = useState({ type: "", message: "" });
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const currentUser = (() => {
     try {
@@ -216,9 +219,36 @@ const SalonDetail = () => {
               </div>
             </div>
             <div className="salon-info-btn-col">
-              <button onClick={handleBookAppointment} className="btn-book-appointment">
-                Book Appointment
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'row', gap: '12px', alignItems: 'center' }}>
+                <button onClick={handleBookAppointment} className="btn-book-appointment">
+                  Book Appointment
+                </button>
+                {isCustomer && (
+                  <button
+                    onClick={() => setIsChatOpen(true)}
+                    className="btn-chat-salon"
+                    style={{
+                      padding: '10px 20px',
+                      background: 'white',
+                      border: '1px solid #3b82f6',
+                      color: '#3b82f6',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      fontWeight: '600',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap',
+                      height: 'fit-content'
+                    }}
+                  >
+                    <MessageCircle size={18} />
+                    Chat with Salon
+                  </button>
+                )}
+              </div>
             </div>
           </div>
    
@@ -443,6 +473,14 @@ const SalonDetail = () => {
           )}
         </div>
       </div>
+
+      {isChatOpen && isCustomer && (
+        <ChatWidget
+          userRole="CUSTOMER"
+          salonId={salon._id}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
     </div>
   );
 };

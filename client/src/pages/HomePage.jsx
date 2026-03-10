@@ -10,6 +10,8 @@ import { MdFaceRetouchingNatural } from 'react-icons/md';
 import HeaderHome from "../components/layout/HeaderHome";
 import axios from 'axios';
 import { HiSparkles, HiTicket } from 'react-icons/hi';
+import ChatWidget from '../components/chat/ChatWidget';
+import { MessageCircle } from 'lucide-react';
 
 
 const HomePage = () => {
@@ -27,6 +29,39 @@ const HomePage = () => {
 
     const userString = localStorage.getItem('user'); // 1. Lấy chuỗi thô
 
+    // Chat widget state
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [chatSalonId, setChatSalonId] = useState(null);
+    const currentUser = (() => {
+        try {
+            return JSON.parse(userString || 'null');
+        } catch {
+            return null;
+        }
+    })();
+
+    const handleChatClick = () => {
+        if (!currentUser) {
+            navigate('/login');
+            return;
+        }
+        setChatSalonId(null);
+        setIsChatOpen(true);
+    };
+
+    // Listen for chat events from SalonCard
+    useEffect(() => {
+        const handleOpenChat = (event) => {
+            const { salonId } = event.detail;
+            setChatSalonId(salonId);
+            setIsChatOpen(true);
+        };
+
+        window.addEventListener('openChatWithSalon', handleOpenChat);
+        return () => {
+            window.removeEventListener('openChatWithSalon', handleOpenChat);
+        };
+    }, []);
 
     // 1. Dữ liệu Categories 
     const categories = [
@@ -143,6 +178,29 @@ const HomePage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Floating Message Button */}
+            {currentUser && (
+                <>
+                    <button
+                        className="chat-floating-btn"
+                        onClick={handleChatClick}
+                        title="Messages"
+                    >
+                        <MessageCircle size={24} />
+                    </button>
+                    {isChatOpen && (
+                        <ChatWidget
+                            userRole={currentUser.role}
+                            salonId={chatSalonId}
+                            onClose={() => {
+                                setIsChatOpen(false);
+                                setChatSalonId(null);
+                            }}
+                        />
+                    )}
+                </>
+            )}
 
         </>
     );
