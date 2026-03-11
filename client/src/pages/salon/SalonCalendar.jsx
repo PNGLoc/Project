@@ -126,7 +126,7 @@ const SalonCalendar = () => {
                     id: app._id,
                     stylistId: app.staffId?._id || app.staffId,
                     timeSlot,
-                    clientName: app.customerId?.fullName || app.clientName || 'Guest',
+                    clientName: app.customerId?.fullName || app.guestInfo?.fullName || app.clientName || 'Guest',
                     service: app.serviceSnapshot?.name || 'Service',
                     status: app.status.toLowerCase(),
                     timeRange: `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`

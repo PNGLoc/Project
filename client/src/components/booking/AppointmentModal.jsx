@@ -27,6 +27,25 @@ const AppointmentModal = ({ isOpen, onClose, appointmentId, onUpdateSuccess }) =
     const currentUser = userStr ? JSON.parse(userStr) : null;
     const isStaff = currentUser?.role === 'STAFF';
 
+    const getClientDisplayName = (appointmentData) => {
+        const customerFullName = String(appointmentData?.customerId?.fullName || '').trim();
+        const guestFullName = String(appointmentData?.guestInfo?.fullName || '').trim();
+
+        if (guestFullName && customerFullName) {
+            return `${customerFullName} (${guestFullName})`;
+        }
+
+        if (guestFullName) {
+            return guestFullName;
+        }
+
+        if (customerFullName) {
+            return customerFullName;
+        }
+
+        return 'Guest';
+    };
+
     useEffect(() => {
         if (isOpen && appointmentId) {
             fetchAppointmentDetails();
@@ -121,7 +140,7 @@ const AppointmentModal = ({ isOpen, onClose, appointmentId, onUpdateSuccess }) =
                         <div className="detail-grid" style={{ background: '#f9fafb', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
                             <div className="detail-row">
                                 <span className="label">Client Name</span>
-                                <span className="value">{appointment.customerId?.fullName || 'Guest'}</span>
+                                <span className="value">{getClientDisplayName(appointment)}</span>
                             </div>
                             <div className="detail-row">
                                 <span className="label">Service</span>

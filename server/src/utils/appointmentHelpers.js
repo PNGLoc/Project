@@ -22,7 +22,7 @@ export const reserveCollectedCouponUsage = async ({ collectedCouponId, appointme
     if (!collectedCouponId || !appointmentId) return;
 
     const collected = await UserCollectedCoupon.findById(collectedCouponId);
-    if (!collected || collected.isUsed) return;
+    if (!collected) return;
 
     collected.isUsed = true;
     collected.usedAt = new Date();
@@ -39,26 +39,17 @@ export const releaseCollectedCouponUsage = async (appointment) => {
     const collectedCouponId = appointment?.appliedCoupon?.collectedCouponId;
     const couponId = appointment?.appliedCoupon?.couponId;
 
-    if (!collectedCouponId || !couponId) return false;
+    if (!couponId) return false;
 
-    const collected = await UserCollectedCoupon.findOne({
-        _id: collectedCouponId,
-        userId: appointment.customerId
-    });
-
-    if (!collected || !collected.isUsed) return false;
-
-    if (
-        collected.usedAppointmentId &&
-        collected.usedAppointmentId.toString() !== appointment._id.toString()
-    ) {
-        return false;
+    if (collectedCouponId) {
+        const collected = await UserCollectedCoupon.findById(collectedCouponId);
+        if (collected && collected.usedAppointmentId?.toString() === appointment._id.toString()) {
+            collected.isUsed = false;
+            collected.usedAt = null;
+            collected.usedAppointmentId = null;
+            await collected.save();
+        }
     }
-
-    collected.isUsed = false;
-    collected.usedAt = null;
-    collected.usedAppointmentId = null;
-    await collected.save();
 
     await Coupon.updateOne(
         { _id: couponId, usedCount: { $gt: 0 } },
@@ -73,28 +64,36 @@ export const refundAppointmentToWallet = async (appointment) => {
         return 0;
     }
 
-    const existingRefund = await Transaction.findOne({
+    const refundFilter = {
         relatedId: appointment._id,
         onModel: 'Appointment',
         type: 'REFUND'
-    });
+    };
 
-    if (existingRefund) {
-        return 0;
+    try {
+        await Transaction.create({
+            userId: appointment.customerId,
+            amount: appointment.totalPrice,
+            type: 'REFUND',
+            relatedId: appointment._id,
+            onModel: 'Appointment'
+        });
+    } catch (error) {
+        if (error?.code === 11000) {
+            return 0;
+        }
+        throw error;
     }
 
-    await User.updateOne(
+    const walletUpdated = await User.updateOne(
         { _id: appointment.customerId },
         { $inc: { walletBalance: appointment.totalPrice } }
     );
 
-    await Transaction.create({
-        userId: appointment.customerId,
-        amount: appointment.totalPrice,
-        type: 'REFUND',
-        relatedId: appointment._id,
-        onModel: 'Appointment'
-    });
+    if (!walletUpdated?.matchedCount) {
+        await Transaction.deleteOne(refundFilter);
+        throw new Error('Refund failed: customer wallet not found.');
+    }
 
     return appointment.totalPrice;
 };

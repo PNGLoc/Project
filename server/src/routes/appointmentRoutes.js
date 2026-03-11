@@ -7,6 +7,7 @@ import {
     getSalonAppointments,
     getAppointmentAvailability,
     getProviderCustomers,
+    getProviderCustomerCollectedCoupons,
     getCustomerAppointments,
     cancelPendingVnpayAppointment,
     cancelCustomerAppointment,
@@ -21,8 +22,9 @@ const router = express.Router();
 router.post('/', protect, authorize('CUSTOMER'), createAppointment);
 router.post('/provider', protect, authorize('SALON_OWNER', 'STAFF'), createProviderAppointment);
 router.get('/my', protect, authorize('CUSTOMER'), getCustomerAppointments);
-router.get('/availability', protect, authorize('CUSTOMER'), getAppointmentAvailability);
+router.get('/availability', protect, authorize('CUSTOMER', 'SALON_OWNER', 'STAFF'), getAppointmentAvailability);
 router.get('/provider-customers', protect, authorize('SALON_OWNER', 'STAFF'), getProviderCustomers);
+router.get('/provider-customers/:customerId/coupons', protect, authorize('SALON_OWNER', 'STAFF'), getProviderCustomerCollectedCoupons);
 router.patch('/:id/cancel-vnpay', protect, authorize('CUSTOMER'), cancelPendingVnpayAppointment);
 router.patch('/:id/cancel', protect, authorize('CUSTOMER'), cancelCustomerAppointment);
 router.get('/salon', protect, authorize('SALON_OWNER', 'STAFF'), getSalonAppointments);

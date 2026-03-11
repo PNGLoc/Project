@@ -28,4 +28,26 @@ const transactionSchema = new mongoose.Schema({
     timestamps: true
 });
 
+transactionSchema.index(
+    { relatedId: 1, onModel: 1, type: 1 },
+    {
+        unique: true,
+        partialFilterExpression: {
+            onModel: 'Appointment',
+            type: 'PAYMENT'
+        }
+    }
+);
+
+transactionSchema.index(
+    { relatedId: 1, onModel: 1, type: 1 },
+    {
+        unique: true,
+        partialFilterExpression: {
+            onModel: 'Appointment',
+            type: 'REFUND'
+        }
+    }
+);
+
 export default mongoose.model('Transaction', transactionSchema);

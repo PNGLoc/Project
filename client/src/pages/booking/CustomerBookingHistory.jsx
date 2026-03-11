@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axiosClient from '../../lib/axios';
 import { FiSearch, FiMapPin, FiClock, FiImage, FiScissors, FiCheckCircle, FiXCircle, FiRotateCcw, FiFilter, FiChevronDown } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 import '../../assets/css/CustomerBookingHistory.css';
 
 const parsedCancelHours = Number(import.meta.env.VITE_BOOKING_CANCEL_DEADLINE_HOURS || 2);
@@ -25,6 +26,29 @@ const formatCurrency = (value) => {
     return `${new Intl.NumberFormat('vi-VN').format(value)} VND`;
 };
 
+const toNumber = (value, fallback = 0) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const getPricingSummary = (appointment) => {
+    const total = toNumber(appointment?.totalPrice, 0);
+    const snapshotPrice = toNumber(appointment?.serviceSnapshot?.price, total);
+    const originalFromField = toNumber(appointment?.originalPrice, snapshotPrice);
+    const original = originalFromField > 0 ? originalFromField : snapshotPrice;
+
+    const explicitDiscount = toNumber(appointment?.discountAmount, 0);
+    const inferredDiscount = Math.max(0, original - total);
+    const discount = explicitDiscount > 0 ? explicitDiscount : inferredDiscount;
+
+    return {
+        original,
+        discount,
+        total,
+        couponCode: appointment?.appliedCoupon?.code || ''
+    };
+};
+
 const CustomerBookingHistory = () => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -37,6 +61,10 @@ const CustomerBookingHistory = () => {
         sort: 'newest'
     });
     const [showSortMenu, setShowSortMenu] = useState(false);
+    const [cancelModal, setCancelModal] = useState({
+        isOpen: false,
+        appointment: null
+    });
     const sortMenuRef = useRef(null);
 
     // Close sort menu when clicking outside
@@ -71,10 +99,10 @@ const CustomerBookingHistory = () => {
 
             // Mapping sort values
             if (filters.sort === 'newest') {
-                params.sortBy = 'startAt';
+                params.sortBy = 'createdAt';
                 params.order = 'desc';
             } else if (filters.sort === 'oldest') {
-                params.sortBy = 'startAt';
+                params.sortBy = 'createdAt';
                 params.order = 'asc';
             } else if (filters.sort === 'price_asc') {
                 params.sortBy = 'totalPrice';
@@ -178,14 +206,27 @@ const CustomerBookingHistory = () => {
         return { canCancel: true, reason: '' };
     };
 
-    const handleCancelAppointment = async (appointment) => {
+    const handleCancelAppointment = (appointment) => {
         const eligibility = getCancelEligibility(appointment);
         if (!eligibility.canCancel) {
             toast.warning(eligibility.reason);
             return;
         }
 
-        if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+        setCancelModal({
+            isOpen: true,
+            appointment
+        });
+    };
+
+    const confirmCancelAppointment = async () => {
+        const appointment = cancelModal.appointment;
+        if (!appointment?._id) {
+            setCancelModal({ isOpen: false, appointment: null });
+            return;
+        }
+
+        setCancelModal({ isOpen: false, appointment: null });
 
         try {
             const res = await axiosClient.patch(`/api/appointments/${appointment._id}/cancel`);
@@ -298,6 +339,7 @@ const CustomerBookingHistory = () => {
                     const status = getStatusInfo(appointment.status);
                     const salonInfo = getDisplaySalonInfo(appointment);
                     const cancelEligibility = getCancelEligibility(appointment);
+                    const pricing = getPricingSummary(appointment);
                     return (
                         <div className="booking-card" key={appointment._id}>
                             <div className="card-top">
@@ -326,16 +368,36 @@ const CustomerBookingHistory = () => {
                                     </div>
                                     <div className="info-row">
                                         <FiClock className="mini-icon" />
-                                        <span>Time: {formatDateTime(appointment.startAt)}</span>
+                                        <span>Booked at: {formatDateTime(appointment.createdAt)}</span>
+                                    </div>
+                                    <div className="info-row">
+                                        <FiClock className="mini-icon" />
+                                        <span>Service time: {formatDateTime(appointment.startAt)}</span>
                                     </div>
                                     <div className="info-row">
                                         <FiCheckCircle className="mini-icon" />
-                                        <span>Payment: {appointment.paymentMethod} - {appointment.paymentStatus}</span>
+                                        <span>Payment: {appointment.paymentMethod || '-'} - {appointment.paymentStatus || '-'}</span>
                                     </div>
                                 </div>
                                 <div className="price-side">
-                                    <div className="price-label">Price</div>
-                                    <div className="price-value">{formatCurrency(appointment.totalPrice)}</div>
+                                    <div className="price-label">Payment Summary</div>
+                                    <div className="price-breakdown">
+                                        <div className="price-row">
+                                            <span>Original</span>
+                                            <span>{formatCurrency(pricing.original)}</span>
+                                        </div>
+                                        <div className="price-row discount">
+                                            <span>Discount</span>
+                                            <span>- {formatCurrency(pricing.discount)}</span>
+                                        </div>
+                                        {pricing.couponCode && (
+                                            <div className="coupon-chip">Coupon: {pricing.couponCode}</div>
+                                        )}
+                                        <div className="price-row total">
+                                            <span>Paid</span>
+                                            <span>{formatCurrency(pricing.total)}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -371,6 +433,17 @@ const CustomerBookingHistory = () => {
                     );
                 })}
             </div>
+
+            <ConfirmModal
+                isOpen={cancelModal.isOpen}
+                title="Cancel booking"
+                message="Are you sure you want to cancel this booking?"
+                onConfirm={confirmCancelAppointment}
+                onCancel={() => setCancelModal({ isOpen: false, appointment: null })}
+                confirmText="Cancel booking"
+                cancelText="Keep booking"
+                type="danger"
+            />
         </div>
     );
 };

@@ -374,19 +374,64 @@
     text-align: right;
     padding-left: 20px;
     border-left: 1px solid #eee;
+    min-width: 240px;
 }
 
 .price-label {
     font-size: 12px;
     color: #999;
     text-transform: uppercase;
-    margin-bottom: 4px;
+    margin-bottom: 10px;
 }
 
 .price-value {
     font-size: 20px;
     font-weight: 800;
     color: #008080;
+}
+
+.price-breakdown {
+    display: grid;
+    gap: 6px;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.price-row.discount {
+    color: #d97706;
+}
+
+.price-row.discount span:last-child {
+    font-weight: 700;
+}
+
+.price-row.total {
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px dashed #dbe4e4;
+    font-size: 15px;
+    font-weight: 800;
+    color: #008080;
+}
+
+.coupon-chip {
+    display: inline-flex;
+    align-self: flex-end;
+    width: fit-content;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0f766e;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
 }
 
 .card-footer {
@@ -558,6 +603,12 @@
         padding-left: 0;
         margin-top: 15px;
         text-align: left;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .coupon-chip {
+        align-self: flex-start;
     }
 
     .footer-actions {

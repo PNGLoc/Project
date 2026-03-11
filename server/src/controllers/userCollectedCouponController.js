@@ -62,9 +62,7 @@ export const getMyCollectedCoupons = async (req, res) => {
         const { status = 'all' } = req.query;
 
         const filter = { userId };
-        if (status === 'available') {
-            filter.isUsed = false;
-        } else if (status === 'used') {
+        if (status === 'used') {
             filter.isUsed = true;
         }
 
