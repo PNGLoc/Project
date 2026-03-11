@@ -9,7 +9,14 @@ const appointmentSchema = new mongoose.Schema({
     customerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false
+    },
+    guestInfo: {
+        fullName: {
+            type: String,
+            trim: true,
+            default: ''
+        }
     },
     serviceId: {
         type: mongoose.Schema.Types.ObjectId,

@@ -3,6 +3,35 @@ import axiosClient from '../../lib/axios';
 import { toast } from 'react-toastify';
 import './NewAppointmentModal.css';
 
+const WALK_IN_VALUE = 'WALK_IN';
+
+const buildTimeSlots = (startHour, endHour, intervalMinutes) => {
+    const slots = [];
+    for (let hour = startHour; hour <= endHour; hour += 1) {
+        for (let minute = 0; minute < 60; minute += intervalMinutes) {
+            if (hour === endHour && minute > 0) break;
+            const hh = String(hour).padStart(2, '0');
+            const mm = String(minute).padStart(2, '0');
+            slots.push(`${hh}:${mm}`);
+        }
+    }
+    return slots;
+};
+
+const calculateDiscount = (coupon, amount) => {
+    if (!coupon || amount <= 0) return 0;
+
+    if (coupon.discountType === 'PERCENTAGE') {
+        const rawDiscount = (amount * coupon.discountValue) / 100;
+        if (coupon.maxDiscountAmount && coupon.maxDiscountAmount > 0) {
+            return Math.max(0, Math.min(rawDiscount, coupon.maxDiscountAmount));
+        }
+        return Math.max(0, rawDiscount);
+    }
+
+    return Math.max(0, coupon.discountValue || 0);
+};
+
 const NewAppointmentModal = ({ isOpen, onClose, onCreated }) => {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -10,15 +39,22 @@ const NewAppointmentModal = ({ isOpen, onClose, onCreated }) => {
     const [staffs, setStaffs] = useState([]);
     const [services, setServices] = useState([]);
     const [search, setSearch] = useState('');
+    const [bookedSlots, setBookedSlots] = useState([]);
+    const [customerCoupons, setCustomerCoupons] = useState([]);
+    const [couponsLoading, setCouponsLoading] = useState(false);
     const [form, setForm] = useState({
         customerId: '',
+        guestName: '',
         serviceId: '',
         staffId: '',
         date: '',
         time: '',
-        paymentMethod: 'CASH',
-        note: ''
+        note: '',
+        collectedCouponId: ''
     });
+
+    const timeSlots = useMemo(() => buildTimeSlots(9, 19, 30), []);
+    const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
     const user = useMemo(() => {
         try {
@@ -30,30 +66,59 @@ const NewAppointmentModal = ({ isOpen, onClose, onCreated }) => {
 
     const isStaffUser = user?.role === 'STAFF';
 
-    const selectedCustomer = useMemo(
-        () => customers.find((item) => item._id === form.customerId),
-        [customers, form.customerId]
-    );
-
     const selectedService = useMemo(
         () => services.find((item) => item._id === form.serviceId),
         [services, form.serviceId]
     );
 
-    const finalAmount = Number(selectedService?.price || 0);
-    const isWalletInsufficient = form.paymentMethod === 'WALLET' && Number(selectedCustomer?.walletBalance || 0) < finalAmount;
+    const isWalkIn = form.customerId === WALK_IN_VALUE;
+
+    const selectedCouponEntry = useMemo(
+        () => customerCoupons.find((item) => item.collectedCouponId === form.collectedCouponId),
+        [customerCoupons, form.collectedCouponId]
+    );
+
+    const pricing = useMemo(() => {
+        const basePrice = Number(selectedService?.price || 0);
+        const coupon = selectedCouponEntry?.coupon;
+
+        if (!coupon) {
+            return {
+                basePrice,
+                discount: 0,
+                total: basePrice,
+                isCouponEligible: true
+            };
+        }
+
+        const minPurchase = Number(coupon.minPurchaseAmount || 0);
+        const isCouponEligible = basePrice >= minPurchase;
+        const discount = isCouponEligible ? Math.min(basePrice, calculateDiscount(coupon, basePrice)) : 0;
+
+        return {
+            basePrice,
+            discount,
+            total: Math.max(0, basePrice - discount),
+            isCouponEligible
+        };
+    }, [selectedService, selectedCouponEntry]);
+
+    const finalAmount = pricing.total;
 
     const resetForm = () => {
         setForm({
             customerId: '',
+            guestName: '',
             serviceId: '',
             staffId: '',
             date: '',
             time: '',
-            paymentMethod: 'CASH',
-            note: ''
+            note: '',
+            collectedCouponId: ''
         });
         setSearch('');
+        setBookedSlots([]);
+        setCustomerCoupons([]);
     };
 
     const fetchCustomers = async (q = '') => {
@@ -119,21 +184,109 @@ const NewAppointmentModal = ({ isOpen, onClose, onCreated }) => {
         return () => clearTimeout(timer);
     }, [search, isOpen]);
 
+    useEffect(() => {
+        if (!isOpen) return;
+
+        if (!form.staffId || !form.date) {
+            setBookedSlots([]);
+            return;
+        }
+
+        axiosClient
+            .get('/api/appointments/availability', {
+                params: {
+                    staffId: form.staffId,
+                    date: form.date
+                }
+            })
+            .then((res) => setBookedSlots(res.data?.data || []))
+            .catch(() => setBookedSlots([]));
+    }, [form.staffId, form.date, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        if (!form.customerId || isWalkIn) {
+            setCustomerCoupons([]);
+            setForm((prev) => ({ ...prev, collectedCouponId: '' }));
+            return;
+        }
+
+        setCouponsLoading(true);
+        axiosClient
+            .get(`/api/appointments/provider-customers/${form.customerId}/coupons`)
+            .then((res) => {
+                setCustomerCoupons(res.data?.data || []);
+            })
+            .catch(() => {
+                setCustomerCoupons([]);
+            })
+            .finally(() => {
+                setCouponsLoading(false);
+            });
+    }, [form.customerId, isWalkIn, isOpen]);
+
+    useEffect(() => {
+        if (!form.time) return;
+
+        const selectedTimeStillAvailable = !isSlotUnavailable(form.time);
+        if (!selectedTimeStillAvailable) {
+            setForm((prev) => ({ ...prev, time: '' }));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bookedSlots, form.date, form.staffId, form.serviceId]);
+
+    useEffect(() => {
+        if (!form.collectedCouponId) return;
+
+        const exists = customerCoupons.some((item) => item.collectedCouponId === form.collectedCouponId);
+        if (!exists || !pricing.isCouponEligible) {
+            setForm((prev) => ({ ...prev, collectedCouponId: '' }));
+        }
+    }, [customerCoupons, form.collectedCouponId, pricing.isCouponEligible]);
+
     const handleChange = (event) => {
         const { name, value } = event.target;
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
+    const isSlotUnavailable = (slot) => {
+        if (!form.date || !selectedService?.duration) return false;
+
+        const slotStart = new Date(`${form.date}T${slot}`);
+        const slotEnd = new Date(slotStart.getTime() + selectedService.duration * 60000);
+
+        const hasConflict = bookedSlots.some((item) => {
+            const startAt = new Date(item.startAt);
+            const endAt = new Date(item.endAt);
+            return slotStart < endAt && slotEnd > startAt;
+        });
+
+        if (hasConflict) return true;
+
+        const now = new Date();
+        if (form.date === today && slotStart < now) {
+            return true;
+        }
+
+        return false;
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        if (!form.customerId || !form.staffId || !form.serviceId || !form.date || !form.time) {
+        if (!form.staffId || !form.serviceId || !form.date || !form.time) {
             toast.warning('Please complete all required fields.');
             return;
         }
 
-        if (isWalletInsufficient) {
-            toast.warning('Customer wallet balance is insufficient for this service.');
+        if (isWalkIn && !String(form.guestName || '').trim()) {
+            toast.warning('Please enter guest name for walk-in appointment.');
+            return;
+        }
+
+        if (!isWalkIn && !form.customerId) {
+            toast.warning('Please select a customer.');
             return;
         }
 
@@ -146,14 +299,25 @@ const NewAppointmentModal = ({ isOpen, onClose, onCreated }) => {
         try {
             setSubmitting(true);
 
-            await axiosClient.post('/api/appointments/provider', {
-                customerId: form.customerId,
+            const payload = {
                 serviceId: form.serviceId,
                 staffId: form.staffId,
                 startAt: startAt.toISOString(),
-                paymentMethod: form.paymentMethod,
                 note: form.note
-            });
+            };
+
+            if (isWalkIn) {
+                payload.customerId = WALK_IN_VALUE;
+                payload.guestName = String(form.guestName || '').trim();
+            } else {
+                payload.customerId = form.customerId;
+
+                if (form.collectedCouponId && pricing.isCouponEligible) {
+                    payload.collectedCouponId = form.collectedCouponId;
+                }
+            }
+
+            await axiosClient.post('/api/appointments/provider', payload);
 
             toast.success('Appointment created and confirmed successfully.');
             onCreated?.();
@@ -179,119 +343,171 @@ const NewAppointmentModal = ({ isOpen, onClose, onCreated }) => {
                     <div className="new-apt-loading">Loading form data...</div>
                 ) : (
                     <form onSubmit={handleSubmit} className="new-apt-form">
-                        <div className="new-apt-grid">
-                            <label>
-                                Customer
-                                <select name="customerId" value={form.customerId} onChange={handleChange} required>
-                                    <option value="">Select customer</option>
-                                    {customers.map((customer) => (
-                                        <option key={customer._id} value={customer._id}>
-                                            {customer.fullName} - {customer.phone || customer.email}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                        <div className="new-apt-layout">
+                            <div className="new-apt-left">
+                                <div className="new-apt-grid">
+                                    <label>
+                                        Customer
+                                        <select name="customerId" value={form.customerId} onChange={handleChange} required>
+                                            <option value="">Select customer</option>
+                                            <option value={WALK_IN_VALUE}>Guest</option>
+                                            {customers.map((customer) => (
+                                                <option key={customer._id} value={customer._id}>
+                                                    {customer.fullName} - {customer.phone || customer.email}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
 
-                            <label>
-                                Search customer
-                                <input
-                                    type="text"
-                                    value={search}
-                                    placeholder="Name, email or phone"
-                                    onChange={(event) => setSearch(event.target.value)}
-                                />
-                            </label>
+                                    <label>
+                                        Search customer
+                                        <input
+                                            type="text"
+                                            value={search}
+                                            placeholder="Name, email or phone"
+                                            disabled={isWalkIn}
+                                            onChange={(event) => setSearch(event.target.value)}
+                                        />
+                                    </label>
 
-                            <label>
-                                Service
-                                <select name="serviceId" value={form.serviceId} onChange={handleChange} required>
-                                    <option value="">Select service</option>
-                                    {services.map((service) => (
-                                        <option key={service._id} value={service._id}>
-                                            {service.name} - {Number(service.price || 0).toLocaleString('vi-VN')} VND
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                                    {isWalkIn && (
+                                        <label>
+                                            Walk-in guest name
+                                            <input
+                                                type="text"
+                                                name="guestName"
+                                                value={form.guestName}
+                                                onChange={handleChange}
+                                                placeholder="Enter guest full name"
+                                                required={isWalkIn}
+                                            />
+                                        </label>
+                                    )}
 
-                            <label>
-                                Staff
-                                <select
-                                    name="staffId"
-                                    value={form.staffId}
-                                    onChange={handleChange}
-                                    required
-                                    disabled={isStaffUser}
-                                >
-                                    <option value="">Select staff</option>
-                                    {staffs.map((staff) => (
-                                        <option key={staff._id} value={staff._id}>
-                                            {staff.fullName}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                                    <label>
+                                        Service
+                                        <select name="serviceId" value={form.serviceId} onChange={handleChange} required>
+                                            <option value="">Select service</option>
+                                            {services.map((service) => (
+                                                <option key={service._id} value={service._id}>
+                                                    {service.name} - {Number(service.price || 0).toLocaleString('vi-VN')} VND
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
 
-                            <label>
-                                Date
-                                <input type="date" name="date" value={form.date} onChange={handleChange} required />
-                            </label>
+                                    <label>
+                                        Staff
+                                        <select
+                                            name="staffId"
+                                            value={form.staffId}
+                                            onChange={handleChange}
+                                            required
+                                            disabled={isStaffUser}
+                                        >
+                                            <option value="">Select staff</option>
+                                            {staffs.map((staff) => (
+                                                <option key={staff._id} value={staff._id}>
+                                                    {staff.fullName}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
 
-                            <label>
-                                Time
-                                <input type="time" name="time" value={form.time} onChange={handleChange} required />
-                            </label>
-                        </div>
-
-                        <div className="new-apt-payment">
-                            <span>Payment</span>
-                            <div className="new-apt-payment-options">
-                                <button
-                                    type="button"
-                                    className={`pay-option ${form.paymentMethod === 'CASH' ? 'active' : ''}`}
-                                    onClick={() => setForm((prev) => ({ ...prev, paymentMethod: 'CASH' }))}
-                                >
-                                    CASH
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`pay-option ${form.paymentMethod === 'WALLET' ? 'active' : ''}`}
-                                    onClick={() => setForm((prev) => ({ ...prev, paymentMethod: 'WALLET' }))}
-                                >
-                                    WALLET
-                                </button>
-                            </div>
-                            {selectedCustomer && (
-                                <div className="new-apt-wallet-hint">
-                                    Customer wallet: {Number(selectedCustomer.walletBalance || 0).toLocaleString('vi-VN')} VND
+                                    <label>
+                                        Date
+                                        <input type="date" min={today} name="date" value={form.date} onChange={handleChange} required />
+                                    </label>
                                 </div>
-                            )}
-                            {isWalletInsufficient && (
-                                <div className="new-apt-error">Wallet balance is insufficient for this payment method.</div>
-                            )}
-                        </div>
 
-                        <label>
-                            Provider note
-                            <textarea
-                                name="note"
-                                rows="3"
-                                placeholder="Optional note"
-                                value={form.note}
-                                onChange={handleChange}
-                            />
-                        </label>
+                                <div className="new-apt-slots">
+                                    <div className="new-apt-slots-header">Select time slot</div>
+                                    <div className="new-apt-time-grid">
+                                        {timeSlots.map((slot) => {
+                                            const isUnavailable = isSlotUnavailable(slot);
+                                            return (
+                                                <button
+                                                    key={slot}
+                                                    type="button"
+                                                    className={`new-apt-time-slot ${form.time === slot ? 'selected' : ''}`}
+                                                    disabled={isUnavailable || !form.date || !selectedService || !form.staffId}
+                                                    onClick={() => setForm((prev) => ({ ...prev, time: slot }))}
+                                                >
+                                                    {slot}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {!form.date && <div className="new-apt-hint">Please select a date first.</div>}
+                                </div>
 
-                        <div className="new-apt-summary">
-                            <span>Total</span>
-                            <strong>{finalAmount.toLocaleString('vi-VN')} VND</strong>
+                                <div className="new-apt-coupon-block">
+                                    <label>
+                                        Apply collected coupon
+                                        <select
+                                            name="collectedCouponId"
+                                            value={form.collectedCouponId}
+                                            onChange={handleChange}
+                                            disabled={isWalkIn || !form.customerId || couponsLoading || customerCoupons.length === 0}
+                                        >
+                                            <option value="">No coupon</option>
+                                            {customerCoupons.map((item) => {
+                                                const coupon = item.coupon;
+                                                const minPurchase = Number(coupon.minPurchaseAmount || 0);
+                                                const notEligible = Number(selectedService?.price || 0) < minPurchase;
+                                                return (
+                                                    <option key={item.collectedCouponId} value={item.collectedCouponId} disabled={notEligible}>
+                                                        {coupon.code} - {coupon.discountType === 'PERCENTAGE'
+                                                            ? `${coupon.discountValue}%`
+                                                            : `${Number(coupon.discountValue || 0).toLocaleString('vi-VN')} VND`}
+                                                        {notEligible ? ` (Min ${minPurchase.toLocaleString('vi-VN')} VND)` : ''}
+                                                    </option>
+                                                );
+                                            })}
+                                        </select>
+                                    </label>
+                                    {couponsLoading && <div className="new-apt-hint">Loading coupons...</div>}
+                                    {!couponsLoading && !isWalkIn && form.customerId && customerCoupons.length === 0 && (
+                                        <div className="new-apt-hint">No available collected coupons for this customer.</div>
+                                    )}
+                                </div>
+
+                            </div>
+
+                            <div className="new-apt-right">
+                                <label className="new-apt-note-block">
+                                    Provider note
+                                    <textarea
+                                        name="note"
+                                        rows="3"
+                                        placeholder="Optional note"
+                                        value={form.note}
+                                        onChange={handleChange}
+                                    />
+                                </label>
+
+                                <div className="new-apt-summary">
+                                    <span>Original</span>
+                                    <strong>{Number(pricing.basePrice || 0).toLocaleString('vi-VN')} VND</strong>
+                                </div>
+
+                                <div className="new-apt-summary">
+                                    <span>Discount</span>
+                                    <strong>- {Number(pricing.discount || 0).toLocaleString('vi-VN')} VND</strong>
+                                </div>
+
+                                <div className="new-apt-summary">
+                                    <span>Total</span>
+                                    <strong>{Number(finalAmount || 0).toLocaleString('vi-VN')} VND</strong>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="new-apt-actions">
                             <button type="button" className="btn-cancel" onClick={onClose} disabled={submitting}>
                                 Cancel
                             </button>
-                            <button type="submit" className="btn-submit" disabled={submitting || isWalletInsufficient}>
+                            <button type="submit" className="btn-submit" disabled={submitting}>
                                 {submitting ? 'Creating...' : 'Create & Confirm'}
                             </button>
                         </div>

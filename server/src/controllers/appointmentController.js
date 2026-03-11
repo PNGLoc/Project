@@ -20,6 +20,19 @@ const CANCELLATION_WINDOW_HOURS = Number.isFinite(parsedCancellationHours) && pa
     ? parsedCancellationHours
     : 2;
 
+const SYSTEM_GUEST_CUSTOMER_EMAIL = String(
+    process.env.SYSTEM_GUEST_CUSTOMER_EMAIL || 'guest.customer@boms.vn'
+).toLowerCase();
+const SYSTEM_GUEST_CUSTOMER_PHONE = String(
+    process.env.SYSTEM_GUEST_CUSTOMER_PHONE || '0999999999'
+);
+const SYSTEM_GUEST_CUSTOMER_PASSWORD = String(
+    process.env.SYSTEM_GUEST_CUSTOMER_PASSWORD || 'Guest@1234'
+);
+const SYSTEM_GUEST_CUSTOMER_NAME = String(
+    process.env.SYSTEM_GUEST_CUSTOMER_NAME || 'Walk-in Guest'
+);
+
 const createHttpError = (statusCode, message) => {
     const error = new Error(message);
     error.statusCode = statusCode;
@@ -53,6 +66,43 @@ const getProviderSalonId = async (user) => {
     return null;
 };
 
+const isSystemGuestCustomer = (customer) => {
+    return String(customer?.email || '').toLowerCase() === SYSTEM_GUEST_CUSTOMER_EMAIL;
+};
+
+const getOrCreateSystemGuestCustomer = async () => {
+    const query = {
+        email: SYSTEM_GUEST_CUSTOMER_EMAIL,
+        role: 'CUSTOMER'
+    };
+
+    const existing = await User.findOne(query);
+    if (existing) {
+        return existing;
+    }
+
+    try {
+        return await User.create({
+            fullName: SYSTEM_GUEST_CUSTOMER_NAME,
+            email: SYSTEM_GUEST_CUSTOMER_EMAIL,
+            password: SYSTEM_GUEST_CUSTOMER_PASSWORD,
+            phone: SYSTEM_GUEST_CUSTOMER_PHONE,
+            role: 'CUSTOMER',
+            isActive: false,
+            isVerified: true,
+            bio: 'System guest account for walk-in bookings.'
+        });
+    } catch (error) {
+        if (error?.code === 11000) {
+            const duplicate = await User.findOne(query);
+            if (duplicate) {
+                return duplicate;
+            }
+        }
+        throw error;
+    }
+};
+
 const resolveCouponForBooking = async ({ customerId, salonId, collectedCouponId, baseAmount }) => {
     if (!collectedCouponId) {
         return {
@@ -62,6 +112,10 @@ const resolveCouponForBooking = async ({ customerId, salonId, collectedCouponId,
         };
     }
 
+    if (!customerId) {
+        throw createHttpError(400, 'Coupon can only be applied for registered customers.');
+    }
+
     const collectedCoupon = await UserCollectedCoupon.findOne({
         _id: collectedCouponId,
         userId: customerId
@@ -69,10 +123,6 @@ const resolveCouponForBooking = async ({ customerId, salonId, collectedCouponId,
 
     if (!collectedCoupon || !collectedCoupon.couponId) {
         throw createHttpError(400, 'Selected coupon is invalid or no longer available.');
-    }
-
-    if (collectedCoupon.isUsed) {
-        throw createHttpError(400, 'Selected coupon has already been used.');
     }
 
     const coupon = collectedCoupon.couponId;
@@ -314,11 +364,64 @@ export const getProviderCustomers = async (req, res) => {
         }
 
         const customers = await User.find(filter)
-            .select('_id fullName email phone walletBalance')
+            .select('_id fullName email phone')
             .sort({ createdAt: -1 })
             .limit(30);
 
         return res.json({ success: true, data: customers });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
+// @desc    Get collected coupons for a selected provider customer
+// @route   GET /api/appointments/provider-customers/:customerId/coupons
+// @access  Private/SALON_OWNER, STAFF
+export const getProviderCustomerCollectedCoupons = async (req, res) => {
+    try {
+        const { customerId } = req.params;
+
+        if (!customerId) {
+            return res.status(400).json({ message: 'Missing customerId.' });
+        }
+
+        const providerSalonId = await getProviderSalonId(req.user);
+        if (!providerSalonId) {
+            return res.status(404).json({ message: 'Salon context not found for current provider.' });
+        }
+
+        const customer = await User.findOne({ _id: customerId, role: 'CUSTOMER', isActive: true })
+            .select('_id fullName');
+
+        if (!customer) {
+            return res.status(404).json({ message: 'Customer not found or inactive.' });
+        }
+
+        const now = new Date();
+
+        const collected = await UserCollectedCoupon.find({ userId: customerId })
+            .populate('couponId')
+            .sort({ createdAt: -1 });
+
+        const items = collected
+            .filter((entry) => {
+                const coupon = entry.couponId;
+                if (!coupon) return false;
+
+                if (coupon.salonId.toString() !== providerSalonId.toString()) return false;
+                if (!coupon.isActive) return false;
+                if (new Date(coupon.startDate) > now) return false;
+                if (new Date(coupon.endDate) < now) return false;
+                if (coupon.usedCount >= coupon.usageLimit) return false;
+
+                return true;
+            })
+            .map((entry) => ({
+                collectedCouponId: entry._id,
+                coupon: entry.couponId
+            }));
+
+        return res.json({ success: true, data: items });
     } catch (error) {
         return res.status(500).json({ message: error.message || 'Server error' });
     }
@@ -331,17 +434,20 @@ export const createProviderAppointment = async (req, res) => {
     try {
         const {
             customerId,
+            guestName = '',
             serviceId,
             staffId,
             startAt,
             note = '',
-            paymentMethod = 'CASH',
             collectedCouponId = null
         } = req.body;
 
-        if (!customerId || !serviceId || !staffId || !startAt) {
+        if (!serviceId || !staffId || !startAt) {
             return res.status(400).json({ message: 'Missing required fields.' });
         }
+
+        const normalizedGuestName = String(guestName || '').trim();
+        const walkInRequested = !customerId || customerId === 'WALK_IN';
 
         const providerSalonId = await getProviderSalonId(req.user);
         if (!providerSalonId) {
@@ -357,12 +463,21 @@ export const createProviderAppointment = async (req, res) => {
             return res.status(400).json({ message: 'Start time must be in the future.' });
         }
 
-        const [salon, customer, service, staff] = await Promise.all([
+        const systemGuestCustomer = walkInRequested
+            ? await getOrCreateSystemGuestCustomer()
+            : null;
+
+        const [salon, selectedCustomer, service, staff] = await Promise.all([
             Salon.findById(providerSalonId),
-            User.findOne({ _id: customerId, role: 'CUSTOMER', isActive: true }),
+            walkInRequested
+                ? Promise.resolve(null)
+                : User.findOne({ _id: customerId, role: 'CUSTOMER', isActive: true }),
             Service.findOne({ _id: serviceId, salonId: providerSalonId, isActive: true }),
             Staff.findOne({ _id: staffId, salonId: providerSalonId, isActive: true })
         ]);
+
+        const customer = walkInRequested ? systemGuestCustomer : selectedCustomer;
+        const isWalkIn = walkInRequested || isSystemGuestCustomer(customer);
 
         if (!salon) {
             return res.status(404).json({ message: 'Salon not found.' });
@@ -370,6 +485,14 @@ export const createProviderAppointment = async (req, res) => {
 
         if (!customer) {
             return res.status(404).json({ message: 'Customer not found or inactive.' });
+        }
+
+        if (isWalkIn && !normalizedGuestName) {
+            return res.status(400).json({ message: 'Guest name is required for walk-in appointments.' });
+        }
+
+        if (isWalkIn && collectedCouponId) {
+            return res.status(400).json({ message: 'Walk-in appointments cannot apply collected coupons.' });
         }
 
         if (!service) {
@@ -392,34 +515,19 @@ export const createProviderAppointment = async (req, res) => {
             return res.status(409).json({ message: 'Selected time slot is not available for this stylist.' });
         }
 
-        if (paymentMethod === 'VNPAY') {
-            return res.status(400).json({ message: 'Provider booking supports only CASH or WALLET payment.' });
-        }
-
         const couponPricing = await resolveCouponForBooking({
-            customerId: customer._id,
+            customerId: isWalkIn ? null : customer._id,
             salonId: providerSalonId,
             collectedCouponId,
             baseAmount: service.price
         });
 
-        const normalizedPayment = normalizePaymentMethod(paymentMethod, { allowVnpay: false });
-
-        if (normalizedPayment === 'WALLET') {
-            const walletDebited = await User.findOneAndUpdate(
-                { _id: customer._id, walletBalance: { $gte: couponPricing.finalPrice } },
-                { $inc: { walletBalance: -couponPricing.finalPrice } },
-                { new: true }
-            );
-
-            if (!walletDebited) {
-                return res.status(400).json({ message: 'Customer wallet balance is insufficient.' });
-            }
-        }
-
         const appointment = await Appointment.create({
             salonId: providerSalonId,
             customerId: customer._id,
+            guestInfo: isWalkIn
+                ? { fullName: normalizedGuestName }
+                : { fullName: '' },
             serviceId,
             staffId,
             startAt: startDate,
@@ -429,7 +537,7 @@ export const createProviderAppointment = async (req, res) => {
             discountAmount: couponPricing.discountAmount,
             status: 'CONFIRMED',
             paymentStatus: 'PAID',
-            paymentMethod: normalizedPayment,
+            paymentMethod: 'CASH',
             appliedCoupon: couponPricing.appliedCoupon,
             note: typeof note === 'string' ? note.trim() : '',
             serviceSnapshot: {
@@ -454,15 +562,19 @@ export const createProviderAppointment = async (req, res) => {
             });
         }
 
-        await Transaction.create({
-            userId: appointment.customerId,
-            amount: appointment.totalPrice,
-            type: 'PAYMENT',
-            relatedId: appointment._id,
-            onModel: 'Appointment'
-        });
+        if (appointment.customerId && !isWalkIn) {
+            await Transaction.create({
+                userId: appointment.customerId,
+                amount: appointment.totalPrice,
+                type: 'PAYMENT',
+                relatedId: appointment._id,
+                onModel: 'Appointment'
+            });
+        }
 
-        sendBookingConfirmationEmail({ customer, appointment });
+        if (!isWalkIn) {
+            sendBookingConfirmationEmail({ customer, appointment });
+        }
 
         return res.status(201).json({ success: true, data: appointment });
     } catch (error) {
@@ -509,25 +621,27 @@ export const markAppointmentPaidByCash = async (req, res) => {
         appointment.status = 'CONFIRMED';
         await appointment.save();
 
-        const existing = await Transaction.findOne({
-            relatedId: appointment._id,
-            onModel: 'Appointment',
-            type: 'PAYMENT'
-        });
-
-        if (!existing) {
-            await Transaction.create({
-                userId: appointment.customerId,
-                amount: appointment.totalPrice,
-                type: 'PAYMENT',
+        if (appointment.customerId) {
+            const existing = await Transaction.findOne({
                 relatedId: appointment._id,
-                onModel: 'Appointment'
+                onModel: 'Appointment',
+                type: 'PAYMENT'
             });
-        }
 
-        const customer = await User.findById(appointment.customerId).select('fullName email');
-        if (customer) {
-            sendBookingConfirmationEmail({ customer, appointment });
+            if (!existing) {
+                await Transaction.create({
+                    userId: appointment.customerId,
+                    amount: appointment.totalPrice,
+                    type: 'PAYMENT',
+                    relatedId: appointment._id,
+                    onModel: 'Appointment'
+                });
+            }
+
+            const customer = await User.findById(appointment.customerId).select('fullName email');
+            if (customer) {
+                sendBookingConfirmationEmail({ customer, appointment });
+            }
         }
 
         return res.json({ success: true, data: appointment });
@@ -538,7 +652,7 @@ export const markAppointmentPaidByCash = async (req, res) => {
 
 // @desc    Get booked slots for a staff on a date
 // @route   GET /api/appointments/availability?staffId=...&date=YYYY-MM-DD
-// @access  Private/CUSTOMER
+// @access  Private/CUSTOMER,SALON_OWNER,STAFF
 export const getAppointmentAvailability = async (req, res) => {
     try {
         const { staffId, date } = req.query;
@@ -680,14 +794,33 @@ export const getCustomerAppointments = async (req, res) => {
         const { status, startDate, endDate, sortBy, order = 'desc', salonName } = req.query;
         let query = { customerId: req.user._id };
 
+        const parseDateFilter = (raw, boundary) => {
+            if (!raw) return null;
+
+            const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw);
+            const parsed = isDateOnly
+                ? new Date(`${raw}T${boundary === 'end' ? '23:59:59.999' : '00:00:00.000'}`)
+                : new Date(raw);
+
+            if (Number.isNaN(parsed.getTime())) return null;
+            return parsed;
+        };
+
         if (status) {
             query.status = status;
         }
 
         if (startDate || endDate) {
-            query.startAt = {};
-            if (startDate) query.startAt.$gte = new Date(startDate);
-            if (endDate) query.startAt.$lte = new Date(endDate);
+            const start = parseDateFilter(startDate, 'start');
+            const end = parseDateFilter(endDate, 'end');
+
+            query.createdAt = {};
+            if (start) query.createdAt.$gte = start;
+            if (end) query.createdAt.$lte = end;
+
+            if (!query.createdAt.$gte && !query.createdAt.$lte) {
+                delete query.createdAt;
+            }
         }
 
         if (salonName) {
@@ -700,9 +833,10 @@ export const getCustomerAppointments = async (req, res) => {
 
         let sortOptions = {};
         if (sortBy) {
-            sortOptions[sortBy] = order === 'asc' ? 1 : -1;
+            const normalizedSortBy = sortBy === 'bookedAt' ? 'createdAt' : sortBy;
+            sortOptions[normalizedSortBy] = order === 'asc' ? 1 : -1;
         } else {
-            sortOptions.startAt = -1;
+            sortOptions.createdAt = -1;
         }
 
         const appointments = await Appointment.find(query)
@@ -729,7 +863,7 @@ export const cancelPendingVnpayAppointment = async (req, res) => {
             return res.status(404).json({ message: 'Appointment not found.' });
         }
 
-        if (appointment.customerId.toString() !== req.user._id.toString()) {
+        if (!appointment.customerId || appointment.customerId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to cancel this appointment.' });
         }
 
@@ -777,7 +911,7 @@ export const cancelCustomerAppointment = async (req, res) => {
         }
 
         // Kiểm tra quyền sở hữu
-        if (appointment.customerId.toString() !== req.user._id.toString()) {
+        if (!appointment.customerId || appointment.customerId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to cancel this appointment.' });
         }
 
@@ -985,15 +1119,17 @@ export const deleteAppointment = async (req, res) => {
 
         await appointment.deleteOne();
 
-        // Gửi thông báo cho Khách hàng
-        await Notification.create({
-            recipient: appointment.customerId,
-            sender: req.user._id,
-            type: 'BOOKING_CANCELLED',
-            title: 'Your Appointment was Cancelled',
-            message: `Your appointment for "${appointment.serviceSnapshot.name}" at ${new Date(appointment.startAt).toLocaleString()} has been cancelled by the salon.`,
-            data: { appointmentId: appointment._id }
-        });
+        // Gửi thông báo cho Khách hàng nếu có tài khoản
+        if (appointment.customerId) {
+            await Notification.create({
+                recipient: appointment.customerId,
+                sender: req.user._id,
+                type: 'BOOKING_CANCELLED',
+                title: 'Your Appointment was Cancelled',
+                message: `Your appointment for "${appointment.serviceSnapshot.name}" at ${new Date(appointment.startAt).toLocaleString()} has been cancelled by the salon.`,
+                data: { appointmentId: appointment._id }
+            });
+        }
 
         res.json({ success: true, message: 'Appointment deleted successfully.', data: appointment });
     } catch (error) {

@@ -3,7 +3,6 @@ import Transaction from '../models/Transaction.js';
 import User from '../models/User.js';
 import { verifyVnpayReturn } from '../utils/vnpay.js';
 import {
-    reserveCollectedCouponUsage,
     releaseCollectedCouponUsage,
     sendBookingConfirmationEmail
 } from '../utils/appointmentHelpers.js';
@@ -31,6 +30,23 @@ export const handleVnpayReturn = async (req, res) => {
                 return res.redirect(`${clientUrl}/book-appointment?vnpay=failed&message=appointment-not-found`);
             }
 
+            if (appointment.paymentStatus === 'PAID') {
+                return res.redirect(`${clientUrl}/book-appointment?vnpay=success&appointmentId=${txnRef}`);
+            }
+
+            if (appointment.status === 'CANCELLED' || appointment.paymentStatus === 'REFUNDED') {
+                return res.redirect(`${clientUrl}/book-appointment?vnpay=failed&message=appointment-closed`);
+            }
+
+            if (appointment.paymentMethod !== 'VNPAY' || appointment.status !== 'PENDING' || appointment.paymentStatus !== 'UNPAID') {
+                return res.redirect(`${clientUrl}/book-appointment?vnpay=failed&message=invalid-appointment-state`);
+            }
+
+            const amountFromGateway = Number(req.query.vnp_Amount || 0) / 100;
+            if (!Number.isFinite(amountFromGateway) || amountFromGateway <= 0 || amountFromGateway !== Number(appointment.totalPrice || 0)) {
+                return res.redirect(`${clientUrl}/book-appointment?vnpay=failed&message=amount-mismatch`);
+            }
+
             appointment.paymentStatus = 'PAID';
             appointment.status = 'CONFIRMED';
             appointment.paymentMethod = 'VNPAY';
@@ -42,13 +58,6 @@ export const handleVnpayReturn = async (req, res) => {
             };
             await appointment.save();
 
-            if (appointment.appliedCoupon?.collectedCouponId) {
-                await reserveCollectedCouponUsage({
-                    collectedCouponId: appointment.appliedCoupon.collectedCouponId,
-                    appointmentId: appointment._id
-                });
-            }
-
             if (appointment) {
                 const existing = await Transaction.findOne({
                     relatedId: appointment._id,
@@ -57,13 +66,19 @@ export const handleVnpayReturn = async (req, res) => {
                 });
 
                 if (!existing) {
-                    await Transaction.create({
-                        userId: appointment.customerId,
-                        amount: appointment.totalPrice,
-                        type: 'PAYMENT',
-                        relatedId: appointment._id,
-                        onModel: 'Appointment'
-                    });
+                    try {
+                        await Transaction.create({
+                            userId: appointment.customerId,
+                            amount: appointment.totalPrice,
+                            type: 'PAYMENT',
+                            relatedId: appointment._id,
+                            onModel: 'Appointment'
+                        });
+                    } catch (transactionError) {
+                        if (transactionError?.code !== 11000) {
+                            throw transactionError;
+                        }
+                    }
                 }
 
                 const customer = await User.findById(appointment.customerId).select('fullName email');
@@ -76,7 +91,12 @@ export const handleVnpayReturn = async (req, res) => {
         }
 
         const failedAppointment = await Appointment.findById(txnRef);
-        if (failedAppointment && failedAppointment.paymentStatus !== 'PAID') {
+        if (
+            failedAppointment &&
+            failedAppointment.paymentMethod === 'VNPAY' &&
+            failedAppointment.status === 'PENDING' &&
+            failedAppointment.paymentStatus === 'UNPAID'
+        ) {
             failedAppointment.status = 'CANCELLED';
             failedAppointment.paymentStatus = 'UNPAID';
             await failedAppointment.save();

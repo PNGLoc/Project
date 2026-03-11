@@ -56,6 +56,44 @@ const getImageUrl = (image) => {
     return `http://localhost:5000/${sanitizedPath.replace(/\\/g, '/')}`;
 };
 
+const SalonSelectCard = React.memo(({ salon, isSelected, onSelect }) => {
+    const imageUrl = useMemo(() => getImageUrl(salon.images), [salon.images]);
+
+    const handleSelect = () => onSelect(salon);
+
+    const handleKeyDown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onSelect(salon);
+        }
+    };
+
+    return (
+        <div
+            className={`select-card salon-card ${isSelected ? 'selected' : ''}`}
+            onClick={handleSelect}
+            role="button"
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+        >
+            <div className="salon-card-image">
+                {imageUrl ? (
+                    <img src={imageUrl} alt={salon.name} loading="lazy" decoding="async" />
+                ) : (
+                    <div className="salon-card-no-image">No Image</div>
+                )}
+            </div>
+            <div className="card-title">{salon.name}</div>
+            <div className="card-meta">{salon.address?.district || 'Ho Chi Minh City'}</div>
+            <div className="card-meta">{salon.address?.street || 'Full address available after selection'}</div>
+            <div className="card-tags">
+                <span className="card-tag">Verified</span>
+                <span className="card-tag">Hair & Spa</span>
+            </div>
+        </div>
+    );
+});
+
 const BookAppointment = () => {
     const [stepIndex, setStepIndex] = useState(0);
     const [salons, setSalons] = useState([]);
@@ -78,6 +116,11 @@ const BookAppointment = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [draftSelectionIds, setDraftSelectionIds] = useState({
+        salonId: '',
+        serviceId: '',
+        staffId: ''
+    });
     const isBooked = Boolean(success);
 
     const timeSlots = useMemo(() => buildTimeSlots(9, 19, 30), []);
@@ -161,9 +204,11 @@ const BookAppointment = () => {
             if (raw) {
                 const draft = JSON.parse(raw);
                 if (draft?.stepIndex >= 0) setStepIndex(draft.stepIndex);
-                if (draft?.selectedSalon) setSelectedSalon(draft.selectedSalon);
-                if (draft?.selectedService) setSelectedService(draft.selectedService);
-                if (draft?.selectedStaff) setSelectedStaff(draft.selectedStaff);
+                setDraftSelectionIds({
+                    salonId: draft?.selectedSalonId || draft?.selectedSalon?._id || '',
+                    serviceId: draft?.selectedServiceId || draft?.selectedService?._id || '',
+                    staffId: draft?.selectedStaffId || draft?.selectedStaff?._id || ''
+                });
                 if (draft?.selectedDate) setSelectedDate(draft.selectedDate);
                 if (draft?.selectedTime) setSelectedTime(draft.selectedTime);
                 if (typeof draft?.note === 'string') setNote(draft.note);
@@ -263,14 +308,41 @@ const BookAppointment = () => {
         if (selectedTime && isSlotUnavailable(selectedTime)) {
             setSelectedTime('');
         }
-    }, [bookedSlots, selectedTime, selectedService, selectedDate]);
+    }, [bookedSlots, selectedTime, selectedService, selectedDate, selectedStaff]);
+
+    useEffect(() => {
+        if (!draftSelectionIds.salonId || selectedSalon || salons.length === 0) return;
+
+        const matchedSalon = salons.find((item) => item._id === draftSelectionIds.salonId);
+        if (matchedSalon) {
+            setSelectedSalon(matchedSalon);
+        }
+    }, [draftSelectionIds.salonId, selectedSalon, salons]);
+
+    useEffect(() => {
+        if (!draftSelectionIds.serviceId || selectedService || services.length === 0) return;
+
+        const matchedService = services.find((item) => item._id === draftSelectionIds.serviceId);
+        if (matchedService) {
+            setSelectedService(matchedService);
+        }
+    }, [draftSelectionIds.serviceId, selectedService, services]);
+
+    useEffect(() => {
+        if (!draftSelectionIds.staffId || selectedStaff || staffs.length === 0) return;
+
+        const matchedStaff = staffs.find((item) => item._id === draftSelectionIds.staffId);
+        if (matchedStaff) {
+            setSelectedStaff(matchedStaff);
+        }
+    }, [draftSelectionIds.staffId, selectedStaff, staffs]);
 
     useEffect(() => {
         const draft = {
             stepIndex,
-            selectedSalon,
-            selectedService,
-            selectedStaff,
+            selectedSalonId: selectedSalon?._id || '',
+            selectedServiceId: selectedService?._id || '',
+            selectedStaffId: selectedStaff?._id || '',
             selectedDate,
             selectedTime,
             note,
@@ -284,6 +356,7 @@ const BookAppointment = () => {
         setSelectedSalon(null);
         setSelectedService(null);
         setSelectedStaff(null);
+        setDraftSelectionIds({ salonId: '', serviceId: '', staffId: '' });
         setServices([]);
         setStaffs([]);
         setSelectedDate('');
@@ -323,7 +396,7 @@ const BookAppointment = () => {
 
         return collectedCoupons.filter((entry) => {
             const coupon = entry?.coupon;
-            if (!coupon || entry?.isUsed) return false;
+            if (!coupon) return false;
 
             const couponSalonId = coupon?.salonId?._id || coupon?.salonId;
             if (!couponSalonId || couponSalonId.toString() !== selectedSalon._id.toString()) {
@@ -397,9 +470,17 @@ const BookAppointment = () => {
     }, [paymentMethod, walletBalance, pricing.total]);
 
     const isSlotUnavailable = (slot) => {
-        if (!selectedDate || !selectedService?.duration) return false;
+        if (!selectedDate || !selectedService?.duration || !selectedStaff?._id) return true;
+
         const slotStart = new Date(`${selectedDate}T${slot}`);
+        if (Number.isNaN(slotStart.getTime())) return true;
+
         const slotEnd = new Date(slotStart.getTime() + selectedService.duration * 60000);
+
+        const now = new Date();
+        if (selectedDate === today && slotStart < now) {
+            return true;
+        }
 
         return bookedSlots.some((item) => {
             const startAt = new Date(item.startAt);
@@ -499,33 +580,12 @@ const BookAppointment = () => {
             ) : (
                 <div className="selection-grid">
                     {salons.map((salon) => (
-                        <div
+                        <SalonSelectCard
                             key={salon._id}
-                            className={`select-card ${selectedSalon?._id === salon._id ? 'selected' : ''}`}
-                            onClick={() => handleSelectSalon(salon)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Enter') {
-                                    handleSelectSalon(salon);
-                                }
-                            }}
-                        >
-                            <div className="card-image" style={{ height: '120px', width: '100%', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#f0f0f0' }}>
-                                {getImageUrl(salon.images) ? (
-                                    <img src={getImageUrl(salon.images)} alt={salon.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc' }}>No Image</div>
-                                )}
-                            </div>
-                            <div className="card-title">{salon.name}</div>
-                            <div className="card-meta">{salon.address?.district || 'Ho Chi Minh City'}</div>
-                            <div className="card-meta">{salon.address?.street || 'Full address available after selection'}</div>
-                            <div className="card-tags">
-                                <span className="card-tag">Verified</span>
-                                <span className="card-tag">Hair & Spa</span>
-                            </div>
-                        </div>
+                            salon={salon}
+                            isSelected={selectedSalon?._id === salon._id}
+                            onSelect={handleSelectSalon}
+                        />
                     ))}
                 </div>
             )}
@@ -613,6 +673,22 @@ const BookAppointment = () => {
         <>
             <h2 className="section-title">Select date & time</h2>
             <p className="section-subtitle">Pick a slot that works for you.</p>
+
+            <div className="datetime-meta-grid">
+                <div className="datetime-meta-item">
+                    <span>Service</span>
+                    <strong>{selectedService?.name || '-'}</strong>
+                </div>
+                <div className="datetime-meta-item">
+                    <span>Stylist</span>
+                    <strong>{selectedStaff?.fullName || '-'}</strong>
+                </div>
+                <div className="datetime-meta-item">
+                    <span>Duration</span>
+                    <strong>{selectedService?.duration ? `${selectedService.duration} min` : '-'}</strong>
+                </div>
+            </div>
+
             <div className="form-row">
                 <label className="input-field">
                     Date
@@ -633,6 +709,8 @@ const BookAppointment = () => {
                     />
                 </label>
             </div>
+
+            <div className="time-grid-header">Select time slot</div>
             <div className="time-grid">
                 {timeSlots.map((slot) => {
                     const isUnavailable = isSlotUnavailable(slot);
@@ -649,6 +727,11 @@ const BookAppointment = () => {
                     );
                 })}
             </div>
+
+            {!selectedDate && <div className="time-grid-hint">Please select a date first to load available slots.</div>}
+            {selectedDate && timeSlots.every((slot) => isSlotUnavailable(slot)) && (
+                <div className="time-grid-hint">No available slots for this day. Please choose another date.</div>
+            )}
         </>
     );
 

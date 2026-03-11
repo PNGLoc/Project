@@ -184,6 +184,36 @@
     cursor: pointer;
 }
 
+.salon-card {
+    content-visibility: auto;
+    contain: layout paint;
+    contain-intrinsic-size: 280px;
+}
+
+.salon-card-image {
+    height: 120px;
+    width: 100%;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+.salon-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.salon-card-no-image {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
 .select-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
@@ -229,6 +259,20 @@
     margin-top: 12px;
 }
 
+.time-grid-header {
+    margin-top: 16px;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.time-grid-hint {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
 .time-slot {
     padding: 10px 0;
     border-radius: 12px;
@@ -259,6 +303,32 @@
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 16px;
     margin-top: 12px;
+}
+
+.datetime-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.datetime-meta-item {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    display: grid;
+    gap: 4px;
+}
+
+.datetime-meta-item span {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.datetime-meta-item strong {
+    font-size: 14px;
+    color: var(--ink);
 }
 
 .input-field {
@@ -428,6 +498,10 @@
 @media (max-width: 640px) {
     .booking-card {
         padding: 20px;
+    }
+
+    .datetime-meta-grid {
+        grid-template-columns: 1fr;
     }
 
     .hero-text h1 {
