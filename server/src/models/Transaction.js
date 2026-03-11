@@ -12,7 +12,7 @@ const transactionSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['DEPOSIT', 'PAYMENT'],
+        enum: ['DEPOSIT', 'PAYMENT', 'REFUND'],
         required: true
     },
     relatedId: {

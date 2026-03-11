@@ -42,7 +42,7 @@ export const collectCoupon = async (req, res) => {
         res.status(201).json({
             success: true,
             message: 'Coupon collected successfully',
-            collected
+            collected: populated
         });
     } catch (error) {
         console.error('[COLLECT COUPON ERROR]', error);
@@ -59,8 +59,16 @@ export const collectCoupon = async (req, res) => {
 export const getMyCollectedCoupons = async (req, res) => {
     try {
         const userId = req.user._id;
+        const { status = 'all' } = req.query;
 
-        const collected = await UserCollectedCoupon.find({ userId })
+        const filter = { userId };
+        if (status === 'available') {
+            filter.isUsed = false;
+        } else if (status === 'used') {
+            filter.isUsed = true;
+        }
+
+        const collected = await UserCollectedCoupon.find(filter)
             .populate({
                 path: 'couponId',
                 populate: { path: 'salonId', select: 'name images address' }
@@ -72,6 +80,8 @@ export const getMyCollectedCoupons = async (req, res) => {
             .map(c => ({
                 _id: c._id,
                 collectedAt: c.createdAt,
+                isUsed: c.isUsed,
+                usedAt: c.usedAt,
                 coupon: c.couponId,
                 salon: c.couponId?.salonId
             }));

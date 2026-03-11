@@ -2,9 +2,11 @@ import express from 'express';
 import { protect, authorize } from '../middlewares/authMiddleware.js';
 import {
     createAppointment,
+    createProviderAppointment,
     markAppointmentPaidByCash,
     getSalonAppointments,
     getAppointmentAvailability,
+    getProviderCustomers,
     getCustomerAppointments,
     cancelPendingVnpayAppointment,
     cancelCustomerAppointment,
@@ -17,8 +19,10 @@ import Appointment from '../models/Appointment.js';
 const router = express.Router();
 
 router.post('/', protect, authorize('CUSTOMER'), createAppointment);
+router.post('/provider', protect, authorize('SALON_OWNER', 'STAFF'), createProviderAppointment);
 router.get('/my', protect, authorize('CUSTOMER'), getCustomerAppointments);
 router.get('/availability', protect, authorize('CUSTOMER'), getAppointmentAvailability);
+router.get('/provider-customers', protect, authorize('SALON_OWNER', 'STAFF'), getProviderCustomers);
 router.patch('/:id/cancel-vnpay', protect, authorize('CUSTOMER'), cancelPendingVnpayAppointment);
 router.patch('/:id/cancel', protect, authorize('CUSTOMER'), cancelCustomerAppointment);
 router.get('/salon', protect, authorize('SALON_OWNER', 'STAFF'), getSalonAppointments);
