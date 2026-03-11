@@ -469,6 +469,12 @@
     border-color: #f5222d;
 }
 
+.btn-action.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* States */
 .list-loading {
     padding: 60px 0;

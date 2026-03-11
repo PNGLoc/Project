@@ -8,6 +8,7 @@ import { DndProvider } from 'react-dnd';
 import DraggableAppointment from '../../components/booking/DraggableAppointment';
 import DroppableSlot from '../../components/booking/DroppableSlot';
 import ConfirmModal from '../../components/ui/ConfirmModal';
+import NewAppointmentModal from '../../components/booking/NewAppointmentModal';
 
 const SalonCalendar = () => {
     const [stylists, setStylists] = useState([]);
@@ -24,6 +25,7 @@ const SalonCalendar = () => {
     // Modal & Filter states
     const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [filterStatus, setFilterStatus] = useState('all');
 
     // Confirm Modal state
@@ -318,12 +320,10 @@ const SalonCalendar = () => {
                                 <div className="filter-option" onClick={() => setFilterStatus('cancelled')}>Cancelled</div>
                             </div>
                         </div>
-                        {!isStaff && (
-                            <button className="btn-new">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                New Appointment
-                            </button>
-                        )}
+                        <button className="btn-new" onClick={() => setIsCreateModalOpen(true)}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            New Appointment
+                        </button>
                     </div>
                 </header>
 
@@ -495,6 +495,12 @@ const SalonCalendar = () => {
                     onCancel={() => setConfirmModal({ isOpen: false, pendingData: null })}
                     confirmText="Reschedule"
                     cancelText="Keep as is"
+                />
+
+                <NewAppointmentModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onCreated={fetchAppointments}
                 />
             </div>
         </DndProvider>

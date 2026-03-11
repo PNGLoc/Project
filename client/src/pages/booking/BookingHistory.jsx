@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import axiosClient from '../../lib/axios';
 import '../../assets/css/BookingHistory.css';
 
+const parsedCancelHours = Number(import.meta.env.VITE_BOOKING_CANCEL_DEADLINE_HOURS || 2);
+const CANCELLATION_WINDOW_HOURS = Number.isFinite(parsedCancelHours) && parsedCancelHours >= 0 ? parsedCancelHours : 2;
+
 const formatDateTime = (value) => {
     if (!value) return '-';
     const date = new Date(value);
@@ -46,6 +49,27 @@ const BookingHistory = () => {
 
         fetchHistory();
     }, []);
+
+    const canCancel = (startAt, status) => {
+        if (!['PENDING', 'CONFIRMED'].includes(status)) return false;
+        const startTime = new Date(startAt).getTime();
+        return startTime >= Date.now() + CANCELLATION_WINDOW_HOURS * 60 * 60 * 1000;
+    };
+
+    const handleCancel = async (appointmentId) => {
+        if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+
+        try {
+            await axiosClient.patch(`/api/appointments/${appointmentId}/cancel`);
+            setItems((prev) => prev.map((item) => (
+                item._id === appointmentId
+                    ? { ...item, status: 'CANCELLED' }
+                    : item
+            )));
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to cancel booking.');
+        }
+    };
 
     return (
         <div className="booking-history-page">
@@ -104,6 +128,18 @@ const BookingHistory = () => {
                                 <strong>{formatCurrency(item.totalPrice)}</strong>
                             </div>
                         </div>
+
+                        {canCancel(item.startAt, item.status) && (
+                            <div style={{ marginTop: '12px' }}>
+                                <button
+                                    type="button"
+                                    className="btn-action danger"
+                                    onClick={() => handleCancel(item._id)}
+                                >
+                                    Cancel booking
+                                </button>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>

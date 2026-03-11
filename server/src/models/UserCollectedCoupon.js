@@ -12,6 +12,19 @@ const userCollectedCouponSchema = new mongoose.Schema({
         ref: 'Coupon',
         required: true,
         index: true
+    },
+    isUsed: {
+        type: Boolean,
+        default: false
+    },
+    usedAt: {
+        type: Date,
+        default: null
+    },
+    usedAppointmentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Appointment',
+        default: null
     }
 }, {
     timestamps: true

@@ -50,6 +50,7 @@ const buildUserResponse = (user, message) => ({
     avatar: user.avatar,
     bio: user.bio,
     dateOfBirth: user.dateOfBirth,
+    walletBalance: user.walletBalance,
     createdAt: user.createdAt,
     token: generateToken(user._id),
     ...(message ? { message } : {}),
@@ -221,6 +222,7 @@ export const login = async (req, res) => {
             email: user.email,
             role: user.role,
             avatar: user.avatar,
+            walletBalance: user.walletBalance,
             token: generateToken(user._id),
             // Trả thêm salonId về để lưu vào localStorage
             salonId: salon ? salon._id : null
@@ -290,6 +292,7 @@ export const googleLogin = async (req, res) => {
             email: user.email,
             role: user.role,
             avatar: user.avatar,
+            walletBalance: user.walletBalance,
             token: generateToken(user._id),
             salonId: salon ? salon._id : null
         });
@@ -385,6 +388,7 @@ export const getUserProfile = async (req, res) => {
                 avatar: user.avatar,
                 bio: user.bio,
                 dateOfBirth: user.dateOfBirth,
+                walletBalance: user.walletBalance,
                 createdAt: user.createdAt,
             });
         } else {

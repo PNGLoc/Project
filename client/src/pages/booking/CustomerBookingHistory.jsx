@@ -5,6 +5,9 @@ import { FiSearch, FiMapPin, FiClock, FiImage, FiScissors, FiCheckCircle, FiXCir
 import { toast } from 'react-toastify';
 import '../../assets/css/CustomerBookingHistory.css';
 
+const parsedCancelHours = Number(import.meta.env.VITE_BOOKING_CANCEL_DEADLINE_HOURS || 2);
+const CANCELLATION_WINDOW_HOURS = Number.isFinite(parsedCancelHours) && parsedCancelHours >= 0 ? parsedCancelHours : 2;
+
 const formatDateTime = (value) => {
     if (!value) return '-';
     const date = new Date(value);
@@ -153,13 +156,46 @@ const CustomerBookingHistory = () => {
         };
     };
 
-    const handleCancelAppointment = async (id) => {
+    const getCancelEligibility = (appointment) => {
+        if (!appointment?.startAt) {
+            return { canCancel: false, reason: 'Missing appointment schedule.' };
+        }
+
+        if (!['PENDING', 'CONFIRMED'].includes(appointment.status)) {
+            return { canCancel: false, reason: 'Only pending/confirmed bookings can be cancelled.' };
+        }
+
+        const startTime = new Date(appointment.startAt).getTime();
+        const minAllowed = Date.now() + CANCELLATION_WINDOW_HOURS * 60 * 60 * 1000;
+
+        if (startTime < minAllowed) {
+            return {
+                canCancel: false,
+                reason: `Cancellation is only allowed at least ${CANCELLATION_WINDOW_HOURS} hour(s) before your appointment.`
+            };
+        }
+
+        return { canCancel: true, reason: '' };
+    };
+
+    const handleCancelAppointment = async (appointment) => {
+        const eligibility = getCancelEligibility(appointment);
+        if (!eligibility.canCancel) {
+            toast.warning(eligibility.reason);
+            return;
+        }
+
         if (!window.confirm("Are you sure you want to cancel this booking?")) return;
 
         try {
-            const res = await axiosClient.patch(`/api/appointments/${id}/cancel`);
+            const res = await axiosClient.patch(`/api/appointments/${appointment._id}/cancel`);
             if (res.data.success) {
-                toast.success("Booking cancelled successfully.");
+                const refundedAmount = Number(res.data?.refundedAmount || 0);
+                if (refundedAmount > 0) {
+                    toast.success(`Booking cancelled. ${formatCurrency(refundedAmount)} refunded to your wallet.`);
+                } else {
+                    toast.success("Booking cancelled successfully.");
+                }
                 fetchHistory(); // Refresh list
             }
         } catch (err) {
@@ -261,6 +297,7 @@ const CustomerBookingHistory = () => {
                 {!loading && !error && items.map((appointment) => {
                     const status = getStatusInfo(appointment.status);
                     const salonInfo = getDisplaySalonInfo(appointment);
+                    const cancelEligibility = getCancelEligibility(appointment);
                     return (
                         <div className="booking-card" key={appointment._id}>
                             <div className="card-top">
@@ -291,6 +328,10 @@ const CustomerBookingHistory = () => {
                                         <FiClock className="mini-icon" />
                                         <span>Time: {formatDateTime(appointment.startAt)}</span>
                                     </div>
+                                    <div className="info-row">
+                                        <FiCheckCircle className="mini-icon" />
+                                        <span>Payment: {appointment.paymentMethod} - {appointment.paymentStatus}</span>
+                                    </div>
                                 </div>
                                 <div className="price-side">
                                     <div className="price-label">Price</div>
@@ -306,12 +347,17 @@ const CustomerBookingHistory = () => {
                                     {appointment.status === 'CANCELLED' && (
                                         <span className="cancel-note"><FiXCircle /> Service cancelled</span>
                                     )}
+                                    {appointment.paymentStatus === 'REFUNDED' && (
+                                        <span className="success-note"><FiCheckCircle /> Refunded to wallet</span>
+                                    )}
                                 </div>
                                 <div className="footer-actions">
-                                    {appointment.status === 'PENDING' && (
+                                    {['PENDING', 'CONFIRMED'].includes(appointment.status) && (
                                         <button
-                                            className="btn-action danger"
-                                            onClick={() => handleCancelAppointment(appointment._id)}
+                                            className={`btn-action danger ${!cancelEligibility.canCancel ? 'disabled' : ''}`}
+                                            onClick={() => handleCancelAppointment(appointment)}
+                                            disabled={!cancelEligibility.canCancel}
+                                            title={cancelEligibility.reason}
                                         >
                                             <FiXCircle /> Cancel Booking
                                         </button>

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axiosClient from '../../lib/axios';
+import userCouponApi from '../../features/coupon/api/userCouponApi';
 import '../../assets/css/BookAppointment.css';
 
 const steps = [
@@ -28,6 +29,20 @@ const formatCurrency = (value) => {
     return `${new Intl.NumberFormat('vi-VN').format(value)} VND`;
 };
 
+const calculateDiscount = (coupon, amount) => {
+    if (!coupon || amount <= 0) return 0;
+
+    if (coupon.discountType === 'PERCENTAGE') {
+        const rawDiscount = (amount * coupon.discountValue) / 100;
+        if (coupon.maxDiscountAmount && coupon.maxDiscountAmount > 0) {
+            return Math.max(0, Math.min(rawDiscount, coupon.maxDiscountAmount));
+        }
+        return Math.max(0, rawDiscount);
+    }
+
+    return Math.max(0, coupon.discountValue || 0);
+};
+
 const DRAFT_KEY = 'booking_draft_v1';
 const VNPAY_PENDING_KEY = 'vnpay_pending_appointment_id';
 const VNPAY_REDIRECTING_KEY = 'vnpay_redirecting';
@@ -53,8 +68,12 @@ const BookAppointment = () => {
     const [selectedTime, setSelectedTime] = useState('');
     const [note, setNote] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('CASH');
+    const [selectedCouponId, setSelectedCouponId] = useState('');
     const [bookedSlots, setBookedSlots] = useState([]);
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [collectedCoupons, setCollectedCoupons] = useState([]);
     const [salonsLoading, setSalonsLoading] = useState(false);
+    const [couponsLoading, setCouponsLoading] = useState(false);
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -82,6 +101,61 @@ const BookAppointment = () => {
     }, []);
 
     useEffect(() => {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const parsed = JSON.parse(userStr);
+                if (typeof parsed?.walletBalance === 'number') {
+                    setWalletBalance(parsed.walletBalance);
+                }
+            } catch {
+                // ignore parse errors
+            }
+        }
+
+        axiosClient
+            .get('/api/auth/profile')
+            .then((res) => {
+                const balance = Number(res.data?.walletBalance || 0);
+                setWalletBalance(balance);
+
+                try {
+                    const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+                    localStorage.setItem('user', JSON.stringify({ ...localUser, walletBalance: balance }));
+                } catch {
+                    // ignore localStorage parse errors
+                }
+            })
+            .catch(() => null);
+    }, []);
+
+    useEffect(() => {
+        let isActive = true;
+
+        const fetchCollectedCoupons = async () => {
+            try {
+                setCouponsLoading(true);
+                const data = await userCouponApi.getMyCollectedCoupons({ status: 'available' });
+                if (!isActive) return;
+                setCollectedCoupons(data.items || []);
+            } catch {
+                if (!isActive) return;
+                setCollectedCoupons([]);
+            } finally {
+                if (isActive) {
+                    setCouponsLoading(false);
+                }
+            }
+        };
+
+        fetchCollectedCoupons();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
+    useEffect(() => {
         try {
             const raw = sessionStorage.getItem(DRAFT_KEY);
             if (raw) {
@@ -94,6 +168,7 @@ const BookAppointment = () => {
                 if (draft?.selectedTime) setSelectedTime(draft.selectedTime);
                 if (typeof draft?.note === 'string') setNote(draft.note);
                 if (draft?.paymentMethod) setPaymentMethod(draft.paymentMethod);
+                if (draft?.selectedCouponId) setSelectedCouponId(draft.selectedCouponId);
             }
         } catch {
             sessionStorage.removeItem(DRAFT_KEY);
@@ -199,10 +274,11 @@ const BookAppointment = () => {
             selectedDate,
             selectedTime,
             note,
-            paymentMethod
+            paymentMethod,
+            selectedCouponId
         };
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    }, [stepIndex, selectedSalon, selectedService, selectedStaff, selectedDate, selectedTime, note, paymentMethod]);
+    }, [stepIndex, selectedSalon, selectedService, selectedStaff, selectedDate, selectedTime, note, paymentMethod, selectedCouponId]);
 
     const resetBooking = () => {
         setSelectedSalon(null);
@@ -214,6 +290,7 @@ const BookAppointment = () => {
         setSelectedTime('');
         setNote('');
         setPaymentMethod('CASH');
+        setSelectedCouponId('');
         setBookedSlots([]);
         setSuccess('');
         setStepIndex(0);
@@ -235,8 +312,89 @@ const BookAppointment = () => {
         setSelectedTime('');
         setSuccess('');
         setPaymentMethod('CASH');
+        setSelectedCouponId('');
         setBookedSlots([]);
     }, [selectedSalon]);
+
+    const availableSalonCoupons = useMemo(() => {
+        if (!selectedSalon?._id) return [];
+
+        const now = Date.now();
+
+        return collectedCoupons.filter((entry) => {
+            const coupon = entry?.coupon;
+            if (!coupon || entry?.isUsed) return false;
+
+            const couponSalonId = coupon?.salonId?._id || coupon?.salonId;
+            if (!couponSalonId || couponSalonId.toString() !== selectedSalon._id.toString()) {
+                return false;
+            }
+
+            const start = new Date(coupon.startDate).getTime();
+            const end = new Date(coupon.endDate).getTime();
+
+            if (!coupon.isActive) return false;
+            if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
+            if (start > now || end < now) return false;
+            if (coupon.usedCount >= coupon.usageLimit) return false;
+
+            return true;
+        });
+    }, [collectedCoupons, selectedSalon]);
+
+    const selectedCouponEntry = useMemo(
+        () => availableSalonCoupons.find((entry) => entry._id === selectedCouponId),
+        [availableSalonCoupons, selectedCouponId]
+    );
+
+    const pricing = useMemo(() => {
+        const basePrice = Number(selectedService?.price || 0);
+        if (!selectedCouponEntry?.coupon) {
+            return {
+                basePrice,
+                discount: 0,
+                total: basePrice,
+                isCouponEligible: true
+            };
+        }
+
+        const coupon = selectedCouponEntry.coupon;
+        const minPurchase = Number(coupon.minPurchaseAmount || 0);
+        const isCouponEligible = basePrice >= minPurchase;
+
+        if (!isCouponEligible) {
+            return {
+                basePrice,
+                discount: 0,
+                total: basePrice,
+                isCouponEligible
+            };
+        }
+
+        const discount = Math.min(basePrice, calculateDiscount(coupon, basePrice));
+
+        return {
+            basePrice,
+            discount,
+            total: Math.max(0, basePrice - discount),
+            isCouponEligible
+        };
+    }, [selectedService, selectedCouponEntry]);
+
+    useEffect(() => {
+        if (!selectedCouponId) return;
+
+        const stillExists = availableSalonCoupons.some((entry) => entry._id === selectedCouponId);
+        if (!stillExists || !pricing.isCouponEligible) {
+            setSelectedCouponId('');
+        }
+    }, [selectedCouponId, availableSalonCoupons, pricing.isCouponEligible]);
+
+    useEffect(() => {
+        if (paymentMethod === 'WALLET' && walletBalance < pricing.total) {
+            setPaymentMethod('CASH');
+        }
+    }, [paymentMethod, walletBalance, pricing.total]);
 
     const isSlotUnavailable = (slot) => {
         if (!selectedDate || !selectedService?.duration) return false;
@@ -277,6 +435,10 @@ const BookAppointment = () => {
             return setError('Please complete all steps before paying.');
         }
 
+        if (paymentMethod === 'WALLET' && walletBalance < pricing.total) {
+            return setError('Your wallet balance is not enough for this booking.');
+        }
+
         setSubmitting(true);
         setError('');
         setSuccess('');
@@ -289,7 +451,8 @@ const BookAppointment = () => {
                 staffId: selectedStaff._id,
                 startAt,
                 note,
-                paymentMethod
+                paymentMethod,
+                collectedCouponId: selectedCouponId || undefined
             });
 
             if (paymentMethod === 'VNPAY') {
@@ -307,6 +470,18 @@ const BookAppointment = () => {
             } else {
                 setSuccess('Your appointment has been booked successfully.');
                 sessionStorage.removeItem(DRAFT_KEY);
+
+                if (paymentMethod === 'WALLET') {
+                    const newBalance = Math.max(0, walletBalance - pricing.total);
+                    setWalletBalance(newBalance);
+
+                    try {
+                        const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+                        localStorage.setItem('user', JSON.stringify({ ...localUser, walletBalance: newBalance }));
+                    } catch {
+                        // ignore localStorage parse errors
+                    }
+                }
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Booking failed. Please try again.');
@@ -508,10 +683,51 @@ const BookAppointment = () => {
                     <span>{selectedDate} at {selectedTime}</span>
                 </div>
                 <div className="summary-item summary-total">
-                    <span>Total</span>
-                    <span>{formatCurrency(selectedService?.price)}</span>
+                    <span>Original price</span>
+                    <span>{formatCurrency(pricing.basePrice)}</span>
+                </div>
+                <div className="summary-item">
+                    <span>Coupon discount</span>
+                    <span>- {formatCurrency(pricing.discount)}</span>
+                </div>
+                <div className="summary-item summary-total">
+                    <span>Final total</span>
+                    <span>{formatCurrency(pricing.total)}</span>
                 </div>
             </div>
+
+            <div className="coupon-picker">
+                <label htmlFor="coupon-select">Apply collected coupon</label>
+                <select
+                    id="coupon-select"
+                    value={selectedCouponId}
+                    onChange={(event) => setSelectedCouponId(event.target.value)}
+                    disabled={!selectedSalon || couponsLoading || availableSalonCoupons.length === 0}
+                >
+                    <option value="">No coupon</option>
+                    {availableSalonCoupons.map((entry) => {
+                        const coupon = entry.coupon;
+                        const minPurchase = Number(coupon.minPurchaseAmount || 0);
+                        const notEligible = Number(selectedService?.price || 0) < minPurchase;
+
+                        return (
+                            <option key={entry._id} value={entry._id} disabled={notEligible}>
+                                {coupon.code} - {coupon.discountType === 'PERCENTAGE'
+                                    ? `${coupon.discountValue}%`
+                                    : formatCurrency(coupon.discountValue)}
+                                {notEligible ? ` (Min ${formatCurrency(minPurchase)})` : ''}
+                            </option>
+                        );
+                    })}
+                </select>
+                {couponsLoading && <div className="coupon-hint">Loading your coupons...</div>}
+                {!couponsLoading && selectedSalon && availableSalonCoupons.length === 0 && (
+                    <div className="coupon-hint">No available collected coupons for this salon.</div>
+                )}
+            </div>
+
+            <div className="wallet-balance">Wallet balance: {formatCurrency(walletBalance)}</div>
+
             <div className="payment-options">
                 <button
                     type="button"
@@ -528,6 +744,19 @@ const BookAppointment = () => {
                 >
                     <div className="payment-title">Pay online with VNPay</div>
                     <div className="payment-sub">VNPay sandbox for testing.</div>
+                </button>
+                <button
+                    type="button"
+                    className={`payment-card ${paymentMethod === 'WALLET' ? 'selected' : ''} ${walletBalance < pricing.total ? 'disabled' : ''}`}
+                    onClick={() => setPaymentMethod('WALLET')}
+                    disabled={walletBalance < pricing.total}
+                >
+                    <div className="payment-title">Pay with wallet</div>
+                    <div className="payment-sub">
+                        {walletBalance < pricing.total
+                            ? 'Insufficient wallet balance for this booking.'
+                            : 'Instant confirmation after payment.'}
+                    </div>
                 </button>
             </div>
         </>
@@ -587,7 +816,15 @@ const BookAppointment = () => {
                         </button>
                     ) : (
                         <button type="button" className="btn-primary" onClick={handleSubmit} disabled={submitting || isBooked}>
-                            {submitting ? 'Processing...' : isBooked ? 'Booked' : paymentMethod === 'VNPAY' ? 'Pay with VNPay' : 'Book (Pay at salon)'}
+                            {submitting
+                                ? 'Processing...'
+                                : isBooked
+                                    ? 'Booked'
+                                    : paymentMethod === 'VNPAY'
+                                        ? 'Pay with VNPay'
+                                        : paymentMethod === 'WALLET'
+                                            ? 'Pay with wallet'
+                                            : 'Book (Pay at salon)'}
                         </button>
                     )}
                 </div>

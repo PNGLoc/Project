@@ -5,8 +5,8 @@ const userCouponApi = {
     const response = await axiosClient.post(`/api/user-coupons/collect/${couponId}`);
     return response.data;
   },
-  getMyCollectedCoupons: async () => {
-    const response = await axiosClient.get('/api/user-coupons');
+  getMyCollectedCoupons: async (params = {}) => {
+    const response = await axiosClient.get('/api/user-coupons', { params });
     return response.data;
   },
   discardCollectedCoupon: async (collectedId) => {

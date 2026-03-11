@@ -33,6 +33,14 @@ const appointmentSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    originalPrice: {
+        type: Number,
+        default: 0
+    },
+    discountAmount: {
+        type: Number,
+        default: 0
+    },
     status: {
         type: String,
         enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'],
@@ -40,13 +48,33 @@ const appointmentSchema = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['UNPAID', 'PAID'],
+        enum: ['UNPAID', 'PAID', 'REFUNDED'],
         default: 'UNPAID'
     },
     paymentMethod: {
         type: String,
-        enum: ['CASH', 'VNPAY'],
+        enum: ['CASH', 'VNPAY', 'WALLET'],
         default: 'CASH'
+    },
+    appliedCoupon: {
+        collectedCouponId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'UserCollectedCoupon'
+        },
+        couponId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Coupon'
+        },
+        code: String,
+        discountType: {
+            type: String,
+            enum: ['PERCENTAGE', 'FIXED_AMOUNT']
+        },
+        discountValue: Number,
+        discountAmount: {
+            type: Number,
+            default: 0
+        }
     },
     note: {
         type: String,
