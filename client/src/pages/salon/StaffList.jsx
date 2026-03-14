@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import axiosClient from '../../lib/axios';
 import { toast } from 'react-toastify';
 
-import '../../assets/css/StaffList.css'; // Import CSS
+import '../../assets/css/AdminDashboard.css';
+import '../../assets/css/StaffList.css';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 
 function StaffList() {
@@ -198,94 +199,185 @@ function StaffList() {
 
   return (
     <>
+      <div className="admin-wrapper">
+        <main className="admin-content-full">
+          <div className="page-inner">
+            <div className="dynamic-header">
+              <h1>Staff Management</h1>
+           
+            </div>
 
-      <div className="staff-management-container">
-        <h1 className="staff-management-title">Staff Management</h1>
-        <p className="staff-management-subtitle">Manage your salon staff members.</p>
+            <div className="section-divider" />
 
-        <div className="staff-search-add-wrapper">
-          <input
-            type="text"
-            placeholder="Search by name, email or skill..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="staff-search-input"
-          />
-          <div className="staff-filter-sort-wrapper" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="staff-filter-select">
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+            <div className="admin-users-center">
+              <div className="admin-card users-card">
+                <div className="table-header-row">
+                 
+                  <span className="count-badge">
+                    {filteredStaffs.length} staff member{filteredStaffs.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
 
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="staff-sort-select">
-              <option value="name_asc">Name A → Z</option>
-              <option value="name_desc">Name Z → A</option>
-              <option value="skills_desc">Most Skills</option>
-              <option value="status_active_first">Active First</option>
-              <option value="status_inactive_first">Inactive First</option>
-            </select>
-          </div>
-          <Link to="/stafflist/add">
-            <button className="staff-add-button">+ Add New Staff</button>
-          </Link>
-        </div>
-
-        {loading ? (
-          <p>Loading staff list...</p>
-        ) : (
-          <table className="staff-table">
-            <thead>
-              <tr>
-                <th>Status</th>
-                <th>Full Name</th>
-                <th>Skills</th>
-                <th>Email</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStaffs.map(staff => (
-                <tr
-                  key={staff._id}
-                  className={!staff.isActive ? 'staff-row-inactive' : ''}
+                <div
+                  className="filters-row"
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    marginBottom: '16px',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
                 >
-                  <td>
-                    <span className={`staff-status-badge ${staff.isActive ? 'staff-status-active' : 'staff-status-inactive'}`}>
-                      {staff.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>{staff.fullName}</td>
-                  <td>
-                    {staff.skills && staff.skills.length > 0 ? (
-                      <div className="staff-skills-wrapper">
-                        {staff.skills.map((skill, idx) => (
-                          <span key={idx} className="staff-skill-tag">
-                            {skill.name}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span style={{ color: '#999', fontStyle: 'italic' }}>No skills</span>
-                    )}
-                  </td>
-                  <td>{staff.userId?.email || '-'}</td>
-                  <td className="staff-actions">
-                    <button onClick={() => openEditModal(staff)} className="staff-btn-edit">
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(staff._id, staff.isActive)}
-                      className={staff.isActive ? 'staff-btn-delete' : 'staff-btn-restore'}
+                  <input
+                    type="text"
+                    placeholder="Search by name, email or skill"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="staff-search-input"
+                    style={{
+                      flex: '1 1 220px',
+                      minWidth: '220px'
+                    }}
+                  />
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '8px',
+                      flexWrap: 'wrap',
+                      justifyContent: 'flex-end',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="staff-filter-select"
                     >
-                      {staff.isActive ? 'Ban' : 'Unban'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+                      <option value="all">All statuses</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="staff-sort-select"
+                    >
+                      <option value="name_asc">Name A → Z</option>
+                      <option value="name_desc">Name Z → A</option>
+                      <option value="skills_desc">Most skills</option>
+                      <option value="status_active_first">Active first</option>
+                      <option value="status_inactive_first">Inactive first</option>
+                    </select>
+
+                    <Link to="/stafflist/add">
+                      <button type="button" className="btn-approve-teal">
+                        + Add new staff
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+
+                {loading ? (
+                  <div className="loading-state">Loading staff...</div>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="admin-table users-table">
+                      <colgroup>
+                        <col style={{ width: '18%' }} />
+                        <col style={{ width: '26%' }} />
+                        <col style={{ width: '28%' }} />
+                        <col style={{ width: '18%' }} />
+                        <col style={{ width: '10%' }} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Skills</th>
+                          <th>Status</th>
+                          <th style={{ textAlign: 'right' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredStaffs.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="no-data-cell">
+                              No staff found.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredStaffs.map((staff) => (
+                            <tr
+                              key={staff._id}
+                              className={!staff.isActive ? 'staff-row-inactive' : ''}
+                            >
+                              <td className="font-semibold">{staff.fullName}</td>
+                              <td>{staff.userId?.email || '-'}</td>
+                              <td>
+                                {staff.skills && staff.skills.length > 0 ? (
+                                  <div className="staff-skills-wrapper">
+                                    {staff.skills.map((skill, idx) => (
+                                      <span key={idx} className="staff-skill-tag">
+                                        {skill.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span style={{ color: '#999', fontStyle: 'italic' }}>
+                                    No skills
+                                  </span>
+                                )}
+                              </td>
+                              <td>
+                                <span
+                                  className={`staff-status-badge ${
+                                    staff.isActive ? 'staff-status-active' : 'staff-status-inactive'
+                                  }`}
+                                >
+                                  {staff.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                              </td>
+                              <td>
+                                <div
+                                  className="action-group"
+                                  style={{ justifyContent: 'flex-end', gap: '8px' }}
+                                >
+                                  <button
+                                    type="button"
+                                    className="btn-outline"
+                                    onClick={() => openEditModal(staff)}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={
+                                      staff.isActive ? 'btn-reject-rose' : 'btn-approve-teal'
+                                    }
+                                    onClick={() => handleDelete(staff._id, staff.isActive)}
+                                  >
+                                    {staff.isActive ? 'Ban' : 'Unban'}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: '24px' }}>
+           
+            </div>
+          </div>
+        </main>
 
         {/* Modal Edit */}
         {modalOpen && selectedStaff && (
@@ -360,11 +452,7 @@ function StaffList() {
           </div>
         )}
 
-        <div>
-          <Link to="/salon/dashboard" className="staff-back-link">
-            ← Back to Dashboard
-          </Link>
-        </div>
+      
 
         <ConfirmModal
           isOpen={confirmModal.isOpen}

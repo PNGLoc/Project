@@ -145,7 +145,8 @@ export const getStaffs = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized role' });
         }
 
-        const staffs = await Staff.find({ salonId, isActive: true })
+        // Lấy toàn bộ staff của salon (bao gồm cả đang inactive) để phía frontend tự lọc
+        const staffs = await Staff.find({ salonId })
             .populate('userId', 'fullName email phone avatar')
             .sort({ createdAt: -1 });
 
