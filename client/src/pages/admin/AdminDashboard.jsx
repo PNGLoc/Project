@@ -32,6 +32,7 @@ const AdminDashboard = () => {
     const isOverview = location.pathname === '/admin/dashboard';
     const isMyPosts = location.pathname === '/admin/my-posts';
     const isUsers = location.pathname === '/admin/users';
+    const isReports = location.pathname === '/admin/reports';
 
     const [stats, setStats] = useState(null);
     const [charts, setCharts] = useState(null);
@@ -119,6 +120,7 @@ const AdminDashboard = () => {
                             <Link className={`nav-link ${isOverview ? 'active' : ''}`} to="/admin/dashboard">Overview</Link>
                             <Link className={`nav-link ${isMyPosts ? 'active' : ''}`} to="/admin/my-posts">My Posts</Link>
                             <Link className={`nav-link ${isUsers ? 'active' : ''}`} to="/admin/users">Users</Link>
+                            <Link className={`nav-link ${isReports ? 'active' : ''}`} to="/admin/reports">Reports</Link>
                         </nav>
                     </div>
                     <div className="header-right">

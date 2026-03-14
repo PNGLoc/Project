@@ -24,6 +24,7 @@ const AdminUsers = () => {
   const isOverview = location.pathname === '/admin/dashboard';
   const isMyPosts = location.pathname === '/admin/my-posts';
   const isUsers = location.pathname === '/admin/users';
+  const isReports = location.pathname === '/admin/reports';
 
   const PAGE_SIZE = 8;
 
@@ -167,6 +168,9 @@ const AdminUsers = () => {
               </Link>
               <Link className={`nav-link ${isUsers ? 'active' : ''}`} to="/admin/users">
                 Users
+              </Link>
+              <Link className={`nav-link ${isReports ? 'active' : ''}`} to="/admin/reports">
+                Reports
               </Link>
             </nav>
           </div>
