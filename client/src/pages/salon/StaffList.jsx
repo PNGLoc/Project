@@ -208,7 +208,7 @@ function StaffList() {
             </div>
 
             <div className="section-divider" />
-
+            
             <div className="admin-users-center">
               <div className="admin-card users-card">
                 <div className="table-header-row">

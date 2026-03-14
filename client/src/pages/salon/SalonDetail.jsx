@@ -35,6 +35,10 @@ const SalonDetail = () => {
   const [collectingId, setCollectingId] = useState(null);
   const [couponToast, setCouponToast] = useState({ type: "", message: "" });
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState("");
 
   const currentUser = (() => {
     try {
@@ -136,6 +140,37 @@ const SalonDetail = () => {
   const handleTabChange = (value) => {
     console.log("Tab changed to:", value); // Debug để kiểm tra tab có chuyển không
     setActiveTab(value);
+  };
+
+  const handleOpenReport = () => {
+    if (!isCustomer) {
+      navigate("/login");
+      return;
+    }
+    setReportError("");
+    setReportDescription("");
+    setIsReportOpen(true);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportDescription.trim()) {
+      setReportError("Please describe the issue you encountered with this salon.");
+      return;
+    }
+    try {
+      setReportSubmitting(true);
+      setReportError("");
+      await axios.post("/api/reports/salon", {
+        salonId: salon._id,
+        description: reportDescription.trim(),
+      });
+      setIsReportOpen(false);
+    } catch (err) {
+      console.error("Submit report error:", err);
+      setReportError(err.response?.data?.message || "Failed to submit report. Please try again.");
+    } finally {
+      setReportSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -246,6 +281,23 @@ const SalonDetail = () => {
                   >
                     <MessageCircle size={18} />
                     Chat with Salon
+                  </button>
+                )}
+                {isCustomer && (
+                  <button
+                    onClick={handleOpenReport}
+                    style={{
+                      padding: "10px 20px",
+                      background: "#fee2e2",
+                      border: "1px solid #f97373",
+                      color: "#b91c1c",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Report Salon
                   </button>
                 )}
               </div>
@@ -480,6 +532,103 @@ const SalonDetail = () => {
           salonId={salon._id}
           onClose={() => setIsChatOpen(false)}
         />
+      )}
+
+      {isReportOpen && isCustomer && (
+        <div className="modal-backdrop" style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 2000
+        }}>
+          <div
+            className="modal-content"
+            style={{
+              background: "white",
+              borderRadius: 16,
+              padding: 24,
+              maxWidth: 500,
+              width: "90%",
+              boxShadow: "0 10px 25px rgba(15,23,42,0.18)"
+            }}
+          >
+            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+              Report this salon
+            </h3>
+            <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
+              Please describe the problem in detail. Example: fake price, wrong description,
+              staff attitude, scam behavior, etc.
+            </p>
+
+            {reportError && (
+              <div
+                style={{
+                  background: "#fee2e2",
+                  color: "#b91c1c",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  marginBottom: 10
+                }}
+              >
+                {reportError}
+              </div>
+            )}
+
+            <textarea
+              rows={5}
+              value={reportDescription}
+              onChange={(e) => setReportDescription(e.target.value)}
+              placeholder="Describe the issue you had with this salon..."
+              style={{
+                width: "100%",
+                borderRadius: 10,
+                border: "1px solid #e5e7eb",
+                padding: 10,
+                fontSize: 14,
+                resize: "vertical",
+                marginBottom: 16
+              }}
+            />
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setIsReportOpen(false)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 8,
+                  border: "1px solid #e5e7eb",
+                  background: "white",
+                  cursor: "pointer",
+                  fontSize: 14
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitReport}
+                disabled={reportSubmitting}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: "#ef4444",
+                  color: "white",
+                  cursor: "pointer",
+                  fontSize: 14,
+                  opacity: reportSubmitting ? 0.7 : 1
+                }}
+              >
+                {reportSubmitting ? "Submitting..." : "Submit report"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

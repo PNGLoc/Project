@@ -171,8 +171,6 @@
     font-size: 30px;
     font-weight: 700;
     color: #111827;
-    text-align: center; /* Căn giữa nội dung */
-    padding-right: 120px; /* Thêm khoảng cách bên phải */
     margin-bottom: 8px;
 }
 
@@ -737,4 +735,35 @@
     .stats-grid {
         grid-template-columns: 1fr 1fr;
     }
+}
+
+/* Dịch status pill sang trái nhẹ để tránh bị nút View đè */
+.users-table td:nth-child(5) {          /* cột Status là cột thứ 5 */
+  position: relative;
+  padding-left: 8px !important;         /* giảm padding trái nếu cần */
+  padding-right: 4px !important;
+}
+
+.status-active-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  margin-left: -0px;                   /* ← dịch sang trái chính ở đây */
+  /* Các giá trị bạn có thể thử: -8px, -10px, -12px, -14px */
+  /* Nếu muốn mượt hơn: dùng transform thay margin */
+  /* transform: translateX(-10px); */
+}
+
+/* Đảm bảo cột Actions không bị co lại và nút View nằm sát phải */
+.users-table td:last-child {
+  padding-right: 16px !important;
+  padding-left: 4px;
+  text-align: right;
+}
+
+/* Giữ cho pill và nút thẳng hàng theo chiều dọc */
+.users-table td {
+  vertical-align: middle;
 }
