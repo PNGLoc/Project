@@ -162,10 +162,15 @@ const HeaderHome = () => {
                                             </Link>
                                         </>
                                     ) : isStaff ? (
-                                        // Staff: show My Schedule
-                                        <Link to="/salon/schedule" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
-                                            <FiBookOpen /> My Schedule
-                                        </Link>
+                                        // Staff: show Staff Dashboard & My Schedule
+                                        <>
+                                            <Link to="/staff/dashboard" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                                <GoBriefcase /> Staff Dashboard
+                                            </Link>
+                                            <Link to="/salon/schedule" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                                                <FiBookOpen /> My Schedule
+                                            </Link>
+                                        </>
                                     ) : hasSalon ? (
                                         // Registered but waiting approval
                                         <div className="dropdown-item" style={{ cursor: 'default', color: '#d97706' }}>

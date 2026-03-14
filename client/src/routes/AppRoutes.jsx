@@ -26,6 +26,7 @@ import SearchPage from '../pages/SearchPage';
 // --- IMPORT ĐÃ ĐƯỢC GỘP TỪ 2 NHÁNH & THÊM MỚI ---
 import ProfilePage from '../pages/users/ProfilePage';
 import StaffList from "../pages/salon/StaffList";
+import StaffDashboard from '../pages/staff/StaffDashboard';
 import BookAppointment from '../pages/booking/BookAppointment';
 import CustomerBookingHistory from '../pages/booking/CustomerBookingHistory';
 import SalonCalendar from '../pages/salon/SalonCalendar';
@@ -77,6 +78,11 @@ const AppRoutes = () => {
                     <Route path="/stafflist" element={<StaffList />} />
                     <Route path="/stafflist/add" element={<StaffRegistration />} />
                     <Route path="/salon/coupons" element={<MyCoupon />} />
+                </Route>
+
+                {/* Role: STAFF - Personal dashboard */}
+                <Route element={<ProtectedRoute allowedRoles={['STAFF']} />}>
+                    <Route path="/staff/dashboard" element={<StaffDashboard />} />
                 </Route>
 
                 {/* Role: SALON_OWNER & STAFF (View Schedule) */}

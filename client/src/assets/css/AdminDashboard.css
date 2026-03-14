@@ -171,6 +171,8 @@
     font-size: 30px;
     font-weight: 700;
     color: #111827;
+    text-align: center; /* Căn giữa nội dung */
+    padding-right: 120px; /* Thêm khoảng cách bên phải */
     margin-bottom: 8px;
 }
 
