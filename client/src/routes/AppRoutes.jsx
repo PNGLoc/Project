@@ -32,7 +32,7 @@ import BookAppointment from '../pages/booking/BookAppointment';
 import CustomerBookingHistory from '../pages/booking/CustomerBookingHistory';
 import SalonCalendar from '../pages/salon/SalonCalendar';
 import MyCoupon from '../pages/salon/MyCoupon';
-import SalonBookingHistory from '../pages/salon/BookingHistory';
+import SalonBookingHistory from '../pages/salon/SalonBookingHistory';
 import CouponPage from '../pages/CouponPage';
 
 import MainLayout from '../components/layout/MainLayout';

@@ -3,7 +3,7 @@ import HeaderHome from '../../components/layout/HeaderHome';
 import ServiceManagement from './ServiceManagement';
 import SalonCalendar from './SalonCalendar';
 import Overview from './Overview';
-import BookingHistory from './BookingHistory';
+import SalonBookingHistory from './SalonBookingHistory';
 import ChatWidget from '../../components/chat/ChatWidget';
 import { MessageCircle } from 'lucide-react';
 import '../../assets/css/SalonDashboard.css';
@@ -96,7 +96,7 @@ const SalonDashboard = () => {
                     )}
                     {activeTab === 'services' && <ServiceManagement />}
                     {activeTab === 'calendar' && <SalonCalendar />}
-                    {activeTab === 'history' && <BookingHistory />}
+                    {activeTab === 'history' && <SalonBookingHistory />}
                 </div>
             </main>
 

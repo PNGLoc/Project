@@ -27,6 +27,10 @@ axiosClient.interceptors.request.use(
     }
 );
 
+import { logout } from './authUtils';
+
+// ... (request interceptor remains similar)
+
 // Catch 401 errors globally to auto-logout
 axiosClient.interceptors.response.use(
     (response) => {
@@ -34,14 +38,7 @@ axiosClient.interceptors.response.use(
     },
     (error) => {
         if (error.response && error.response.status === 401) {
-            // Token is invalid or expired
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-
-            // Redirect to login if not already there to prevent infinite loops
-            // if (window.location.pathname !== '/login') {
-            //     window.location.href = '/login?session_expired=true';
-            // }
+            logout();
         }
         return Promise.reject(error);
     }
