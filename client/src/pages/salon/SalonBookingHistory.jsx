@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../../lib/axios';
 import { toast } from 'react-toastify';
 import { FiSearch, FiCalendar, FiUser, FiScissors, FiFilter, FiChevronUp, FiChevronDown, FiRefreshCcw } from 'react-icons/fi';
-import '../../assets/css/BookingHistory.css';
+import '../../assets/css/SalonBookingHistory.css';
 
-const BookingHistory = () => {
+const SalonBookingHistory = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [staffs, setStaffs] = useState([]);
@@ -290,4 +290,4 @@ const BookingHistory = () => {
     );
 };
 
-export default BookingHistory;
+export default SalonBookingHistory;

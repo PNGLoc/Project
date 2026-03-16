@@ -40,7 +40,7 @@ const Overview = ({ onTabChange }) => {
                         className={`sub-nav-btn ${activeSubTab === 'none' ? 'active' : ''}`}
                         onClick={() => setActiveSubTab('none')}
                     >
-                        Overview
+                        <FiBarChart2 />Overview
                     </button>
                     <button
                         className={`sub-nav-btn ${activeSubTab === 'followers' ? 'active' : ''}`}
