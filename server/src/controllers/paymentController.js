@@ -1,11 +1,120 @@
 import Appointment from '../models/Appointment.js';
 import Transaction from '../models/Transaction.js';
 import User from '../models/User.js';
-import { verifyVnpayReturn } from '../utils/vnpay.js';
+import mongoose from 'mongoose';
+import WalletTopup from '../models/WalletTopup.js';
+import { buildVnpayUrl, verifyVnpayReturn } from '../utils/vnpay.js';
+import {
+    decryptWalletEnvelope,
+    getWalletEncryptionPublicKey
+} from '../utils/walletCrypto.js';
 import {
     releaseCollectedCouponUsage,
     sendBookingConfirmationEmail
 } from '../utils/appointmentHelpers.js';
+
+const MIN_FUND_AMOUNT = 1000;
+const MAX_FUND_AMOUNT = 50000000;
+const WALLET_TOPUP_TXN_PREFIX = 'TOPUP_';
+
+export const getWalletBalance = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('walletBalance');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        return res.json({
+            success: true,
+            data: {
+                walletBalance: Number(user.walletBalance || 0)
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
+export const getWalletPublicKey = async (req, res) => {
+    try {
+        const publicKey = getWalletEncryptionPublicKey();
+
+        return res.json({
+            success: true,
+            data: {
+                algorithm: 'RSA-OAEP/AES-GCM',
+                publicKey
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
+export const addFundEncrypted = async (req, res) => {
+    try {
+        const { encryptedKey, iv, payload } = req.body || {};
+
+        const decrypted = decryptWalletEnvelope({
+            encryptedKey,
+            iv,
+            payload,
+            userId: req.user?._id
+        });
+
+        const amount = Number(decrypted?.amount || 0);
+        if (!Number.isFinite(amount) || amount < MIN_FUND_AMOUNT || amount > MAX_FUND_AMOUNT) {
+            return res.status(400).json({
+                message: `Amount must be between ${MIN_FUND_AMOUNT.toLocaleString('vi-VN')} and ${MAX_FUND_AMOUNT.toLocaleString('vi-VN')} VND.`
+            });
+        }
+
+        const roundedAmount = Math.round(amount);
+
+        const user = await User.findById(req.user._id).select('_id');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        const topup = await WalletTopup.create({
+            userId: req.user._id,
+            amount: roundedAmount,
+            status: 'PENDING',
+            method: 'VNPAY'
+        });
+
+        const txnRef = `${WALLET_TOPUP_TXN_PREFIX}${topup._id.toString()}`;
+
+        const returnUrl = process.env.VNPAY_RETURN_URL || 'http://localhost:5000/api/payments/vnpay/return';
+        const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+        const paymentUrl = buildVnpayUrl({
+            amount: roundedAmount,
+            txnRef,
+            orderInfo: `Wallet topup ${topup._id}`,
+            ipAddr,
+            returnUrl
+        });
+
+        topup.vnpay = {
+            ...topup.vnpay,
+            txnRef
+        };
+        await topup.save();
+
+        return res.status(201).json({
+            success: true,
+            message: 'Topup request created. Please complete VNPay payment.',
+            data: {
+                amount: roundedAmount,
+                topupId: topup._id,
+                paymentUrl
+            },
+            paymentUrl
+        });
+    } catch (error) {
+        return res.status(400).json({ message: error.message || 'Invalid encrypted wallet request.' });
+    }
+};
 
 export const handleVnpayReturn = async (req, res) => {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
@@ -21,6 +130,99 @@ export const handleVnpayReturn = async (req, res) => {
 
         if (!txnRef) {
             return res.redirect(`${clientUrl}/book-appointment?vnpay=failed&message=missing-reference`);
+        }
+
+        if (txnRef.startsWith(WALLET_TOPUP_TXN_PREFIX)) {
+            const topupId = txnRef.slice(WALLET_TOPUP_TXN_PREFIX.length);
+
+            if (!mongoose.Types.ObjectId.isValid(topupId)) {
+                return res.redirect(`${clientUrl}/profile?tab=wallet&walletTopup=failed&message=invalid-topup-ref`);
+            }
+
+            const topup = await WalletTopup.findById(topupId);
+            if (!topup) {
+                return res.redirect(`${clientUrl}/profile?tab=wallet&walletTopup=failed&message=topup-not-found`);
+            }
+
+            if (topup.status === 'SUCCESS') {
+                return res.redirect(`${clientUrl}/profile?tab=wallet&walletTopup=success&topupId=${topup._id}`);
+            }
+
+            if (responseCode === '00') {
+                const amountFromGateway = Number(req.query.vnp_Amount || 0) / 100;
+                if (!Number.isFinite(amountFromGateway) || amountFromGateway <= 0 || amountFromGateway !== Number(topup.amount || 0)) {
+                    topup.status = 'FAILED';
+                    topup.vnpay = {
+                        ...topup.vnpay,
+                        responseCode,
+                        txnNo: req.query.vnp_TransactionNo || '',
+                        bankCode: req.query.vnp_BankCode || '',
+                        payDate: req.query.vnp_PayDate || ''
+                    };
+                    await topup.save();
+                    return res.redirect(`${clientUrl}/profile?tab=wallet&walletTopup=failed&message=amount-mismatch`);
+                }
+
+                const existingDeposit = await Transaction.findOne({
+                    relatedId: topup._id,
+                    onModel: 'Bank',
+                    type: 'DEPOSIT'
+                });
+
+                if (!existingDeposit) {
+                    try {
+                        await Transaction.create({
+                            userId: topup.userId,
+                            amount: topup.amount,
+                            type: 'DEPOSIT',
+                            relatedId: topup._id,
+                            onModel: 'Bank'
+                        });
+                    } catch (transactionError) {
+                        if (transactionError?.code !== 11000) {
+                            throw transactionError;
+                        }
+                    }
+
+                    const walletUpdated = await User.updateOne(
+                        { _id: topup.userId },
+                        { $inc: { walletBalance: topup.amount } }
+                    );
+
+                    if (!walletUpdated?.matchedCount) {
+                        await Transaction.deleteOne({
+                            relatedId: topup._id,
+                            onModel: 'Bank',
+                            type: 'DEPOSIT'
+                        });
+                        throw new Error('Topup failed: customer wallet not found.');
+                    }
+                }
+
+                topup.status = 'SUCCESS';
+                topup.vnpay = {
+                    ...topup.vnpay,
+                    responseCode,
+                    txnNo: req.query.vnp_TransactionNo || '',
+                    bankCode: req.query.vnp_BankCode || '',
+                    payDate: req.query.vnp_PayDate || ''
+                };
+                await topup.save();
+
+                return res.redirect(`${clientUrl}/profile?tab=wallet&walletTopup=success&topupId=${topup._id}`);
+            }
+
+            topup.status = 'FAILED';
+            topup.vnpay = {
+                ...topup.vnpay,
+                responseCode,
+                txnNo: req.query.vnp_TransactionNo || '',
+                bankCode: req.query.vnp_BankCode || '',
+                payDate: req.query.vnp_PayDate || ''
+            };
+            await topup.save();
+
+            return res.redirect(`${clientUrl}/profile?tab=wallet&walletTopup=failed&code=${responseCode}&topupId=${topup._id}`);
         }
 
         if (responseCode === '00') {

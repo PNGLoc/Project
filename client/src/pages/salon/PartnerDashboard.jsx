@@ -21,6 +21,7 @@ import {
     ResponsiveContainer
 } from 'recharts';
 import axiosClient from '../../lib/axios';
+import DashboardExport from '../../components/salon/DashboardExportButton';
 import '../../assets/css/PartnerDashboard.css';
 
 export function PartnerDashboard({ onNavigate }) {
@@ -100,6 +101,16 @@ export function PartnerDashboard({ onNavigate }) {
     return (
         <div className="partner-dashboard">
             <div className="dashboard-wrapper">
+                <div className="dash-card-header" style={{ marginBottom: 16 }}>
+                    <h3 className="dash-card-title">Overview Report</h3>
+                    <DashboardExport
+                        stats={stats}
+                        revenueData={revenueData}
+                        bookingsData={bookingsData}
+                        todaySchedule={todaySchedule}
+                        topServices={topServices}
+                    />
+                </div>
 
                 {/* Stats Grid */}
                 <div className="stats-grid">
