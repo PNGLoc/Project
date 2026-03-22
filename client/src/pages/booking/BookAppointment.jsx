@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axiosClient from '../../lib/axios';
 import userCouponApi from '../../features/coupon/api/userCouponApi';
 import '../../assets/css/BookAppointment.css';
@@ -95,7 +96,14 @@ const SalonSelectCard = React.memo(({ salon, isSelected, onSelect }) => {
 });
 
 const BookAppointment = () => {
-    const [stepIndex, setStepIndex] = useState(0);
+    const [searchParams] = useSearchParams();
+    const lockedSalonId = searchParams.get('salonId') || '';
+    const presetServiceId = searchParams.get('serviceId') || '';
+    const presetStaffId = searchParams.get('staffId') || '';
+    const hasLockedSalon = Boolean(lockedSalonId);
+    const minStepIndex = hasLockedSalon ? 1 : 0;
+
+    const [stepIndex, setStepIndex] = useState(minStepIndex);
     const [salons, setSalons] = useState([]);
     const [services, setServices] = useState([]);
     const [staffs, setStaffs] = useState([]);
@@ -122,6 +130,8 @@ const BookAppointment = () => {
         staffId: ''
     });
     const isBooked = Boolean(success);
+    const progressSteps = useMemo(() => (hasLockedSalon ? steps.slice(1) : steps), [hasLockedSalon]);
+    const progressStepIndex = hasLockedSalon ? Math.max(stepIndex - 1, 0) : stepIndex;
 
     const timeSlots = useMemo(() => buildTimeSlots(9, 19, 30), []);
     const today = useMemo(() => new Date().toISOString().split('T')[0], []);
@@ -203,17 +213,26 @@ const BookAppointment = () => {
             const raw = sessionStorage.getItem(DRAFT_KEY);
             if (raw) {
                 const draft = JSON.parse(raw);
-                if (draft?.stepIndex >= 0) setStepIndex(draft.stepIndex);
+                if (draft?.stepIndex >= 0) {
+                    setStepIndex(Math.max(draft.stepIndex, minStepIndex));
+                }
                 setDraftSelectionIds({
-                    salonId: draft?.selectedSalonId || draft?.selectedSalon?._id || '',
-                    serviceId: draft?.selectedServiceId || draft?.selectedService?._id || '',
-                    staffId: draft?.selectedStaffId || draft?.selectedStaff?._id || ''
+                    salonId: lockedSalonId || draft?.selectedSalonId || draft?.selectedSalon?._id || '',
+                    serviceId: presetServiceId || draft?.selectedServiceId || draft?.selectedService?._id || '',
+                    staffId: presetStaffId || draft?.selectedStaffId || draft?.selectedStaff?._id || ''
                 });
                 if (draft?.selectedDate) setSelectedDate(draft.selectedDate);
                 if (draft?.selectedTime) setSelectedTime(draft.selectedTime);
                 if (typeof draft?.note === 'string') setNote(draft.note);
                 if (draft?.paymentMethod) setPaymentMethod(draft.paymentMethod);
                 if (draft?.selectedCouponId) setSelectedCouponId(draft.selectedCouponId);
+            } else {
+                setDraftSelectionIds({
+                    salonId: lockedSalonId,
+                    serviceId: presetServiceId,
+                    staffId: presetStaffId
+                });
+                setStepIndex(minStepIndex);
             }
         } catch {
             sessionStorage.removeItem(DRAFT_KEY);
@@ -248,7 +267,34 @@ const BookAppointment = () => {
             });
             setError('VNPay payment was not completed. Your pending booking has been cancelled.');
         }
-    }, []);
+    }, [lockedSalonId, presetServiceId, presetStaffId, minStepIndex]);
+
+    useEffect(() => {
+        if (!hasLockedSalon || salons.length === 0) return;
+
+        const matchedSalon = salons.find((item) => item._id === lockedSalonId);
+        if (!matchedSalon) {
+            setError('Selected salon is unavailable. Please choose another salon.');
+            return;
+        }
+
+        if (selectedSalon?._id !== matchedSalon._id) {
+            setSelectedSalon(matchedSalon);
+            setSelectedService(null);
+            setSelectedStaff(null);
+            setServices([]);
+            setStaffs([]);
+            setSelectedDate('');
+            setSelectedTime('');
+            setSuccess('');
+            setPaymentMethod('CASH');
+            setSelectedCouponId('');
+            setBookedSlots([]);
+        }
+
+        setDraftSelectionIds((prev) => ({ ...prev, salonId: matchedSalon._id }));
+        setStepIndex((prev) => (prev < minStepIndex ? minStepIndex : prev));
+    }, [hasLockedSalon, lockedSalonId, minStepIndex, salons, selectedSalon]);
 
     useEffect(() => {
         let isActive = true;
@@ -353,10 +399,15 @@ const BookAppointment = () => {
     }, [stepIndex, selectedSalon, selectedService, selectedStaff, selectedDate, selectedTime, note, paymentMethod, selectedCouponId]);
 
     const resetBooking = () => {
-        setSelectedSalon(null);
+        if (hasLockedSalon) {
+            const matchedSalon = salons.find((item) => item._id === lockedSalonId) || null;
+            setSelectedSalon(matchedSalon);
+        } else {
+            setSelectedSalon(null);
+        }
         setSelectedService(null);
         setSelectedStaff(null);
-        setDraftSelectionIds({ salonId: '', serviceId: '', staffId: '' });
+        setDraftSelectionIds({ salonId: lockedSalonId || '', serviceId: presetServiceId || '', staffId: presetStaffId || '' });
         setServices([]);
         setStaffs([]);
         setSelectedDate('');
@@ -366,7 +417,7 @@ const BookAppointment = () => {
         setSelectedCouponId('');
         setBookedSlots([]);
         setSuccess('');
-        setStepIndex(0);
+        setStepIndex(minStepIndex);
         sessionStorage.removeItem(DRAFT_KEY);
         sessionStorage.removeItem(VNPAY_PENDING_KEY);
         sessionStorage.removeItem(VNPAY_REDIRECTING_KEY);
@@ -508,7 +559,7 @@ const BookAppointment = () => {
 
     const handleBack = () => {
         setError('');
-        setStepIndex((prev) => Math.max(prev - 1, 0));
+        setStepIndex((prev) => Math.max(prev - 1, minStepIndex));
     };
 
     const handleSubmit = async () => {
@@ -859,10 +910,10 @@ const BookAppointment = () => {
                 </div>
                 <div className="hero-progress">
                     <div className="booking-steps">
-                        {steps.map((step, index) => (
+                        {progressSteps.map((step, index) => (
                             <div
                                 key={step.label}
-                                className={`step-pill ${index === stepIndex ? 'active' : ''} ${index < stepIndex ? 'done' : ''}`}
+                                className={`step-pill ${index === progressStepIndex ? 'active' : ''} ${index < progressStepIndex ? 'done' : ''}`}
                             >
                                 <div className="step-index">{index + 1}</div>
                                 <div>
@@ -876,7 +927,7 @@ const BookAppointment = () => {
             </section>
 
             <section className="booking-card">
-                {stepIndex === 0 && renderSalonStep()}
+                {!hasLockedSalon && stepIndex === 0 && renderSalonStep()}
                 {stepIndex === 1 && renderServiceStep()}
                 {stepIndex === 2 && renderStaffStep()}
                 {stepIndex === 3 && renderDateStep()}
@@ -890,7 +941,7 @@ const BookAppointment = () => {
                 )}
 
                 <div className="booking-actions">
-                    <button type="button" className="btn-secondary" onClick={handleBack} disabled={stepIndex === 0}>
+                    <button type="button" className="btn-secondary" onClick={handleBack} disabled={stepIndex === minStepIndex}>
                         Back
                     </button>
                     {stepIndex < steps.length - 1 ? (
