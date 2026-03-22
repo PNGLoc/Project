@@ -4,7 +4,8 @@ import { useSearchParams } from 'react-router-dom';
 import authApi from '../../features/auth/api/authApi';
 import followApi from '../../features/social/api/followApi';
 import userCouponApi from '../../features/coupon/api/userCouponApi';
-import { FaUser, FaEdit, FaLock, FaIdCard, FaHeart, FaTag } from 'react-icons/fa';
+import walletApi from '../../features/payment/api/walletApi';
+import { FaUser, FaEdit, FaLock, FaIdCard, FaHeart, FaTag, FaWallet } from 'react-icons/fa';
 import SalonCard from '../../components/salon/SalonCard';
 import '../../assets/css/ProfilePage.css';
 
@@ -44,10 +45,27 @@ const ProfilePage = () => {
     const [loadingCoupons, setLoadingCoupons] = useState(false);
     const [discardingId, setDiscardingId] = useState(null);
 
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [walletLoading, setWalletLoading] = useState(false);
+    const [addingFund, setAddingFund] = useState(false);
+    const [fundAmount, setFundAmount] = useState('');
+
     useEffect(() => {
         const tab = searchParams.get('tab');
         if (tab) setActiveTab(tab);
         fetchProfile();
+
+        const walletTopupStatus = searchParams.get('walletTopup');
+        if (walletTopupStatus) {
+            setActiveTab('wallet');
+            if (walletTopupStatus === 'success') {
+                setMessage({ type: 'success', text: 'Wallet top up successful.' });
+            } else {
+                setMessage({ type: 'error', text: 'Wallet top up failed or was cancelled.' });
+            }
+            fetchWalletBalance();
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        }
     }, [searchParams]);
 
     useEffect(() => {
@@ -122,11 +140,53 @@ const ProfilePage = () => {
                 bio: data.bio || '',
                 dateOfBirth: formattedDoB
             });
+            setWalletBalance(Number(data.walletBalance || 0));
         } catch (error) {
             console.error(error);
             setMessage({ type: 'error', text: 'Failed to load profile' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchWalletBalance = async () => {
+        try {
+            setWalletLoading(true);
+            const response = await walletApi.getBalance();
+            const nextBalance = Number(response?.data?.walletBalance || 0);
+            setWalletBalance(nextBalance);
+            setUser((prev) => prev ? { ...prev, walletBalance: nextBalance } : prev);
+        } catch (error) {
+            setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to load wallet balance' });
+        } finally {
+            setWalletLoading(false);
+        }
+    };
+
+    const handleAddFund = async (e) => {
+        e.preventDefault();
+        setMessage({ type: '', text: '' });
+
+        const amount = Number(fundAmount);
+        if (!Number.isFinite(amount) || amount < 1000) {
+            setMessage({ type: 'error', text: 'Top up amount must be at least 1,000 VND.' });
+            return;
+        }
+
+        try {
+            setAddingFund(true);
+            const response = await walletApi.addFundEncrypted(Math.round(amount));
+            const paymentUrl = response?.paymentUrl || response?.data?.paymentUrl;
+            if (!paymentUrl) {
+                throw new Error('VNPay payment URL is missing.');
+            }
+
+            setFundAmount('');
+            window.location.href = paymentUrl;
+        } catch (error) {
+            setMessage({ type: 'error', text: error.response?.data?.message || error.message || 'Failed to add fund' });
+        } finally {
+            setAddingFund(false);
         }
     };
 
@@ -287,6 +347,15 @@ const ProfilePage = () => {
                                         className={`profile-menu-button ${activeTab === 'coupons' ? 'active' : ''}`}
                                     >
                                         <FaTag /> Collected Coupons
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab('wallet');
+                                            fetchWalletBalance();
+                                        }}
+                                        className={`profile-menu-button ${activeTab === 'wallet' ? 'active' : ''}`}
+                                    >
+                                        <FaWallet /> Wallet
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('following')}
@@ -527,7 +596,48 @@ const ProfilePage = () => {
                             </div>
                         )}
 
-                        {/* 6. Following Tab (Only for CUSTOMER) */}
+                        {/* 6. Wallet Tab (Only for CUSTOMER) */}
+                        {activeTab === 'wallet' && user?.role === 'CUSTOMER' && (
+                            <div>
+                                <h2 className="profile-section-title">My Wallet</h2>
+                                <div className="profile-wallet-card">
+                                    <div className="profile-wallet-balance-label">Current Balance</div>
+                                    <div className="profile-wallet-balance-value">
+                                        {walletLoading ? 'Loading...' : `${walletBalance.toLocaleString('vi-VN')} VND`}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="profile-wallet-refresh-btn"
+                                        onClick={fetchWalletBalance}
+                                        disabled={walletLoading}
+                                    >
+                                        {walletLoading ? 'Refreshing...' : 'Refresh balance'}
+                                    </button>
+                                </div>
+
+                                <form className="profile-wallet-form" onSubmit={handleAddFund}>
+                                    <label className="profile-form-label" htmlFor="wallet-fund-amount">
+                                        Add Fund (secured with RSA + AES)
+                                    </label>
+                                    <input
+                                        id="wallet-fund-amount"
+                                        type="number"
+                                        min="1000"
+                                        step="1000"
+                                        className="profile-form-control"
+                                        placeholder="Enter amount in VND"
+                                        value={fundAmount}
+                                        onChange={(e) => setFundAmount(e.target.value)}
+                                        disabled={addingFund}
+                                    />
+                                    <button type="submit" className="btn profile-submit-btn" disabled={addingFund}>
+                                        {addingFund ? 'Processing...' : 'Add fund'}
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* 7. Following Tab (Only for CUSTOMER) */}
                         {activeTab === 'following' && user?.role === 'CUSTOMER' && (
                             <div>
                                 <h2 className="profile-section-title">Salons You Follow</h2>

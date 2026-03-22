@@ -2,6 +2,8 @@ import User from '../models/User.js';
 import Salon from '../models/Salon.js';
 import Appointment from '../models/Appointment.js';
 import Category from '../models/Category.js';
+import AuditLog from '../models/AuditLog.js';
+import mongoose from 'mongoose';
 
 // @desc    Get all admin dashboard stats
 // @route   GET /api/admin/stats
@@ -156,5 +158,103 @@ export const getRecentActivity = async (req, res) => {
     } catch (error) {
         console.error('[ADMIN ACTIVITY ERROR]', error);
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get audit logs with filters
+// @route   GET /api/admin/audit-logs
+// @access  Private/Admin
+export const getAuditLogs = async (req, res) => {
+    try {
+        const {
+            action,
+            user,
+            ip,
+            startTime,
+            endTime,
+            page = 1,
+            limit = 15
+        } = req.query;
+
+        const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(limit, 10) || 15, 1), 100);
+
+        const filter = {};
+
+        if (action && String(action).trim()) {
+            filter.action = String(action).trim();
+        }
+
+        if (ip && String(ip).trim()) {
+            filter.ip = { $regex: String(ip).trim(), $options: 'i' };
+        }
+
+        if (startTime || endTime) {
+            filter.createdAt = {};
+
+            if (startTime) {
+                const parsedStart = new Date(startTime);
+                if (!Number.isNaN(parsedStart.getTime())) {
+                    filter.createdAt.$gte = parsedStart;
+                }
+            }
+
+            if (endTime) {
+                const parsedEnd = new Date(endTime);
+                if (!Number.isNaN(parsedEnd.getTime())) {
+                    filter.createdAt.$lte = parsedEnd;
+                }
+            }
+
+            if (!filter.createdAt.$gte && !filter.createdAt.$lte) {
+                delete filter.createdAt;
+            }
+        }
+
+        if (user && String(user).trim()) {
+            const userQuery = String(user).trim();
+            if (mongoose.Types.ObjectId.isValid(userQuery)) {
+                filter.userId = userQuery;
+            } else {
+                const regex = new RegExp(userQuery, 'i');
+                const matchedUsers = await User.find({
+                    $or: [
+                        { fullName: regex },
+                        { email: regex }
+                    ]
+                }).select('_id');
+
+                const matchedIds = matchedUsers.map((item) => item._id);
+                filter.userId = matchedIds.length > 0 ? { $in: matchedIds } : null;
+            }
+        }
+
+        const skip = (pageNum - 1) * limitNum;
+
+        const [total, items, actions] = await Promise.all([
+            AuditLog.countDocuments(filter),
+            AuditLog.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum)
+                .populate('userId', 'fullName email'),
+            AuditLog.distinct('action')
+        ]);
+
+        return res.json({
+            success: true,
+            data: items,
+            pagination: {
+                total,
+                page: pageNum,
+                limit: limitNum,
+                pages: Math.max(1, Math.ceil(total / limitNum))
+            },
+            filters: {
+                actions: actions.filter(Boolean).sort()
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || 'Server error' });
     }
 };

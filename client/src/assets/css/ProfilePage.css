@@ -306,6 +306,47 @@
   cursor: not-allowed;
 }
 
+.profile-wallet-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: #f8fafc;
+  margin-bottom: 1rem;
+}
+
+.profile-wallet-balance-label {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.profile-wallet-balance-value {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.profile-wallet-refresh-btn {
+  margin-top: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.profile-wallet-refresh-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profile-wallet-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 @media (max-width: 768px) {
   .profile-wrapper {
     flex-direction: column;

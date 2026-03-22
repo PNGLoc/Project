@@ -30,24 +30,7 @@ const transactionSchema = new mongoose.Schema({
 
 transactionSchema.index(
     { relatedId: 1, onModel: 1, type: 1 },
-    {
-        unique: true,
-        partialFilterExpression: {
-            onModel: 'Appointment',
-            type: 'PAYMENT'
-        }
-    }
-);
-
-transactionSchema.index(
-    { relatedId: 1, onModel: 1, type: 1 },
-    {
-        unique: true,
-        partialFilterExpression: {
-            onModel: 'Appointment',
-            type: 'REFUND'
-        }
-    }
+    { unique: true }
 );
 
 export default mongoose.model('Transaction', transactionSchema);
