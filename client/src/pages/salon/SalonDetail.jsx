@@ -194,7 +194,7 @@ const SalonDetail = () => {
  
 
   const handleBookAppointment = () => {
-    navigate("/book-appointment");
+    navigate(`/book-appointment?salonId=${salon._id}`);
   };
 
   return (
@@ -351,7 +351,7 @@ const SalonDetail = () => {
                         <button
                           className="salon-service-book-btn"
                           onClick={() =>
-                            navigate(`/booking?salonId=${salon._id}&serviceId=${service._id}`)
+                            navigate(`/book-appointment?salonId=${salon._id}&serviceId=${service._id}`)
                           }
                         >
                           <span style={{fontSize:'1.2em',marginRight:'6px'}}>&#10003;</span> Add to Booking
