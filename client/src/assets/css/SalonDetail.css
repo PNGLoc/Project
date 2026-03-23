@@ -724,3 +724,117 @@
     max-width: 100%;
   }
 }
+
+/* --- Location Tab Styles --- */
+.location-tab-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@media (min-width: 1024px) {
+  .location-tab-content {
+    grid-template-columns: 1.5fr 1fr;
+  }
+}
+
+.map-card-container {
+  height: 500px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  background: #f3f4f6;
+  position: relative;
+}
+
+.location-info-card {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.location-info-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.location-detail-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+
+.location-detail-item:hover {
+  transform: translateX(4px);
+  background: #f3f4f6;
+}
+
+.location-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  color: var(--primary);
+}
+
+.location-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.location-value {
+  font-size: 1rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.btn-directions {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 1rem;
+  background: var(--primary);
+  color: white;
+  border-radius: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 150, 136, 0.25);
+}
+
+.btn-directions:hover {
+  background: #00796b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 150, 136, 0.35);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
