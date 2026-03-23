@@ -13,7 +13,7 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['SALON_REJECTION', 'SALON_APPROVAL', 'APPOINTMENT_REMINDER', 'SYSTEM_ANNOUNCEMENT', 'BOOKING_CANCELLED'],
+        enum: ['SALON_REJECTION', 'SALON_APPROVAL', 'APPOINTMENT_REMINDER', 'SYSTEM_ANNOUNCEMENT', 'BOOKING_CANCELLED', 'BOOKING_SUCCESS', 'BOOKING_CONFIRMED'],
         required: true
     },
     title: {

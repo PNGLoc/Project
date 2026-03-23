@@ -601,6 +601,7 @@ const BookAppointment = () => {
                 setError('Unable to start VNPay payment. Please try again.');
             } else {
                 setSuccess('Your appointment has been booked successfully.');
+                window.dispatchEvent(new Event('notifications_updated'));
                 sessionStorage.removeItem(DRAFT_KEY);
 
                 if (paymentMethod === 'WALLET') {

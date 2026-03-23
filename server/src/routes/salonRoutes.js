@@ -5,7 +5,7 @@ import fs from 'fs';
 import { protect } from '../middlewares/authMiddleware.js';
 import {
     registerSalon, approveSalon, rejectSalon, getAllSalons, getPendingSalons,
-    getSalonDetails, getDashboardStats
+    getSalonDetails, getDashboardStats, updateSalonLocation
 } from '../controllers/salonController.js';
 import { getSalonCoupons } from '../controllers/salonCouponController.js';
 
@@ -44,6 +44,7 @@ router.get('/:id/coupons', getSalonCoupons);
 // private dashboard stats for salon owner
 router.get('/dashboard/stats', protect, getDashboardStats);
 router.post('/register', protect, upload.single('image'), registerSalon); // 'image' field must match frontend FormData
+router.patch('/my-salon', protect, updateSalonLocation);
 router.get('/pending', protect, getPendingSalons);
 router.patch('/approve/:id', protect, approveSalon);
 router.delete('/reject/:id', protect, rejectSalon);

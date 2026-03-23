@@ -106,6 +106,10 @@ const appointmentSchema = new mongoose.Schema({
         name: String,
         address: String,
         image: String
+    },
+    reminderSent: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

@@ -12,12 +12,24 @@ import {
   Tag,
   Gift,
   MessageCircle,
+  Navigation,
 } from "lucide-react";
 import couponApi from "../../features/coupon/api/couponApi";
 import userCouponApi from "../../features/coupon/api/userCouponApi";
 import ChatWidget from "../../components/chat/ChatWidget";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 // tab UI implemented inline below (no external components needed)
 import "../../assets/css/SalonDetail.css";
+
+// Fix Leaflet marker icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const SalonDetail = () => {
   const { id } = useParams();
@@ -39,6 +51,8 @@ const SalonDetail = () => {
   const [reportDescription, setReportDescription] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportError, setReportError] = useState("");
+  const [userLocation, setUserLocation] = useState(null);
+  const [distance, setDistance] = useState(null);
 
   const currentUser = (() => {
     try {
@@ -141,6 +155,39 @@ const SalonDetail = () => {
     console.log("Tab changed to:", value); // Debug để kiểm tra tab có chuyển không
     setActiveTab(value);
   };
+
+  // Calculate distance using Haversine formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distance in km
+    return d.toFixed(1);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'location' && !userLocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            },
+            (err) => console.warn("Geolocation error:", err)
+        );
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (userLocation && salonData?.salon?.location?.coordinates) {
+        const [lng, lat] = salonData.salon.location.coordinates;
+        const d = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
+        setDistance(d);
+    }
+  }, [userLocation, salonData]);
 
   const handleOpenReport = () => {
     if (!isCustomer) {
@@ -327,6 +374,12 @@ const SalonDetail = () => {
             className={`salon-tab-btn${activeTab === 'coupons' ? ' active' : ''}`}
           >
             Coupons
+          </button>
+          <button
+            onClick={() => handleTabChange('location')}
+            className={`salon-tab-btn${activeTab === 'location' ? ' active' : ''}`}
+          >
+            Location
           </button>
         </div>
 
@@ -522,6 +575,73 @@ const SalonDetail = () => {
                 </div>
               )}
             </>
+          )}
+
+          {activeTab === 'location' && (
+            <div className="location-tab-content">
+              <div className="map-card-container">
+                {salon.location?.coordinates && (
+                  <MapContainer 
+                    center={[salon.location.coordinates[1], salon.location.coordinates[0]]} 
+                    zoom={15} 
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    <Marker position={[salon.location.coordinates[1], salon.location.coordinates[0]]}>
+                      <Popup>
+                        <strong>{salon.name}</strong><br />
+                        {salon.address?.street}, {salon.address?.district}
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                )}
+              </div>
+
+              <div className="location-info-card">
+                <h3 className="location-info-title">
+                  <MapPin className="text-teal-600" /> Salon Location
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="location-detail-item">
+                    <div className="location-icon-wrapper">
+                      <MapPin size={20} />
+                    </div>
+                    <div>
+                      <div className="location-label">Address</div>
+                      <div className="location-value">
+                        {salon.address?.street}<br />
+                        {salon.address?.district}, {salon.address?.city}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {distance && (
+                    <div className="location-detail-item">
+                      <div className="location-icon-wrapper" style={{ color: '#3b82f6' }}>
+                        <Navigation size={20} />
+                      </div>
+                      <div>
+                        <div className="location-label">Distance</div>
+                        <div className="location-value">{distance} km from you</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <a 
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${salon.location?.coordinates?.[1]},${salon.location?.coordinates?.[0]}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-directions"
+                  >
+                    <Navigation size={20} /> Get Directions
+                  </a>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -45,11 +45,23 @@ export const registerSalon = async (req, res) => {
         }
 
         let parsedAddress = typeof address === 'string' ? JSON.parse(address) : address;
+        
+        // --- NEW: Parse location coordinates ---
+        let locationData = { type: 'Point', coordinates: [106.6297, 10.8231] }; // Mặc định TP.HCM
+        if (req.body.location) {
+            const parsedLocation = typeof req.body.location === 'string' 
+                ? JSON.parse(req.body.location) 
+                : req.body.location;
+            if (parsedLocation.lat && parsedLocation.lng) {
+                locationData.coordinates = [Number(parsedLocation.lng), Number(parsedLocation.lat)];
+            }
+        }
 
         const newSalon = new Salon({
             name,
             phone,
             address: parsedAddress,
+            location: locationData,
             // Lưu path tương đối để Frontend dễ gọi
             images: req.file ? [`/assets/salon/temp/${req.file.filename}`] : [],
             ownerId: req.user._id,
@@ -424,5 +436,38 @@ export const getDashboardStats = async (req, res) => {
     } catch (error) {
         console.error('[GET DASHBOARD STATS ERROR]', error);
         res.status(500).json({ message: 'Server error fetching dashboard stats' });
+    }
+};
+
+// @desc    Update salon details (address & location)
+// @route   PATCH /api/salons/my-salon
+// @access  Private/SALON_OWNER
+export const updateSalonLocation = async (req, res) => {
+    try {
+        const { address, location } = req.body;
+        const salon = await Salon.findOne({ ownerId: req.user._id });
+        
+        if (!salon) {
+            return res.status(404).json({ message: "Salon not found" });
+        }
+
+        if (address) {
+            salon.address = typeof address === 'string' ? JSON.parse(address) : address;
+        }
+
+        if (location) {
+            const parsedLocation = typeof location === 'string' ? JSON.parse(location) : location;
+            if (parsedLocation.lat && parsedLocation.lng) {
+                salon.location = {
+                    type: 'Point',
+                    coordinates: [Number(parsedLocation.lng), Number(parsedLocation.lat)]
+                };
+            }
+        }
+
+        await salon.save();
+        res.json({ success: true, data: salon });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };

@@ -39,9 +39,15 @@ const NotificationBell = () => {
             }
         };
 
+        const handleRefresh = () => {
+            fetchNotifications();
+        };
+
+        window.addEventListener('notifications_updated', handleRefresh);
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             clearInterval(interval);
+            window.removeEventListener('notifications_updated', handleRefresh);
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);

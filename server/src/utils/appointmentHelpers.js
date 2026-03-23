@@ -169,3 +169,55 @@ export const sendBookingConfirmationEmail = async ({ customer, appointment }) =>
         console.error('[BOOKING EMAIL ERROR]', error.message);
     }
 };
+
+export const sendAppointmentReminderEmail = async ({ customer, appointment }) => {
+    if (!customer?.email || !appointment) return;
+
+    const transporter = getEmailTransporter();
+    if (!transporter) return;
+
+    const schedule = new Date(appointment.startAt).toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+
+    const salonName = appointment.salonSnapshot?.name || 'Your salon';
+    const serviceName = appointment.serviceSnapshot?.name || 'Service';
+    const stylistName = appointment.staffSnapshot?.fullName || 'Stylist';
+
+    const subject = `Reminder: Your Appointment at ${salonName} is Tomorrow!`;
+    const text = `Hello ${customer.fullName || 'Customer'},\n\n` +
+        `This is a friendly reminder for your upcoming appointment.\n` +
+        `Salon: ${salonName}\n` +
+        `Service: ${serviceName}\n` +
+        `Stylist: ${stylistName}\n` +
+        `Schedule: ${schedule}\n\n` +
+        `We look forward to seeing you!`;
+
+    const html =
+        `<p>Hello <b>${customer.fullName || 'Customer'}</b>,</p>` +
+        `<p>This is a friendly reminder for your upcoming appointment.</p>` +
+        `<ul>` +
+        `<li><b>Salon:</b> ${salonName}</li>` +
+        `<li><b>Service:</b> ${serviceName}</li>` +
+        `<li><b>Stylist:</b> ${stylistName}</li>` +
+        `<li><b>Schedule:</b> ${schedule}</li>` +
+        `</ul>` +
+        `<p>We look forward to seeing you!</p>`;
+
+    try {
+        await transporter.sendMail({
+            from: `"Boms Salon" <${process.env.EMAIL_USER}>`,
+            to: customer.email,
+            subject,
+            text,
+            html
+        });
+        console.log(`[REMINDER SENT] Appointment ${appointment._id} to ${customer.email}`);
+    } catch (error) {
+        console.error('[REMINDER EMAIL ERROR]', error.message);
+    }
+};

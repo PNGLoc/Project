@@ -335,6 +335,16 @@ export const createAppointment = async (req, res) => {
             appointment
         });
 
+        // --- NEW: Internal Notification for Booking Success ---
+        await Notification.create({
+            recipient: appointment.customerId,
+            sender: req.user._id, // The customer themselves or system
+            type: 'BOOKING_SUCCESS',
+            title: 'Booking Request Submitted',
+            message: `Your booking for "${appointment.serviceSnapshot.name}" at ${appointment.salonSnapshot.name} has been received and is pending review.`,
+            data: { appointmentId: appointment._id }
+        });
+
         return res.status(201).json({
             success: true,
             data: appointment
@@ -572,6 +582,18 @@ export const createProviderAppointment = async (req, res) => {
             });
         }
 
+        // --- NEW: Internal Notification for Provider-Created Booking (Instant Confirmation) ---
+        if (appointment.customerId && !isWalkIn) {
+            await Notification.create({
+                recipient: appointment.customerId,
+                sender: req.user._id,
+                type: 'BOOKING_CONFIRMED',
+                title: 'Booking Created & Confirmed!',
+                message: `The salon has created and confirmed a booking for "${appointment.serviceSnapshot.name}" on ${new Date(appointment.startAt).toLocaleString()}.`,
+                data: { appointmentId: appointment._id }
+            });
+        }
+
         if (!isWalkIn) {
             sendBookingConfirmationEmail({ customer, appointment });
         }
@@ -641,6 +663,16 @@ export const markAppointmentPaidByCash = async (req, res) => {
             const customer = await User.findById(appointment.customerId).select('fullName email');
             if (customer) {
                 sendBookingConfirmationEmail({ customer, appointment });
+
+                // --- NEW: Internal Notification for Cash Payment Confirmation ---
+                await Notification.create({
+                    recipient: appointment.customerId,
+                    sender: req.user._id,
+                    type: 'BOOKING_CONFIRMED',
+                    title: 'Booking Confirmed!',
+                    message: `Your booking for "${appointment.serviceSnapshot.name}" has been confirmed after cash payment.`,
+                    data: { appointmentId: appointment._id }
+                });
             }
         }
 
@@ -1081,6 +1113,19 @@ export const updateAppointment = async (req, res) => {
         }
 
         await appointment.save();
+
+        // --- NEW: Internal Notification for Booking Confirmation ---
+        if (status === 'CONFIRMED' && appointment.customerId) {
+            await Notification.create({
+                recipient: appointment.customerId,
+                sender: req.user._id,
+                type: 'BOOKING_CONFIRMED',
+                title: 'Booking Confirmed!',
+                message: `Great news! Your booking for "${appointment.serviceSnapshot.name}" at ${appointment.salonSnapshot.name} on ${new Date(appointment.startAt).toLocaleString()} has been confirmed.`,
+                data: { appointmentId: appointment._id }
+            });
+        }
+
         res.json({ success: true, data: appointment });
     } catch (error) {
         res.status(500).json({ message: error.message || 'Server error' });

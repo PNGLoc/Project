@@ -4,8 +4,9 @@ import ServiceManagement from './ServiceManagement';
 import SalonCalendar from './SalonCalendar';
 import Overview from './Overview';
 import SalonBookingHistory from './SalonBookingHistory';
+import LocationSettings from './LocationSettings';
 import ChatWidget from '../../components/chat/ChatWidget';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, MapPin } from 'lucide-react';
 import '../../assets/css/SalonDashboard.css';
 import '../../components/chat/ChatWidget.css';
 
@@ -48,6 +49,11 @@ const SalonDashboard = () => {
                                 <h1>Booking History</h1>
                                 <p>Review and filter past appointments</p>
                             </>
+                        ) : activeTab === 'location' ? (
+                            <>
+                                <h1>Salon Location</h1>
+                                <p>Update your salon's address and map coordinates</p>
+                            </>
                         ) : (
                             <>
                                 <h1>Partner Dashboard</h1>
@@ -86,6 +92,14 @@ const SalonDashboard = () => {
                         >
                             History
                         </button>
+                        {!isStaffUser && (
+                            <button
+                                className={`tab-btn-link ${activeTab === 'location' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('location')}
+                            >
+                                Location
+                            </button>
+                        )}
                     </nav>
                     <div className="header-balance-div"></div>
                 </header>
@@ -97,6 +111,7 @@ const SalonDashboard = () => {
                     {activeTab === 'services' && <ServiceManagement />}
                     {activeTab === 'calendar' && <SalonCalendar />}
                     {activeTab === 'history' && <SalonBookingHistory />}
+                    {activeTab === 'location' && <LocationSettings />}
                 </div>
             </main>
 
