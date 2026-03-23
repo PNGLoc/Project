@@ -5,12 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import axiosClient from '../../lib/axios';
 import { toast } from 'react-toastify';
 import { MapPin, Save, Navigation } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import axiosClient from '../../lib/axios';
-import { toast } from 'react-toastify';
-import { MapPin, Save, Navigation } from 'lucide-react';
+
 
 // Fix Leaflet marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
