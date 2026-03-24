@@ -49,6 +49,10 @@ const ProfilePage = () => {
     const [walletLoading, setWalletLoading] = useState(false);
     const [addingFund, setAddingFund] = useState(false);
     const [fundAmount, setFundAmount] = useState('');
+    const [topupHistory, setTopupHistory] = useState([]);
+    const [topupHistoryLoading, setTopupHistoryLoading] = useState(false);
+    const [topupHistoryPage, setTopupHistoryPage] = useState(1);
+    const [topupHistoryTotalPages, setTopupHistoryTotalPages] = useState(1);
 
     useEffect(() => {
         const tab = searchParams.get('tab');
@@ -64,6 +68,7 @@ const ProfilePage = () => {
                 setMessage({ type: 'error', text: 'Wallet top up failed or was cancelled.' });
             }
             fetchWalletBalance();
+            fetchWalletTopupHistory(1);
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
         }
     }, [searchParams]);
@@ -160,6 +165,20 @@ const ProfilePage = () => {
             setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to load wallet balance' });
         } finally {
             setWalletLoading(false);
+        }
+    };
+
+    const fetchWalletTopupHistory = async (page = 1) => {
+        try {
+            setTopupHistoryLoading(true);
+            const response = await walletApi.getTopupHistory({ page, limit: 10 });
+            setTopupHistory(Array.isArray(response?.data) ? response.data : []);
+            setTopupHistoryPage(Number(response?.pagination?.page || page));
+            setTopupHistoryTotalPages(Number(response?.pagination?.pages || 1));
+        } catch (error) {
+            setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to load top-up history' });
+        } finally {
+            setTopupHistoryLoading(false);
         }
     };
 
@@ -352,6 +371,7 @@ const ProfilePage = () => {
                                         onClick={() => {
                                             setActiveTab('wallet');
                                             fetchWalletBalance();
+                                            fetchWalletTopupHistory(1);
                                         }}
                                         className={`profile-menu-button ${activeTab === 'wallet' ? 'active' : ''}`}
                                     >
@@ -634,6 +654,67 @@ const ProfilePage = () => {
                                         {addingFund ? 'Processing...' : 'Add fund'}
                                     </button>
                                 </form>
+
+                                <div className="profile-wallet-history">
+                                    <div className="profile-wallet-history-header">
+                                        <h3>Top-up History</h3>
+                                    </div>
+
+                                    {topupHistoryLoading ? (
+                                        <div className="profile-wallet-history-empty">Loading history...</div>
+                                    ) : topupHistory.length === 0 ? (
+                                        <div className="profile-wallet-history-empty">No top-up history yet.</div>
+                                    ) : (
+                                        <div className="profile-wallet-history-table-wrap">
+                                            <table className="profile-wallet-history-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Time</th>
+                                                        <th>Amount</th>
+                                                        <th>Status</th>
+                                                        <th>Method</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {topupHistory.map((item) => (
+                                                        <tr key={item._id}>
+                                                            <td>{new Date(item.createdAt).toLocaleString('vi-VN')}</td>
+                                                            <td>{Number(item.amount || 0).toLocaleString('vi-VN')} VND</td>
+                                                            <td>
+                                                                <span className={`profile-wallet-status status-${String(item.status || '').toLowerCase()}`}>
+                                                                    {item.status || '-'}
+                                                                </span>
+                                                            </td>
+                                                            <td>{item.method || 'VNPAY'}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+
+                                            <div className="profile-wallet-history-pagination">
+                                                <button
+                                                    type="button"
+                                                    className="profile-wallet-history-page-btn"
+                                                    onClick={() => fetchWalletTopupHistory(topupHistoryPage - 1)}
+                                                    disabled={topupHistoryLoading || topupHistoryPage <= 1}
+                                                >
+                                                    Prev
+                                                </button>
+                                                <span className="profile-wallet-history-page-text">
+                                                    Page {topupHistoryPage} / {topupHistoryTotalPages}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    className="profile-wallet-history-page-btn"
+                                                    onClick={() => fetchWalletTopupHistory(topupHistoryPage + 1)}
+                                                    disabled={topupHistoryLoading || topupHistoryPage >= topupHistoryTotalPages}
+                                                >
+                                                    Next
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 

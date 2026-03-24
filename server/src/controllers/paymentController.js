@@ -117,6 +117,38 @@ export const addFundEncrypted = async (req, res) => {
     }
 };
 
+export const getWalletTopupHistory = async (req, res) => {
+    try {
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
+        const skip = (page - 1) * limit;
+
+        const filter = { userId: req.user._id };
+
+        const [items, total] = await Promise.all([
+            WalletTopup.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .select('_id amount status method createdAt updatedAt vnpay'),
+            WalletTopup.countDocuments(filter)
+        ]);
+
+        return res.json({
+            success: true,
+            data: items,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.max(1, Math.ceil(total / limit))
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
 export const handleVnpayReturn = async (req, res) => {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 
