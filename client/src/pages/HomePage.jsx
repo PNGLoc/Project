@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import '../assets/css/HomePage.css';
 import SalonCard from '../components/salon/SalonCard';
-import { FiSearch, FiScissors, FiMapPin } from 'react-icons/fi';
+import { FiSearch, FiScissors, FiMapPin, FiTrendingUp, FiClock } from 'react-icons/fi';
 import { FaSpa, FaFire } from 'react-icons/fa';
 import { GiFingernail, GiLipstick } from 'react-icons/gi';
 import { TbMassage } from 'react-icons/tb';
@@ -25,6 +25,29 @@ const HomePage = () => {
         } else {
             navigate('/search');
         }
+    };
+
+    const CountdownTimer = ({ endTime }) => {
+        const [timeLeft, setTimeLeft] = useState('');
+
+        useEffect(() => {
+            const calculateTimeLeft = () => {
+                const diff = new Date(endTime) - new Date();
+                if (diff > 0) {
+                    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                    const m = Math.floor((diff / 1000 / 60) % 60);
+                    setTimeLeft(d > 0 ? `${d}d ${h}h` : `${h}h ${m}m`);
+                } else {
+                    setTimeLeft('Expired');
+                }
+            };
+            calculateTimeLeft();
+            const timer = setInterval(calculateTimeLeft, 60000);
+            return () => clearInterval(timer);
+        }, [endTime]);
+
+        return <span>{timeLeft}</span>;
     };
 
     const userString = localStorage.getItem('user'); // 1. Lấy chuỗi thô
@@ -75,23 +98,27 @@ const HomePage = () => {
 
     // 3. Khởi tạo state (Dùng JS thuần không cần khai báo kiểu dữ liệu)
     const [salons, setSalons] = useState([]); // Mặc định là mảng rỗng
+    const [flashSaleItems, setFlashSaleItems] = useState([]);
     const [loading, setLoading] = useState(true); // Mặc định là đang tải
 
     // 4. Hàm gọi API từ Backend
     useEffect(() => {
-        const fetchSalons = async () => {
+        const fetchData = async () => {
             try {
-                // Thay URL bằng endpoint API thật của bạn
-                const response = await axios.get('http://localhost:5000/api/salons');
-                setSalons(response.data);
+                const [salonsRes, flashsalesRes] = await Promise.all([
+                    axios.get('http://localhost:5000/api/salons'),
+                    axios.get('http://localhost:5000/api/flashsales/public/top').catch(() => ({ data: { data: [] } }))
+                ]);
+                setSalons(salonsRes.data);
+                setFlashSaleItems(flashsalesRes.data?.data || []);
                 setLoading(false);
             } catch (error) {
-                console.error("Error fetching salons:", error);
+                console.error("Error fetching data:", error);
                 setLoading(false);
             }
         };
 
-        fetchSalons();
+        fetchData();
     }, []);
 
 
@@ -148,6 +175,44 @@ const HomePage = () => {
                     ))}
                 </div>
             </section>
+
+            {/* --- PHẦN FLASH SALE --- */}
+            {flashSaleItems.length > 0 && (
+                <section className="bg-gray">
+                    <section className="section-container">
+                        <div className="section-header">
+                            <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <FiTrendingUp color="#ef4444" />
+                                Flash Sale
+                            </h2>
+                        </div>
+
+                        <div className="flash-sale-grid">
+                            {flashSaleItems.map((item) => (
+                                <div key={item.id} className="flash-card" onClick={() => navigate(`/salon/${item.salon?._id}`)} style={{ cursor: 'pointer' }}>
+                                    <div className="flash-card-header">
+                                        <h3 className="flash-service-name">{item.service?.name}</h3>
+                                        <div className="flash-timer">
+                                            <FiClock size={14} />
+                                            <CountdownTimer endTime={item.endTime} />
+                                        </div>
+                                    </div>
+
+                                    <p className="flash-shop-name">{item.salon?.name}</p>
+
+                                    <div className="flash-price-row">
+                                        <span className="current-price">{item.discountedPrice?.toLocaleString('vi-VN')} VNĐ</span>
+                                        <span className="old-price">{item.service?.price?.toLocaleString('vi-VN')} VNĐ</span>
+                                        <span className="discount-tag">{item.percentOff}% OFF</span>
+                                    </div>
+
+                                    <button className="btn-book-now" onClick={(e) => { e.stopPropagation(); navigate(`/book-appointment?salonId=${item.salon?._id}&serviceId=${item.service?._id}`); }}>Book Now</button>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                </section>
+            )}
 
             {/* --- PHẦN 5: SALON  --- */}
 
@@ -207,41 +272,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
-
-{/* --- PHẦN FLASH SALE --- */ }
-{/* <section className="bg-gray">
-                <section className="section-container">
-                    <div className="section-header">
-                        <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <FiTrendingUp color="#ef4444" />
-                            Flash Sale
-                        </h2>
-                        <a href="#" className="view-all">View All &rarr;</a>
-                    </div>
-
-                    <div className="flash-sale-grid">
-                        {flashSaleItems.map((item) => (
-                            <div key={item.id} className="flash-card">
-                                <div className="flash-card-header">
-                                    <h3 className="flash-service-name">{item.service}</h3>
-                                    <div className="flash-timer">
-                                        <FiClock size={14} />
-                                        <span>{item.timeLeft}</span>
-                                    </div>
-                                </div>
-
-                                <p className="flash-shop-name">{item.shop}</p>
-
-                                <div className="flash-price-row">
-                                    <span className="current-price">${item.price}</span>
-                                    <span className="old-price">${item.originalPrice}</span>
-                                    <span className="discount-tag">{item.discount}</span>
-                                </div>
-
-                                <button className="btn-book-now">Book Now</button>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            </section> */}

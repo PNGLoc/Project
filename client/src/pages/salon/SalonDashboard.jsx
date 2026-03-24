@@ -5,6 +5,7 @@ import SalonCalendar from './SalonCalendar';
 import Overview from './Overview';
 import SalonBookingHistory from './SalonBookingHistory';
 import LocationSettings from './LocationSettings';
+import FlashsaleManagement from './FlashsaleManagement';
 import ChatWidget from '../../components/chat/ChatWidget';
 import { MessageCircle, MapPin } from 'lucide-react';
 import '../../assets/css/SalonDashboard.css';
@@ -54,6 +55,11 @@ const SalonDashboard = () => {
                                 <h1>Salon Location</h1>
                                 <p>Update your salon's address and map coordinates</p>
                             </>
+                        ) : activeTab === 'flashsale' ? (
+                            <>
+                                <h1>Flashsale Management</h1>
+                                <p>Manage short-term discount campaigns</p>
+                            </>
                         ) : (
                             <>
                                 <h1>Partner Dashboard</h1>
@@ -100,6 +106,14 @@ const SalonDashboard = () => {
                                 Location
                             </button>
                         )}
+                        {!isStaffUser && (
+                            <button
+                                className={`tab-btn-link ${activeTab === 'flashsale' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('flashsale')}
+                            >
+                                Flashsale
+                            </button>
+                        )}
                     </nav>
                     <div className="header-balance-div"></div>
                 </header>
@@ -112,6 +126,7 @@ const SalonDashboard = () => {
                     {activeTab === 'calendar' && <SalonCalendar />}
                     {activeTab === 'history' && <SalonBookingHistory />}
                     {activeTab === 'location' && <LocationSettings />}
+                    {activeTab === 'flashsale' && <FlashsaleManagement />}
                 </div>
             </main>
 

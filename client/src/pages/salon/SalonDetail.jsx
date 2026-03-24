@@ -26,9 +26,9 @@ import "../../assets/css/SalonDetail.css";
 // Fix Leaflet marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
 const SalonDetail = () => {
@@ -38,6 +38,7 @@ const SalonDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("services");
+  const [flashsaleServices, setFlashsaleServices] = useState({});
   const [coupons, setCoupons] = useState([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
   const [couponStatusFilter, setCouponStatusFilter] = useState("ALL");
@@ -64,14 +65,40 @@ const SalonDetail = () => {
   const isCustomer = currentUser?.role === "CUSTOMER";
 
   useEffect(() => {
-    const fetchSalon = async () => {
+    const fetchSalonAndFlashsales = async () => {
       try {
-        const res = await axios.get(`/api/salons/${id}/details`);
-        if (res.data.success) {
-          setSalonData(res.data.data);
+        const [salonRes, flashsalesRes] = await Promise.all([
+          axios.get(`/api/salons/${id}/details`),
+          axios.get(`/api/flashsales/salon/${id}`).catch(() => ({ data: { data: [] } }))
+        ]);
+
+        if (salonRes.data.success) {
+          setSalonData(salonRes.data.data);
         } else {
-          setError(res.data.message || "Không thể tải thông tin salon");
+          setError(salonRes.data.message || "Không thể tải thông tin salon");
         }
+
+        if (flashsalesRes.data?.success) {
+          const fsMap = {};
+          flashsalesRes.data.data.forEach(fs => {
+            fs.services.forEach(serv => {
+              const sid = serv.serviceId._id || serv.serviceId;
+              const originalPrice = serv.serviceId.price || 0;
+              let percentage = 0;
+              let newPrice = originalPrice;
+              if (serv.discountType === 'percentage') {
+                percentage = serv.discountValue;
+                newPrice = originalPrice - (originalPrice * percentage / 100);
+              } else {
+                percentage = (serv.discountValue / originalPrice) * 100;
+                newPrice = originalPrice - serv.discountValue;
+              }
+              fsMap[sid] = { percentOff: Math.round(percentage), discountedPrice: newPrice };
+            });
+          });
+          setFlashsaleServices(fsMap);
+        }
+
       } catch (err) {
         console.error("Lỗi lấy chi tiết salon:", err);
         setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.");
@@ -79,7 +106,7 @@ const SalonDetail = () => {
         setLoading(false);
       }
     };
-    fetchSalon();
+    fetchSalonAndFlashsales();
   }, [id]);
 
   useEffect(() => {
@@ -162,9 +189,9 @@ const SalonDetail = () => {
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const d = R * c; // Distance in km
     return d.toFixed(1);
@@ -172,20 +199,20 @@ const SalonDetail = () => {
 
   useEffect(() => {
     if (activeTab === 'location' && !userLocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            },
-            (err) => console.warn("Geolocation error:", err)
-        );
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        (err) => console.warn("Geolocation error:", err)
+      );
     }
   }, [activeTab]);
 
   useEffect(() => {
     if (userLocation && salonData?.salon?.location?.coordinates) {
-        const [lng, lat] = salonData.salon.location.coordinates;
-        const d = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
-        setDistance(d);
+      const [lng, lat] = salonData.salon.location.coordinates;
+      const d = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
+      setDistance(d);
     }
   }, [userLocation, salonData]);
 
@@ -238,7 +265,7 @@ const SalonDetail = () => {
 
   const { salon, services = [], staffs = [] } = salonData;
 
- 
+
 
   const handleBookAppointment = () => {
     navigate(`/book-appointment?salonId=${salon._id}`);
@@ -297,7 +324,7 @@ const SalonDetail = () => {
                 <Phone className="icon-figma ml-4" />
                 <span>{salon.phone}</span>
                 <Clock className="icon-figma ml-4" />
-       
+
               </div>
             </div>
             <div className="salon-info-btn-col">
@@ -350,7 +377,7 @@ const SalonDetail = () => {
               </div>
             </div>
           </div>
-   
+
         </div>
       </div>
 
@@ -388,30 +415,47 @@ const SalonDetail = () => {
             <>
               {services.length > 0 ? (
                 <div className="salon-service-list">
-                  {services.map((service) => (
-                    <div key={service._id} className="salon-service-card">
-                      <div className="salon-service-header">
-                        <div className="salon-service-title">
-                          {service.name}
-                          {service.isPopular && (
-                            <span className="salon-service-popular">Popular</span>
-                          )}
+                  {services.map((service) => {
+                    const fs = flashsaleServices[service._id];
+                    return (
+                      <div key={service._id} className="salon-service-card">
+                        <div className="salon-service-header">
+                          <div className="salon-service-title" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            {service.name}
+                            {service.isPopular && (
+                              <span className="salon-service-popular">Popular</span>
+                            )}
+                            {fs && (
+                              <span style={{ padding: '2px 8px', background: '#fee2e2', color: '#ef4444', fontSize: '11px', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                ⚡ {fs.percentOff}% OFF
+                              </span>
+                            )}
+                          </div>
+                        <span className="salon-service-price">
+                            {fs ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{fs.discountedPrice.toLocaleString('vi-VN')} VNĐ</span>
+                                <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '12px' }}>{service.price.toLocaleString('vi-VN')} VNĐ</span>
+                              </div>
+                            ) : (
+                              `${service.price.toLocaleString('vi-VN')} VNĐ`
+                            )}
+                          </span>
                         </div>
-                        <span className="salon-service-price">${service.price}</span>
+                        <div className="salon-service-duration">{service.duration} min</div>
+                        <div className="salon-service-book-row">
+                          <button
+                            className="salon-service-book-btn"
+                            onClick={() =>
+                              navigate(`/book-appointment?salonId=${salon._id}&serviceId=${service._id}`)
+                            }
+                          >
+                            <span style={{ fontSize: '1.2em', marginRight: '6px' }}>&#10003;</span> Add to Booking
+                          </button>
+                        </div>
                       </div>
-                      <div className="salon-service-duration">{service.duration} min</div>
-                      <div className="salon-service-book-row">
-                        <button
-                          className="salon-service-book-btn"
-                          onClick={() =>
-                            navigate(`/book-appointment?salonId=${salon._id}&serviceId=${service._id}`)
-                          }
-                        >
-                          <span style={{fontSize:'1.2em',marginRight:'6px'}}>&#10003;</span> Add to Booking
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-16 text-gray-500">
@@ -581,9 +625,9 @@ const SalonDetail = () => {
             <div className="location-tab-content">
               <div className="map-card-container">
                 {salon.location?.coordinates && (
-                  <MapContainer 
-                    center={[salon.location.coordinates[1], salon.location.coordinates[0]]} 
-                    zoom={15} 
+                  <MapContainer
+                    center={[salon.location.coordinates[1], salon.location.coordinates[0]]}
+                    zoom={15}
                     style={{ height: '100%', width: '100%' }}
                   >
                     <TileLayer
@@ -604,7 +648,7 @@ const SalonDetail = () => {
                 <h3 className="location-info-title">
                   <MapPin className="text-teal-600" /> Salon Location
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div className="location-detail-item">
                     <div className="location-icon-wrapper">
@@ -618,7 +662,7 @@ const SalonDetail = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {distance && (
                     <div className="location-detail-item">
                       <div className="location-icon-wrapper" style={{ color: '#3b82f6' }}>
@@ -631,7 +675,7 @@ const SalonDetail = () => {
                     </div>
                   )}
 
-                  <a 
+                  <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${salon.location?.coordinates?.[1]},${salon.location?.coordinates?.[0]}`}
                     target="_blank"
                     rel="noopener noreferrer"
