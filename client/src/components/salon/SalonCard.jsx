@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { FiMapPin } from 'react-icons/fi';
-import { FaStar } from 'react-icons/fa';
 import { HiSparkles } from 'react-icons/hi';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Star } from 'lucide-react';
 import '../../assets/css/SalonCard.css';
 import ConfirmModal from '../ui/ConfirmModal';
 import { useFollow } from '../../features/social/hooks/useFollow';
@@ -120,9 +119,9 @@ const SalonCard = ({ data, onUnfollow, showChatButton = true }) => {
                 </div>
 
                 <div className="salon-stats">
-                    <div className="stat-item rating">
-                        <FaStar className="star-icon" color="#FFD700" />
-                        <span className="score"> {data.rating || 5.0}</span>
+                    <div className="stat-item rating" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Star size={16} fill="#f59e0b" color="#f59e0b" />
+                        <span className="score"> {data.rating ? data.rating.toFixed(1) : "0"}</span>
                         <span className="count"> ({data.reviews || 0})</span>
                     </div>
                     <div className="stat-item location">

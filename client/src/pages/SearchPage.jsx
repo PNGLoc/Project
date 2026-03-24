@@ -181,7 +181,7 @@ const SearchPage = () => {
                                         onChange={() => handleFilterChange('rating', r.value)}
                                     />
                                     <div className="search-page-rating-content">
-                                        <Star size={16} fill="#FFD700" color="#FFD700" />
+                                        <Star size={16} fill="#f59e0b" color="#f59e0b" />
                                         <span className="search-page-rating-label">{r.label}</span>
                                     </div>
                                 </label>

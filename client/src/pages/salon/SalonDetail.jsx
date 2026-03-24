@@ -13,6 +13,7 @@ import {
   Gift,
   MessageCircle,
   Navigation,
+  Edit2,
 } from "lucide-react";
 import couponApi from "../../features/coupon/api/couponApi";
 import userCouponApi from "../../features/coupon/api/userCouponApi";
@@ -52,6 +53,16 @@ const SalonDetail = () => {
   const [reportDescription, setReportDescription] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportError, setReportError] = useState("");
+
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewImages, setReviewImages] = useState([]);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState("");
   const [userLocation, setUserLocation] = useState(null);
   const [distance, setDistance] = useState(null);
 
@@ -247,6 +258,112 @@ const SalonDetail = () => {
     }
   };
 
+  useEffect(() => {
+    if (activeTab === 'reviews' && reviews.length === 0) {
+      const fetchReviews = async () => {
+        try {
+          setReviewsLoading(true);
+          const res = await axios.get(`/api/reviews/salon/${id}`);
+          if (res.data.success) {
+            setReviews(res.data.data);
+          }
+        } catch (err) {
+          console.error("Lỗi lấy đánh giá:", err);
+        } finally {
+          setReviewsLoading(false);
+        }
+      };
+      fetchReviews();
+    }
+  }, [activeTab, id]);
+
+  const handleOpenReview = (reviewToEdit = null) => {
+    if (!isCustomer) {
+      navigate("/login");
+      return;
+    }
+    setReviewError("");
+    setReviewImages([]);
+    setIsReviewOpen(true);
+
+    if (reviewToEdit && reviewToEdit._id) {
+      setEditingReviewId(reviewToEdit._id);
+      setReviewRating(reviewToEdit.rating);
+      setReviewComment(reviewToEdit.comment || "");
+    } else {
+      setEditingReviewId(null);
+      setReviewRating(5);
+      setReviewComment("");
+    }
+  };
+
+  const handleImageChange = (e) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files).slice(0, 5); // max 5
+      setReviewImages(filesArray);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewComment.trim() && reviewImages.length === 0) {
+      setReviewError("Please provide a comment or upload at least one image.");
+      return;
+    }
+    try {
+      setReviewSubmitting(true);
+      setReviewError("");
+
+      const formData = new FormData();
+      formData.append("rating", reviewRating);
+      formData.append("comment", reviewComment.trim());
+      reviewImages.forEach(file => {
+        formData.append("images", file);
+      });
+
+      let res;
+      if (editingReviewId) {
+        res = await axios.put(`/api/reviews/${editingReviewId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        if (res.data.success) {
+          setReviews(reviews.map(r => r._id === editingReviewId ? res.data.data : r));
+          setIsReviewOpen(false);
+          setSalonData(prev => ({
+            ...prev,
+            salon: {
+              ...prev.salon,
+              rating: prev.salon.reviews > 0 ? ((prev.salon.rating * prev.salon.reviews) - reviews.find(r => r._id === editingReviewId).rating + reviewRating) / prev.salon.reviews : reviewRating
+            }
+          }));
+        }
+      } else {
+        formData.append("salonId", salon._id);
+        res = await axios.post("/api/reviews", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        if (res.data.success) {
+          setReviews([res.data.data, ...reviews]);
+          setIsReviewOpen(false);
+          setSalonData(prev => ({
+            ...prev,
+            salon: {
+              ...prev.salon,
+              rating: ((prev.salon.rating * prev.salon.reviews) + reviewRating) / (prev.salon.reviews + 1),
+              reviews: prev.salon.reviews + 1
+            }
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("Submit review error:", err);
+      setReviewError(err.response?.data?.message || "Failed to submit review. Please try again.");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -314,8 +431,8 @@ const SalonDetail = () => {
               </div>
               <div className="salon-info-desc">{salon.description || "Premium Hair Salon & Spa"}</div>
               <div className="salon-info-rating-row">
-                <Star className="star-icon-figma" />
-                <span className="salon-info-rating">{salon.rating?.toFixed(1) || "4.9"}</span>
+                <Star size={20} fill="#f59e0b" color="#f59e0b" style={{ marginRight: '4px' }} />
+                <span className="salon-info-rating">{salon.rating ? salon.rating.toFixed(1) : "0"}</span>
                 <span className="salon-info-reviews">({salon.reviews || 0} reviews)</span>
               </div>
               <div className="salon-info-contact-row">
@@ -323,12 +440,11 @@ const SalonDetail = () => {
                 <span>{salon.address?.street}, {salon.address?.district}</span>
                 <Phone className="icon-figma ml-4" />
                 <span>{salon.phone}</span>
-                <Clock className="icon-figma ml-4" />
 
               </div>
             </div>
             <div className="salon-info-btn-col">
-              <div style={{ display: 'flex', flexDirection: 'row', gap: '12px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch', width: '100%' }}>
                 <button onClick={handleBookAppointment} className="btn-book-appointment">
                   Book Appointment
                 </button>
@@ -408,6 +524,12 @@ const SalonDetail = () => {
           >
             Location
           </button>
+          <button
+            onClick={() => handleTabChange('reviews')}
+            className={`salon-tab-btn${activeTab === 'reviews' ? ' active' : ''}`}
+          >
+            Reviews
+          </button>
         </div>
 
         <div className="mt-6">
@@ -431,7 +553,7 @@ const SalonDetail = () => {
                               </span>
                             )}
                           </div>
-                        <span className="salon-service-price">
+                          <span className="salon-service-price">
                             {fs ? (
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                                 <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{fs.discountedPrice.toLocaleString('vi-VN')} VNĐ</span>
@@ -687,6 +809,92 @@ const SalonDetail = () => {
               </div>
             </div>
           )}
+
+          {activeTab === 'reviews' && (
+            <div className="reviews-tab-content" style={{ maxWidth: '1100px', margin: '2.5rem auto 0 auto', padding: '0 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <h3 style={{ fontSize: '24px', fontWeight: 'bold' }}>Customer Reviews</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#f8fafc', padding: '6px 12px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+                    <Star size={18} fill="#f59e0b" color="#f59e0b" />
+                    <span style={{ fontWeight: 'bold', fontSize: '18px' }}>{salon.rating?.toFixed(1) || 0}</span>
+                    <span style={{ color: '#64748b', fontSize: '14px' }}>({salon.reviews || 0})</span>
+                  </div>
+                </div>
+                {isCustomer && (
+                  <button onClick={handleOpenReview} style={{ padding: '8px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)', transition: 'all 0.2s' }}>
+                    Write a Review
+                  </button>
+                )}
+              </div>
+
+              {reviewsLoading ? (
+                <div className="text-center py-16 text-gray-500">Loading reviews...</div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-16 text-gray-500" style={{ background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <Star size={48} color="#94a3b8" style={{ margin: '0 auto 10px', opacity: 0.5 }} />
+                  <p style={{ fontSize: '16px', color: '#64748b' }}>No reviews yet. Be the first to share your experience!</p>
+                </div>
+              ) : (
+                <div className="reviews-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {reviews.map(review => (
+                    <div key={review._id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                        <img src={review.userId?.avatar ? `http://localhost:5000${review.userId.avatar}` : "https://randomuser.me/api/portraits/lego/1.jpg"} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                        <div>
+                          <div style={{ fontWeight: 'bold', fontSize: '15px' }}>{review.userId?.fullName || 'Anonymous'}</div>
+                          <div style={{ color: '#64748b', fontSize: '12px' }}>{new Date(review.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '2px', marginBottom: '8px' }}>
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <Star key={star} size={16} fill={star <= review.rating ? "#f59e0b" : "transparent"} color={star <= review.rating ? "#f59e0b" : "#cbd5e1"} />
+                        ))}
+                      </div>
+                      <p style={{ fontSize: '14px', color: '#334155', marginBottom: '12px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{review.comment}</p>
+                      {review.images && review.images.length > 0 && (
+                        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '5px' }}>
+                          {review.images.map((img, idx) => (
+                            <img key={idx} src={`http://localhost:5000${img}`} alt="Review photo" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer' }} onClick={() => window.open(`http://localhost:5000${img}`, '_blank')} />
+                          ))}
+                        </div>
+                      )}
+
+                      {isCustomer && review.userId?._id === currentUser?._id && !review.isEdited && (
+                        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => handleOpenReview(review)}
+                            style={{
+                              fontSize: '13px',
+                              background: '#f8fafc',
+                              border: '1px solid #3b82f6',
+                              padding: '6px 14px',
+                              borderRadius: '8px',
+                              color: '#3b82f6',
+                              cursor: 'pointer',
+                              fontWeight: '600',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s',
+                              boxShadow: '0 1px 2px rgba(59, 130, 246, 0.1)'
+                            }}
+                            onMouseOver={(e) => { e.currentTarget.style.background = '#3b82f6'; e.currentTarget.style.color = 'white'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#3b82f6'; }}
+                          >
+                            <Edit2 size={14} /> Edit Review (1 left)
+                          </button>
+                        </div>
+                      )}
+                      {review.isEdited && (
+                        <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '8px', fontStyle: 'italic', textAlign: 'right' }}>(Edited)</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -789,6 +997,152 @@ const SalonDetail = () => {
                 }}
               >
                 {reportSubmitting ? "Submitting..." : "Submit report"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {isReviewOpen && isCustomer && (
+        <div className="modal-backdrop" style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 2000
+        }}>
+          <div
+            className="modal-content"
+            style={{
+              background: "white",
+              borderRadius: 16,
+              padding: 24,
+              maxWidth: 500,
+              width: "90%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: 24, fontWeight: 700 }}>{editingReviewId ? "Edit Review" : "Write a Review"}</h3>
+              <button onClick={() => setIsReviewOpen(false)} style={{ background: 'transparent', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#64748b' }}>&times;</button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', justifyContent: 'center' }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <Star
+                  key={star}
+                  size={40}
+                  fill={star <= reviewRating ? "#f59e0b" : "transparent"}
+                  color={star <= reviewRating ? "#f59e0b" : "#cbd5e1"}
+                  style={{ cursor: 'pointer', transition: 'transform 0.1s' }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  onClick={() => setReviewRating(star)}
+                />
+              ))}
+            </div>
+
+            {reviewError && (
+              <div
+                style={{
+                  background: "#fee2e2",
+                  color: "#b91c1c",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  marginBottom: 16
+                }}
+              >
+                {reviewError}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#334155' }}>Share more about your experience</label>
+              <textarea
+                rows={4}
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="What did you like or dislike? How was the service?"
+                style={{
+                  width: "100%",
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1",
+                  padding: 12,
+                  fontSize: 15,
+                  resize: "vertical",
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#334155' }}>Add photos (Optional, max 5)</label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px dashed #cbd5e1',
+                  borderRadius: '8px',
+                  background: '#f8fafc',
+                  color: '#64748b',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              />
+              {reviewImages.length > 0 && (
+                <div style={{ marginTop: '10px', fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>
+                  {reviewImages.length} file(s) selected
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setIsReviewOpen(false)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 8,
+                  border: "1px solid #cbd5e1",
+                  background: "white",
+                  cursor: "pointer",
+                  fontSize: 15,
+                  fontWeight: '600',
+                  color: '#475569'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitReview}
+                disabled={reviewSubmitting}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: "#3b82f6",
+                  color: "white",
+                  cursor: reviewSubmitting ? "not-allowed" : "pointer",
+                  fontSize: 15,
+                  fontWeight: 'bold',
+                  opacity: reviewSubmitting ? 0.7 : 1,
+                  boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)'
+                }}
+              >
+                {reviewSubmitting ? "Posting..." : (editingReviewId ? "Update Review" : "Post Review")}
               </button>
             </div>
           </div>
