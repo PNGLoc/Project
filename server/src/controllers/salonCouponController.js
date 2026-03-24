@@ -14,24 +14,11 @@ export const getSalonCoupons = async (req, res) => {
             });
         }
 
-        const { status, sortBy = 'endDate', sortOrder = 'asc' } = req.query;
+        const { discountType, sortBy = 'endDate', sortOrder = 'asc' } = req.query;
         const filter = { salonId: salon._id };
 
-        const now = new Date();
-        if (status === 'ACTIVE') {
-            filter.isActive = true;
-            filter.startDate = { $lte: now };
-            filter.endDate = { $gte: now };
-            filter.$expr = { $lt: ['$usedCount', '$usageLimit'] };
-        } else if (status === 'UPCOMING') {
-            filter.isActive = true;
-            filter.startDate = { $gt: now };
-        } else if (status === 'EXPIRED') {
-            filter.endDate = { $lt: now };
-        } else if (status === 'USED_UP') {
-            filter.$expr = { $gte: ['$usedCount', '$usageLimit'] };
-        } else if (status === 'INACTIVE') {
-            filter.isActive = false;
+        if (discountType === 'PERCENTAGE' || discountType === 'FIXED_AMOUNT') {
+            filter.discountType = discountType;
         }
 
         const sortOptions = {};

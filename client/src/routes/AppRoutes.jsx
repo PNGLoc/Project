@@ -10,6 +10,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminMyPosts from '../pages/admin/AdminMyPosts';
 import AdminUsers from '../pages/admin/AdminUsers';
 import AdminReports from '../pages/admin/AdminReports';
+import AdminCommissionConfig from '../pages/admin/AdminCommissionConfig';
 import SalonDashboard from '../pages/salon/SalonDashboard';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
@@ -102,6 +103,7 @@ const AppRoutes = () => {
             {/* Role: ADMIN */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                 <Route path='/admin/dashboard' element={<AdminDashboard />} />
+                <Route path='/admin/commission' element={<AdminCommissionConfig />} />
                 <Route path='/admin/my-posts' element={<AdminMyPosts />} />
                 <Route path='/admin/users' element={<AdminUsers />} />
                 <Route path='/admin/reports' element={<AdminReports />} />
