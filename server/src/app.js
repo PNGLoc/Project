@@ -23,6 +23,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import flashsaleRoutes from './routes/flashsaleRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
 import { initReminderCron } from './services/reminderService.js';
 
 // Get __dirname equivalent in ES modules
@@ -61,6 +62,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/flashsales', flashsaleRoutes);
+app.use('/api/reviews', reviewRoutes);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
