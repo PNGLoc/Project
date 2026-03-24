@@ -85,6 +85,10 @@ const walletApi = {
         const response = await axiosClient.get('/api/payments/wallet/balance');
         return response.data;
     },
+    getTopupHistory: async (params = {}) => {
+        const response = await axiosClient.get('/api/payments/wallet/topups', { params });
+        return response.data;
+    },
     getPublicKey: async () => {
         const response = await axiosClient.get('/api/payments/wallet/public-key');
         return response.data;
