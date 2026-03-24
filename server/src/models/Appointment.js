@@ -1,5 +1,22 @@
 import mongoose from 'mongoose';
 
+const reviewSchema = new mongoose.Schema({
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+        required: true
+    },
+    comment: {
+        type: String,
+        trim: true,
+        default: ''
+    }
+}, {
+    timestamps: true,
+    _id: false
+});
+
 const appointmentSchema = new mongoose.Schema({
     salonId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -110,6 +127,10 @@ const appointmentSchema = new mongoose.Schema({
     reminderSent: {
         type: Boolean,
         default: false
+    },
+    review: {
+        type: reviewSchema,
+        default: null
     }
 }, {
     timestamps: true

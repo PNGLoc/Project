@@ -119,6 +119,32 @@ const SalonBookingHistory = () => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
 
+    const renderCustomerReview = (appointment) => {
+        const review = appointment?.review;
+        if (!review) return <span style={{ color: '#6b7280' }}>No customer review yet</span>;
+        const rating = Number(review.rating || 0);
+        const comment = String(review.comment || '').trim();
+        const filled = Math.min(5, Math.max(0, Math.round(rating)));
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', gap: '2px', lineHeight: 1 }}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                        <span
+                            key={n}
+                            style={{
+                                fontSize: '16px',
+                                color: n <= filled ? '#f59e0b' : '#d1d5db'
+                            }}
+                        >
+                            ★
+                        </span>
+                    ))}
+                </div>
+                <span style={{ fontSize: '12px', color: '#6b7280' }}>{comment || '(No comment)'}</span>
+            </div>
+        );
+    };
+
     return (
         <div className="booking-history-container">
             <div className="history-filter-bar">
@@ -240,16 +266,19 @@ const SalonBookingHistory = () => {
                                     <span className="sort-icon">{sort.order === 'desc' ? <FiChevronDown /> : <FiChevronUp />}</span>
                                 )}
                             </th>
+                            <th>
+                                Customer review
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading && appointments.length === 0 ? (
                             <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>Loading history...</td>
+                                <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>Loading history...</td>
                             </tr>
                         ) : appointments.length === 0 ? (
                             <tr>
-                                <td colSpan="6" className="history-empty-state">
+                                <td colSpan="7" className="history-empty-state">
                                     <i>📭</i>
                                     No matching appointments found.
                                 </td>
@@ -280,6 +309,7 @@ const SalonBookingHistory = () => {
                                                     app.status === 'COMPLETED' ? 'Completed' : 'Cancelled'}
                                         </span>
                                     </td>
+                                    <td>{renderCustomerReview(app)}</td>
                                 </tr>
                             ))
                         )}

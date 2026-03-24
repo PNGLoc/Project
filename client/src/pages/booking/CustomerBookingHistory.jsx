@@ -4,6 +4,7 @@ import axiosClient from '../../lib/axios';
 import { FiSearch, FiMapPin, FiClock, FiImage, FiScissors, FiCheckCircle, FiXCircle, FiRotateCcw, FiFilter, FiChevronDown } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import ConfirmModal from '../../components/ui/ConfirmModal';
+import ReviewModal from '../../components/review/ReviewModal';
 import '../../assets/css/CustomerBookingHistory.css';
 
 const parsedCancelHours = Number(import.meta.env.VITE_BOOKING_CANCEL_DEADLINE_HOURS || 2);
@@ -62,6 +63,10 @@ const CustomerBookingHistory = () => {
     });
     const [showSortMenu, setShowSortMenu] = useState(false);
     const [cancelModal, setCancelModal] = useState({
+        isOpen: false,
+        appointment: null
+    });
+    const [reviewModal, setReviewModal] = useState({
         isOpen: false,
         appointment: null
     });
@@ -242,6 +247,14 @@ const CustomerBookingHistory = () => {
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to cancel booking.");
         }
+    };
+
+    const openReviewModal = (appointment) => {
+        if (appointment?.status !== 'COMPLETED') {
+            toast.warning('You can only review a completed appointment.');
+            return;
+        }
+        setReviewModal({ isOpen: true, appointment });
     };
 
     return (
@@ -425,7 +438,12 @@ const CustomerBookingHistory = () => {
                                         </button>
                                     )}
                                     {appointment.status === 'COMPLETED' && (
-                                        <button className="btn-action primary">Review Service</button>
+                                        <button
+                                            className="btn-action primary"
+                                            onClick={() => openReviewModal(appointment)}
+                                        >
+                                            Review Service
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -443,6 +461,13 @@ const CustomerBookingHistory = () => {
                 confirmText="Cancel booking"
                 cancelText="Keep booking"
                 type="danger"
+            />
+
+            <ReviewModal
+                isOpen={reviewModal.isOpen}
+                appointment={reviewModal.appointment}
+                onClose={() => setReviewModal({ isOpen: false, appointment: null })}
+                onSaved={fetchHistory}
             />
         </div>
     );
