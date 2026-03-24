@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { FiEdit, FiFilter, FiChevronDown } from 'react-icons/fi';
+import { FiEdit, FiFilter, FiChevronDown, FiZap, FiClock, FiXCircle } from 'react-icons/fi';
 import axiosClient from '../../lib/axios';
 import { toast } from 'react-toastify';
 import ConfirmModal from '../../components/ui/ConfirmModal';
@@ -10,6 +10,7 @@ import '../../assets/css/SalonDashboard.css';
 const ServiceManagement = () => {
     const [services, setServices] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [activeFlashsales, setActiveFlashsales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -73,10 +74,35 @@ const ServiceManagement = () => {
         }
     }, []);
 
+    const fetchFlashsales = useCallback(async () => {
+        try {
+            const res = await axiosClient.get('/api/flashsales/owner');
+            const data = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+            setActiveFlashsales(data);
+        } catch (error) {
+            console.error("Fetch flashsales error", error);
+        }
+    }, []);
+
     useEffect(() => {
         fetchServices();
         fetchCategories();
-    }, [fetchServices, fetchCategories]);
+        fetchFlashsales();
+    }, [fetchServices, fetchCategories, fetchFlashsales]);
+
+    const getFlashsaleForService = (serviceId) => {
+        const sorted = [...activeFlashsales].sort((a, b) => {
+            const p = { 'Active': 1, 'Upcoming': 2, 'Expired': 3 };
+            return (p[a.status] || 4) - (p[b.status] || 4);
+        });
+        for (const fs of sorted) {
+            const found = fs.services.find(s => (s.serviceId._id || s.serviceId) === serviceId);
+            if (found) {
+                return { name: fs.name, status: fs.status };
+            }
+        }
+        return null;
+    };
 
     const handleOpenCreate = () => {
         setEditId(null);
@@ -302,8 +328,34 @@ const ServiceManagement = () => {
                         <tbody>
                             {filteredServices.map((s) => (
                                 <tr key={s._id} className={s.isActive ? '' : 'row-hidden'}>
-                                    <td>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <td style={{ position: 'relative', overflow: 'hidden' }}>
+                                        {(() => {
+                                            const fs = getFlashsaleForService(s._id);
+                                            if (fs) {
+                                                const bgColors = { 'Active': '#10b981', 'Upcoming': '#3b82f6', 'Expired': '#94a3b8' };
+                                                const Icons = { 'Active': FiZap, 'Upcoming': FiClock, 'Expired': FiXCircle };
+                                                const Icon = Icons[fs.status] || FiZap;
+                                                return (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '8px',
+                                                        left: '-18px',
+                                                        backgroundColor: bgColors[fs.status] || '#94a3b8',
+                                                        color: 'white',
+                                                        fontSize: '12px',
+                                                        width: '64px',
+                                                        textAlign: 'center',
+                                                        transform: 'rotate(-45deg)',
+                                                        zIndex: 0,
+                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                                    }} title={`Flashsale: ${fs.name} (${fs.status})`}>
+                                                        <Icon size={12} style={{ verticalAlign: 'middle', marginBottom: '2px' }} />
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
+                                        <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, paddingLeft: getFlashsaleForService(s._id) ? '18px' : '0' }}>
                                             <span className="service-name">{s.name}</span>
                                             {s.type === 'COMBO' && (
                                                 <span className="combo-badge">COMBO ({s.comboItems?.length || 0} items)</span>
