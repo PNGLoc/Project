@@ -14,6 +14,7 @@ import {
     refundAppointmentToWallet,
     sendBookingConfirmationEmail
 } from '../utils/appointmentHelpers.js';
+import { createCommissionTransactionForAppointment } from '../utils/commissionHelpers.js';
 
 const parsedCancellationHours = Number(process.env.BOOKING_CANCEL_DEADLINE_HOURS || 2);
 const CANCELLATION_WINDOW_HOURS = Number.isFinite(parsedCancellationHours) && parsedCancellationHours >= 0
@@ -303,6 +304,8 @@ export const createAppointment = async (req, res) => {
                 relatedId: appointment._id,
                 onModel: 'Appointment'
             });
+
+            await createCommissionTransactionForAppointment(appointment);
         }
 
         if (normalizedPayment === 'VNPAY') {
@@ -582,6 +585,8 @@ export const createProviderAppointment = async (req, res) => {
             });
         }
 
+        await createCommissionTransactionForAppointment(appointment);
+
         // --- NEW: Internal Notification for Provider-Created Booking (Instant Confirmation) ---
         if (appointment.customerId && !isWalkIn) {
             await Notification.create({
@@ -659,6 +664,8 @@ export const markAppointmentPaidByCash = async (req, res) => {
                     onModel: 'Appointment'
                 });
             }
+
+            await createCommissionTransactionForAppointment(appointment);
 
             const customer = await User.findById(appointment.customerId).select('fullName email');
             if (customer) {

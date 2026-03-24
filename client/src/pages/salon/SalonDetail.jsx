@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../../lib/axios";
 import {
@@ -14,6 +14,8 @@ import {
   MessageCircle,
   Navigation,
   Edit2,
+  Filter,
+  ChevronDown,
 } from "lucide-react";
 import couponApi from "../../features/coupon/api/couponApi";
 import userCouponApi from "../../features/coupon/api/userCouponApi";
@@ -42,12 +44,14 @@ const SalonDetail = () => {
   const [flashsaleServices, setFlashsaleServices] = useState({});
   const [coupons, setCoupons] = useState([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
-  const [couponStatusFilter, setCouponStatusFilter] = useState("ALL");
+  const [couponTypeFilter, setCouponTypeFilter] = useState("");
   const [couponSortBy, setCouponSortBy] = useState("endDate");
   const [couponSortOrder, setCouponSortOrder] = useState("asc");
   const [collectedCouponIds, setCollectedCouponIds] = useState(new Set());
   const [collectingId, setCollectingId] = useState(null);
   const [couponToast, setCouponToast] = useState({ type: "", message: "" });
+  const [showCouponFilterMenu, setShowCouponFilterMenu] = useState(false);
+  const [showCouponSortMenu, setShowCouponSortMenu] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [reportDescription, setReportDescription] = useState("");
@@ -65,6 +69,8 @@ const SalonDetail = () => {
   const [reviewError, setReviewError] = useState("");
   const [userLocation, setUserLocation] = useState(null);
   const [distance, setDistance] = useState(null);
+  const couponFilterRef = useRef(null);
+  const couponSortRef = useRef(null);
 
   const currentUser = (() => {
     try {
@@ -86,7 +92,7 @@ const SalonDetail = () => {
         if (salonRes.data.success) {
           setSalonData(salonRes.data.data);
         } else {
-          setError(salonRes.data.message || "Không thể tải thông tin salon");
+          setError(salonRes.data.message || "Failed to load salon information");
         }
 
         if (flashsalesRes.data?.success) {
@@ -111,8 +117,8 @@ const SalonDetail = () => {
         }
 
       } catch (err) {
-        console.error("Lỗi lấy chi tiết salon:", err);
-        setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.");
+        console.error("Failed to fetch salon details:", err);
+        setError("An error occurred while loading data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -126,20 +132,20 @@ const SalonDetail = () => {
       try {
         setCouponsLoading(true);
         const params = {};
-        if (couponStatusFilter !== "ALL") params.status = couponStatusFilter;
+        if (couponTypeFilter) params.discountType = couponTypeFilter;
         params.sortBy = couponSortBy;
         params.sortOrder = couponSortOrder;
         const data = await couponApi.getSalonCoupons(id, params);
         setCoupons(data.coupons || []);
       } catch (err) {
-        console.error("Lỗi tải coupons:", err);
+        console.error("Failed to load coupons:", err);
         setCoupons([]);
       } finally {
         setCouponsLoading(false);
       }
     };
     fetchSalonCoupons();
-  }, [id, activeTab, couponStatusFilter, couponSortBy, couponSortOrder]);
+  }, [id, activeTab, couponTypeFilter, couponSortBy, couponSortOrder]);
 
   useEffect(() => {
     if (activeTab !== "coupons" || !isCustomer) return;
@@ -156,6 +162,19 @@ const SalonDetail = () => {
     fetchCollectedCoupons();
   }, [activeTab, isCustomer]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (couponFilterRef.current && !couponFilterRef.current.contains(event.target)) {
+        setShowCouponFilterMenu(false);
+      }
+      if (couponSortRef.current && !couponSortRef.current.contains(event.target)) {
+        setShowCouponSortMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const showCouponToast = (type, message) => {
     setCouponToast({ type, message });
     setTimeout(() => setCouponToast({ type: "", message: "" }), 3000);
@@ -170,9 +189,9 @@ const SalonDetail = () => {
       setCollectingId(couponId);
       await userCouponApi.collectCoupon(couponId);
       setCollectedCouponIds((prev) => new Set([...prev, couponId]));
-      showCouponToast("success", "Đã lưu coupon vào tài khoản!");
+      showCouponToast("success", "Coupon saved to your account!");
     } catch (err) {
-      showCouponToast("error", err.response?.data?.message || "Không thể lưu coupon");
+      showCouponToast("error", err.response?.data?.message || "Unable to save coupon");
     } finally {
       setCollectingId(null);
     }
@@ -189,8 +208,36 @@ const SalonDetail = () => {
     return { label: "Active", class: "coupon-status-active" };
   };
 
+  const getCouponFilterLabel = () => {
+    switch (couponTypeFilter) {
+      case "PERCENTAGE":
+        return "Percentage";
+      case "FIXED_AMOUNT":
+        return "Fixed Amount";
+      default:
+        return "All Types";
+    }
+  };
+
+  const getCouponSortLabel = () => {
+    const key = `${couponSortBy}-${couponSortOrder}`;
+    switch (key) {
+      case "endDate-asc":
+        return "Expiring Soon";
+      case "endDate-desc":
+        return "Expiring Later";
+      case "discountValue-desc":
+        return "Highest Discount";
+      case "discountValue-asc":
+        return "Lowest Discount";
+      case "createdAt-desc":
+        return "Newest First";
+      default:
+        return "Sort By";
+    }
+  };
+
   const handleTabChange = (value) => {
-    console.log("Tab changed to:", value); // Debug để kiểm tra tab có chuyển không
     setActiveTab(value);
   };
 
@@ -268,7 +315,7 @@ const SalonDetail = () => {
             setReviews(res.data.data);
           }
         } catch (err) {
-          console.error("Lỗi lấy đánh giá:", err);
+          console.error("Failed to fetch reviews:", err);
         } finally {
           setReviewsLoading(false);
         }
@@ -367,7 +414,7 @@ const SalonDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        Đang tải thông tin salon...
+        Loading salon details...
       </div>
     );
   }
@@ -375,7 +422,7 @@ const SalonDetail = () => {
   if (error || !salonData || !salonData.salon) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 text-red-600">
-        {error || "Không tìm thấy salon hoặc salon chưa được duyệt"}
+        {error || "Salon not found or not approved yet"}
       </div>
     );
   }
@@ -580,8 +627,8 @@ const SalonDetail = () => {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-16 text-gray-500">
-                  Chưa có dịch vụ nào
+                <div className="salon-empty-state text-center py-16 text-gray-500">
+                  No services available yet.
                 </div>
               )}
             </>
@@ -595,39 +642,83 @@ const SalonDetail = () => {
                 </div>
               )}
               <div className="salon-coupons-filters">
-                <select
-                  value={couponStatusFilter}
-                  onChange={(e) => setCouponStatusFilter(e.target.value)}
-                  className="salon-coupon-select"
-                >
-                  <option value="ALL">All status</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="UPCOMING">Upcoming</option>
-                  <option value="EXPIRED">Expired</option>
-                  <option value="USED_UP">Used Up</option>
-                  <option value="INACTIVE">Inactive</option>
-                </select>
-                <select
-                  value={`${couponSortBy}-${couponSortOrder}`}
-                  onChange={(e) => {
-                    const [field, order] = e.target.value.split('-');
-                    setCouponSortBy(field);
-                    setCouponSortOrder(order);
-                  }}
-                  className="salon-coupon-select"
-                >
-                  <option value="endDate-asc">Expiring Soon</option>
-                  <option value="endDate-desc">Expiring Later</option>
-                  <option value="discountValue-desc">Highest Discount</option>
-                  <option value="discountValue-asc">Lowest Discount</option>
-                  <option value="createdAt-desc">Newest First</option>
-                </select>
+                <div className="salon-coupons-filter-pill">
+                  <div className="salon-filter-dropdown-container" ref={couponFilterRef}>
+                    <button
+                      type="button"
+                      className="salon-filter-segment"
+                      onClick={() => setShowCouponFilterMenu((prev) => !prev)}
+                    >
+                      <Filter className="salon-filter-icon" />
+                      <span className="salon-filter-label">{getCouponFilterLabel()}</span>
+                      <ChevronDown className="salon-filter-caret" />
+                    </button>
+
+                    {showCouponFilterMenu && (
+                      <div className="salon-custom-filter-menu">
+                        {[
+                          { value: "", label: "All Types" },
+                          { value: "PERCENTAGE", label: "Percentage" },
+                          { value: "FIXED_AMOUNT", label: "Fixed Amount" },
+                        ].map((item) => (
+                          <div
+                            key={item.value}
+                            className={`salon-filter-menu-item ${couponTypeFilter === item.value ? "selected" : ""}`}
+                            onClick={() => {
+                              setCouponTypeFilter(item.value);
+                              setShowCouponFilterMenu(false);
+                            }}
+                          >
+                            {item.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="salon-filter-separator" />
+
+                  <div className="salon-filter-dropdown-container" ref={couponSortRef}>
+                    <button
+                      type="button"
+                      className="salon-filter-segment"
+                      onClick={() => setShowCouponSortMenu((prev) => !prev)}
+                    >
+                      <Clock className="salon-filter-icon" />
+                      <span className="salon-filter-label">{getCouponSortLabel()}</span>
+                      <ChevronDown className="salon-filter-caret" />
+                    </button>
+
+                    {showCouponSortMenu && (
+                      <div className="salon-custom-filter-menu">
+                        {[
+                          { value: "createdAt-desc", label: "Newest First" },
+                          { value: "discountValue-desc", label: "Highest Discount" },
+                          { value: "endDate-asc", label: "Expiring Soon" },
+                        ].map((item) => (
+                          <div
+                            key={item.value}
+                            className={`salon-filter-menu-item ${`${couponSortBy}-${couponSortOrder}` === item.value ? "selected" : ""}`}
+                            onClick={() => {
+                              const [field, order] = item.value.split("-");
+                              setCouponSortBy(field);
+                              setCouponSortOrder(order);
+                              setShowCouponSortMenu(false);
+                            }}
+                          >
+                            {item.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               {couponsLoading ? (
-                <div className="text-center py-16 text-gray-500">Đang tải coupons...</div>
+                <div className="text-center py-16 text-gray-500">Loading coupons...</div>
               ) : coupons.length === 0 ? (
-                <div className="text-center py-16 text-gray-500">
-                  Chưa có coupon nào
+                <div className="salon-empty-state text-center py-16 text-gray-500">
+                  No coupons available.
                 </div>
               ) : (
                 <div className="salon-coupons-grid">
@@ -664,16 +755,16 @@ const SalonDetail = () => {
                             disabled={collectingId === coupon._id}
                           >
                             <Gift className="w-4 h-4" />
-                            {collectingId === coupon._id ? 'Đang lưu...' : 'Lưu coupon'}
+                            {collectingId === coupon._id ? 'Saving...' : 'Save Coupon'}
                           </button>
                         )}
                         {isCollected && (
                           <span className="salon-coupon-collected-badge">
-                            <Check className="w-4 h-4" /> Đã lưu
+                            <Check className="w-4 h-4" /> Saved
                           </span>
                         )}
                         {isCustomer && status.label !== 'Active' && !isCollected && (
-                          <span className="salon-coupon-unavailable">Không thể lưu</span>
+                          <span className="salon-coupon-unavailable">Cannot save</span>
                         )}
                       </div>
                     );
@@ -736,8 +827,8 @@ const SalonDetail = () => {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-16 text-gray-500">
-                  Chưa có stylist nào được thêm.
+                <div className="salon-empty-state text-center py-16 text-gray-500">
+                  No stylists added yet.
                 </div>
               )}
             </>
@@ -931,8 +1022,6 @@ const SalonDetail = () => {
               Report this salon
             </h3>
             <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
-              Please describe the problem in detail. Example: fake price, wrong description,
-              staff attitude, scam behavior, etc.
             </p>
 
             {reportError && (

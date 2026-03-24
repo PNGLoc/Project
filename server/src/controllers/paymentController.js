@@ -12,6 +12,7 @@ import {
     releaseCollectedCouponUsage,
     sendBookingConfirmationEmail
 } from '../utils/appointmentHelpers.js';
+import { createCommissionTransactionForAppointment } from '../utils/commissionHelpers.js';
 
 const MIN_FUND_AMOUNT = 1000;
 const MAX_FUND_AMOUNT = 50000000;
@@ -282,6 +283,8 @@ export const handleVnpayReturn = async (req, res) => {
                         }
                     }
                 }
+
+                await createCommissionTransactionForAppointment(appointment);
 
                 const customer = await User.findById(appointment.customerId).select('fullName email');
                 if (customer) {

@@ -131,6 +131,8 @@
   min-height: 100px;
   position: relative;
   font-size: 1rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .salon-service-header {
@@ -146,6 +148,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .salon-service-popular {
@@ -163,6 +168,8 @@
   color: #009688;
   font-size: 1.1rem;
   font-weight: 700;
+  flex-shrink: 0;
+  text-align: right;
 }
 
 .salon-service-duration {
@@ -368,6 +375,8 @@
   text-align: center;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .salon-stylist-card:hover {
@@ -403,6 +412,8 @@
   font-weight: 600;
   margin-bottom: 2px;
   color: #111827;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .salon-stylist-role {
@@ -458,20 +469,133 @@
 
 .salon-coupons-filters {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 12px;
   margin-top: 24px;
   margin-bottom: 24px;
-  padding-right: 210px;
-  /* chỉnh số này để canh đúng vị trí */
+  padding-right: 0;
+  flex-wrap: wrap;
 }
 
-.salon-coupon-select {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+.salon-coupons-filter-pill {
+  display: flex;
+  background: #fff;
+  border-radius: 100px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #efefef;
+  align-items: center;
+  padding: 6px;
+  position: relative;
+}
+
+.salon-filter-dropdown-container {
+  position: relative;
+}
+
+.salon-filter-segment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  border-radius: 100px;
+  transition: background 0.2s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.salon-filter-segment:hover {
+  background-color: #f8f8f8;
+}
+
+.salon-filter-icon {
+  color: teal;
+  width: 18px;
+  height: 18px;
+}
+
+.salon-filter-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.salon-filter-caret {
+  color: #999;
+  width: 14px;
+  height: 14px;
+}
+
+.salon-filter-separator {
+  width: 1px;
+  background: #eee;
+  height: 24px;
+}
+
+.salon-custom-filter-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
   background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  min-width: 190px;
+  padding: 8px;
+  animation: salonMenuFadeIn 0.2s ease-out;
+}
+
+.salon-filter-menu-item {
+  padding: 10px 16px;
+  border-radius: 10px;
   font-size: 14px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.salon-filter-menu-item:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.salon-filter-menu-item.selected {
+  background: #eff6ff;
+  color: teal;
+  font-weight: 700;
+}
+
+@keyframes salonMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .salon-coupons-filter-pill {
+    width: 100%;
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .salon-filter-separator {
+    display: none;
+  }
+
+  .salon-filter-segment {
+    justify-content: space-between;
+    width: 100%;
+  }
 }
 
 .salon-coupons-grid {
@@ -515,6 +639,8 @@
   flex-direction: column;
   gap: 0.5rem;
   position: relative;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .salon-coupon-header {
@@ -531,6 +657,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .salon-coupon-status {
@@ -560,12 +689,16 @@
   font-size: 1.25rem;
   font-weight: 700;
   color: #009688;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .salon-coupon-min,
 .salon-coupon-validity {
   font-size: 0.9rem;
   color: #6b7280;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .salon-coupon-collect-btn {
@@ -608,6 +741,16 @@
   font-size: 0.85rem;
   color: #9ca3af;
   margin-top: 8px;
+}
+
+.salon-empty-state {
+  max-width: 1100px;
+  margin: 2rem auto 0 auto;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 @media (max-width: 900px) {
