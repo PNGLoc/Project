@@ -332,7 +332,7 @@ const ServiceManagement = () => {
                                         {(() => {
                                             const fs = getFlashsaleForService(s._id);
                                             if (fs) {
-                                                const bgColors = { 'Active': '#10b981', 'Upcoming': '#3b82f6', 'Expired': '#94a3b8' };
+                                                const bgColors = { 'Active': '#ef4444', 'Upcoming': '#10b981', 'Expired': '#94a3b8' };
                                                 const Icons = { 'Active': FiZap, 'Upcoming': FiClock, 'Expired': FiXCircle };
                                                 const Icon = Icons[fs.status] || FiZap;
                                                 return (
