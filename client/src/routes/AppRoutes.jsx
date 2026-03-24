@@ -10,7 +10,6 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminMyPosts from '../pages/admin/AdminMyPosts';
 import AdminUsers from '../pages/admin/AdminUsers';
 import AdminReports from '../pages/admin/AdminReports';
-import AdminAuditLogs from '../pages/admin/AdminAuditLogs';
 import SalonDashboard from '../pages/salon/SalonDashboard';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 import HeaderHome from "../components/layout/HeaderHome";
@@ -106,7 +105,6 @@ const AppRoutes = () => {
                 <Route path='/admin/my-posts' element={<AdminMyPosts />} />
                 <Route path='/admin/users' element={<AdminUsers />} />
                 <Route path='/admin/reports' element={<AdminReports />} />
-                <Route path='/admin/audit-logs' element={<AdminAuditLogs />} />
             </Route>
 
             {/* 404 - NOT FOUND */}
