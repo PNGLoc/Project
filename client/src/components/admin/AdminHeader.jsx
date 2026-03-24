@@ -11,7 +11,6 @@ const AdminHeader = () => {
     const isMyPosts = location.pathname === '/admin/my-posts';
     const isUsers = location.pathname === '/admin/users';
     const isReports = location.pathname === '/admin/reports';
-    const isAuditLogs = location.pathname === '/admin/audit-logs';
 
     return (
         <header className="admin-header">
@@ -27,7 +26,6 @@ const AdminHeader = () => {
                         <Link className={`nav-link ${isMyPosts ? 'active' : ''}`} to="/admin/my-posts">My Posts</Link>
                         <Link className={`nav-link ${isUsers ? 'active' : ''}`} to="/admin/users">Users</Link>
                         <Link className={`nav-link ${isReports ? 'active' : ''}`} to="/admin/reports">Reports</Link>
-                        <Link className={`nav-link ${isAuditLogs ? 'active' : ''}`} to="/admin/audit-logs">Audit Logs</Link>
                     </nav>
                 </div>
 
