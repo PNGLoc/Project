@@ -15,7 +15,11 @@ import {
     cancelCustomerAppointment,
     getAppointmentById,
     updateAppointment,
-    deleteAppointment
+    deleteAppointment,
+    getAppointmentReview,
+    createAppointmentReview,
+    updateAppointmentReview,
+    deleteAppointmentReview
 } from '../controllers/appointmentController.js';
 import Appointment from '../models/Appointment.js';
 
@@ -45,6 +49,12 @@ router.patch('/:id/cancel-vnpay', protect, authorize('CUSTOMER'), cancelLimiter,
 router.patch('/:id/cancel', protect, authorize('CUSTOMER'), cancelLimiter, auditAction('APPOINTMENT_CANCEL_CUSTOMER'), cancelCustomerAppointment);
 router.get('/salon', protect, authorize('SALON_OWNER', 'STAFF'), getSalonAppointments);
 router.patch('/:id/pay-cash', protect, authorize('SALON_OWNER', 'STAFF'), markAppointmentPaidByCash);
+
+router.route('/:id/review')
+    .get(protect, authorize('CUSTOMER'), getAppointmentReview)
+    .post(protect, authorize('CUSTOMER'), auditAction('APPOINTMENT_REVIEW_CREATE'), createAppointmentReview)
+    .put(protect, authorize('CUSTOMER'), auditAction('APPOINTMENT_REVIEW_UPDATE'), updateAppointmentReview)
+    .delete(protect, authorize('CUSTOMER'), auditAction('APPOINTMENT_REVIEW_DELETE'), deleteAppointmentReview);
 
 router.route('/:id')
     .get(protect, authorize('SALON_OWNER', 'STAFF'), getAppointmentById)

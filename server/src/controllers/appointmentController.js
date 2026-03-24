@@ -1181,3 +1181,123 @@ export const deleteAppointment = async (req, res) => {
         res.status(500).json({ message: error.message || 'Server error' });
     }
 };
+
+const assertCustomerOwnsCompletedAppointment = (appointment, user) => {
+    if (!appointment) {
+        const err = new Error('Appointment not found.');
+        err.statusCode = 404;
+        throw err;
+    }
+
+    if (!appointment.customerId || appointment.customerId.toString() !== user._id.toString()) {
+        const err = new Error('Not authorized to review this appointment.');
+        err.statusCode = 403;
+        throw err;
+    }
+
+    if (appointment.status !== 'COMPLETED') {
+        const err = new Error('You can only review a completed appointment.');
+        err.statusCode = 400;
+        throw err;
+    }
+};
+
+// @desc    Get review for an appointment
+// @route   GET /api/appointments/:id/review
+// @access  Private/CUSTOMER
+export const getAppointmentReview = async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id).select('review customerId status');
+        assertCustomerOwnsCompletedAppointment(appointment, req.user);
+        return res.json({ success: true, data: appointment.review || null });
+    } catch (error) {
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({ message: error.message || 'Server error' });
+    }
+};
+
+// @desc    Create review for an appointment
+// @route   POST /api/appointments/:id/review
+// @access  Private/CUSTOMER
+export const createAppointmentReview = async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id).select('review customerId status');
+        assertCustomerOwnsCompletedAppointment(appointment, req.user);
+
+        if (appointment.review) {
+            return res.status(400).json({ message: 'Review already exists for this appointment.' });
+        }
+
+        const rating = Number(req.body?.rating);
+        const comment = typeof req.body?.comment === 'string' ? req.body.comment.trim() : '';
+
+        if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+            return res.status(400).json({ message: 'Rating must be a number between 1 and 5.' });
+        }
+
+        appointment.review = { rating, comment };
+        await appointment.save();
+
+        return res.status(201).json({ success: true, data: appointment.review });
+    } catch (error) {
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({ message: error.message || 'Server error' });
+    }
+};
+
+// @desc    Update review for an appointment
+// @route   PUT /api/appointments/:id/review
+// @access  Private/CUSTOMER
+export const updateAppointmentReview = async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id).select('review customerId status');
+        assertCustomerOwnsCompletedAppointment(appointment, req.user);
+
+        if (!appointment.review) {
+            return res.status(404).json({ message: 'Review not found for this appointment.' });
+        }
+
+        const rating = req.body?.rating !== undefined ? Number(req.body.rating) : undefined;
+        const comment = req.body?.comment !== undefined
+            ? (typeof req.body.comment === 'string' ? req.body.comment.trim() : '')
+            : undefined;
+
+        if (rating !== undefined) {
+            if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+                return res.status(400).json({ message: 'Rating must be a number between 1 and 5.' });
+            }
+            appointment.review.rating = rating;
+        }
+
+        if (comment !== undefined) {
+            appointment.review.comment = comment;
+        }
+
+        await appointment.save();
+        return res.json({ success: true, data: appointment.review });
+    } catch (error) {
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({ message: error.message || 'Server error' });
+    }
+};
+
+// @desc    Delete review for an appointment
+// @route   DELETE /api/appointments/:id/review
+// @access  Private/CUSTOMER
+export const deleteAppointmentReview = async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id).select('review customerId status');
+        assertCustomerOwnsCompletedAppointment(appointment, req.user);
+
+        if (!appointment.review) {
+            return res.json({ success: true, data: null });
+        }
+
+        appointment.review = null;
+        await appointment.save();
+        return res.json({ success: true, data: null });
+    } catch (error) {
+        const statusCode = error.statusCode || 500;
+        return res.status(statusCode).json({ message: error.message || 'Server error' });
+    }
+};
