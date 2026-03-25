@@ -6,6 +6,7 @@ import Overview from './Overview';
 import SalonBookingHistory from './SalonBookingHistory';
 import LocationSettings from './LocationSettings';
 import FlashsaleManagement from './FlashsaleManagement';
+import SalonReports from './SalonReports';
 import ChatWidget from '../../components/chat/ChatWidget';
 import { MessageCircle, MapPin } from 'lucide-react';
 import '../../assets/css/SalonDashboard.css';
@@ -59,6 +60,11 @@ const SalonDashboard = () => {
                             <>
                                 <h1>Flashsale Management</h1>
                                 <p>Manage short-term discount campaigns</p>
+                            </>
+                        ) : activeTab === 'reports' ? (
+                            <>
+                                <h1>Reports</h1>
+                                <p>Track the customer reports you have submitted</p>
                             </>
                         ) : (
                             <>
@@ -114,6 +120,14 @@ const SalonDashboard = () => {
                                 Flashsale
                             </button>
                         )}
+                        {!isStaffUser && (
+                            <button
+                                className={`tab-btn-link ${activeTab === 'reports' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('reports')}
+                            >
+                                Report
+                            </button>
+                        )}
                     </nav>
                     <div className="header-balance-div"></div>
                 </header>
@@ -127,6 +141,7 @@ const SalonDashboard = () => {
                     {activeTab === 'history' && <SalonBookingHistory />}
                     {activeTab === 'location' && <LocationSettings />}
                     {activeTab === 'flashsale' && <FlashsaleManagement />}
+                    {activeTab === 'reports' && <SalonReports />}
                 </div>
             </main>
 

@@ -8,6 +8,10 @@ const SalonBookingHistory = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [staffs, setStaffs] = useState([]);
+    const [reportModal, setReportModal] = useState({ open: false, appointment: null });
+    const [reportForm, setReportForm] = useState({ reason: '', description: '' });
+    const [reportSubmitting, setReportSubmitting] = useState(false);
+    const [reportedAppointmentIds, setReportedAppointmentIds] = useState(() => new Set());
 
     // Filter & Sort State
     const [filters, setFilters] = useState({
@@ -33,6 +37,7 @@ const SalonBookingHistory = () => {
     };
     const user = getUser();
     const isStaffUser = user?.role === 'STAFF';
+    const isOwnerUser = user?.role === 'SALON_OWNER';
 
     const fetchStaffs = async () => {
         try {
@@ -67,6 +72,18 @@ const SalonBookingHistory = () => {
         }
     }, [filters, sort]);
 
+    const fetchReportedAppointments = useCallback(async () => {
+        if (!isOwnerUser) return;
+        try {
+            const res = await axiosClient.get('/api/reports/provider/reported-appointments');
+            const ids = Array.isArray(res.data?.data) ? res.data.data : [];
+            setReportedAppointmentIds(new Set(ids));
+        } catch (err) {
+            // Non-blocking: just log
+            console.error('[SALON BOOKING HISTORY] Failed to fetch reported appointments', err);
+        }
+    }, [isOwnerUser]);
+
     useEffect(() => {
         fetchStaffs();
     }, []);
@@ -77,6 +94,10 @@ const SalonBookingHistory = () => {
         }, 300); // Debounce search input
         return () => clearTimeout(timeoutId);
     }, [fetchAppointments]);
+
+    useEffect(() => {
+        fetchReportedAppointments();
+    }, [fetchReportedAppointments]);
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -143,6 +164,52 @@ const SalonBookingHistory = () => {
                 <span style={{ fontSize: '12px', color: '#6b7280' }}>{comment || '(No comment)'}</span>
             </div>
         );
+    };
+
+    const isWalkInGuest = (appointment) => {
+        const email = String(appointment?.customerId?.email || '').toLowerCase();
+        const fullName = String(appointment?.customerId?.fullName || '').toLowerCase();
+        return email === 'guest.customer@boms.vn' || fullName === 'walk-in guest';
+    };
+
+    const openReportModal = (appointment) => {
+        setReportForm({ reason: '', description: '' });
+        setReportModal({ open: true, appointment });
+    };
+
+    const closeReportModal = () => {
+        if (reportSubmitting) return;
+        setReportModal({ open: false, appointment: null });
+        setReportForm({ reason: '', description: '' });
+    };
+
+    const submitReport = async () => {
+        try {
+            if (!reportModal.appointment?._id) return;
+            const description = String(reportForm.description || '').trim();
+            if (!description) {
+                toast.error('Please enter a description');
+                return;
+            }
+            setReportSubmitting(true);
+            await axiosClient.post('/api/reports/provider', {
+                appointmentId: reportModal.appointment._id,
+                reason: reportForm.reason,
+                description
+            });
+            toast.success('Report submitted');
+            setReportedAppointmentIds((prev) => {
+                const next = new Set(prev);
+                next.add(reportModal.appointment._id);
+                return next;
+            });
+            closeReportModal();
+        } catch (err) {
+            const message = err?.response?.data?.message || 'Failed to submit report';
+            toast.error(message);
+        } finally {
+            setReportSubmitting(false);
+        }
     };
 
     return (
@@ -269,16 +336,19 @@ const SalonBookingHistory = () => {
                             <th>
                                 Customer review
                             </th>
+                            {!isStaffUser && (
+                                <th style={{ textAlign: 'right' }}>Actions</th>
+                            )}
                         </tr>
                     </thead>
                     <tbody>
                         {loading && appointments.length === 0 ? (
                             <tr>
-                                <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>Loading history...</td>
+                                <td colSpan={!isStaffUser ? 8 : 7} style={{ textAlign: 'center', padding: '40px' }}>Loading history...</td>
                             </tr>
                         ) : appointments.length === 0 ? (
                             <tr>
-                                <td colSpan="7" className="history-empty-state">
+                                <td colSpan={!isStaffUser ? 8 : 7} className="history-empty-state">
                                     <i>📭</i>
                                     No matching appointments found.
                                 </td>
@@ -310,12 +380,151 @@ const SalonBookingHistory = () => {
                                         </span>
                                     </td>
                                     <td>{renderCustomerReview(app)}</td>
+                                    {!isStaffUser && (
+                                        <td style={{ textAlign: 'right' }}>
+                                            {isOwnerUser && !isWalkInGuest(app) ? (
+                                                reportedAppointmentIds.has(app._id) ? (
+                                                    <button
+                                                        type="button"
+                                                        disabled
+                                                        style={{
+                                                            padding: '8px 12px',
+                                                            borderRadius: 10,
+                                                            border: '1px solid #e5e7eb',
+                                                            background: '#f9fafb',
+                                                            color: '#6b7280',
+                                                            cursor: 'not-allowed',
+                                                            fontWeight: 600,
+                                                        }}
+                                                        title="This booking has already been reported"
+                                                    >
+                                                        Reported
+                                                    </button>
+                                                ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openReportModal(app)}
+                                                    style={{
+                                                        padding: '8px 12px',
+                                                        borderRadius: 10,
+                                                        border: '1px solid #fecaca',
+                                                        background: '#fff',
+                                                        color: '#b91c1c',
+                                                        cursor: 'pointer',
+                                                        fontWeight: 600,
+                                                    }}
+                                                >
+                                                    Report
+                                                </button>
+                                                )
+                                            ) : (
+                                                <span style={{ color: '#9ca3af', fontSize: 12 }}>-</span>
+                                            )}
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         )}
                     </tbody>
                 </table>
             </div>
+
+            {reportModal.open && (
+                <div
+                    className="admin-modal-backdrop"
+                    onClick={closeReportModal}
+                    style={{ zIndex: 50 }}
+                >
+                    <div
+                        className="admin-modal"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ maxWidth: 560 }}
+                    >
+                        <div className="admin-modal-header">
+                            <h3>Report customer</h3>
+                            <button
+                                type="button"
+                                className="admin-modal-close"
+                                onClick={closeReportModal}
+                                disabled={reportSubmitting}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'grid', gap: 12 }}>
+                            <div style={{ fontSize: 13, color: '#6b7280' }}>
+                                Booking:{' '}
+                                <b>{reportModal.appointment?.serviceSnapshot?.name || 'Service'}</b>{' '}
+                                {reportModal.appointment?.startAt ? `- ${new Date(reportModal.appointment.startAt).toLocaleString('vi-VN')}` : ''}
+                                <br />
+                                Customer:{' '}
+                                <b>{reportModal.appointment?.customerId?.fullName || '-'}</b>{' '}
+                                {reportModal.appointment?.customerId?.email ? `(${reportModal.appointment.customerId.email})` : ''}
+                            </div>
+
+                            <div style={{ display: 'grid', gap: 6 }}>
+                                <label style={{ fontSize: 13, fontWeight: 600 }}>Reason</label>
+                                <select
+                                    value={reportForm.reason}
+                                    onChange={(e) => setReportForm((p) => ({ ...p, reason: e.target.value }))}
+                                    style={{
+                                        padding: '10px 12px',
+                                        borderRadius: 10,
+                                        border: '1px solid #e5e7eb',
+                                        background: 'white',
+                                        fontSize: 14,
+                                    }}
+                                >
+                                    <option value="">Select a reason (optional)</option>
+                                    <option value="NO_SHOW">No show</option>
+                                    <option value="LATE">Arrived too late</option>
+                                    <option value="RUDE_BEHAVIOR">Rude behavior</option>
+                                    <option value="PAYMENT_ISSUE">Payment issue</option>
+                                    <option value="SPAM_BOOKING">Spam booking</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
+
+                            <div style={{ display: 'grid', gap: 6 }}>
+                                <label style={{ fontSize: 13, fontWeight: 600 }}>Description *</label>
+                                <textarea
+                                    value={reportForm.description}
+                                    onChange={(e) => setReportForm((p) => ({ ...p, description: e.target.value }))}
+                                    rows={5}
+                                    placeholder="Describe what happened..."
+                                    style={{
+                                        padding: '10px 12px',
+                                        borderRadius: 10,
+                                        border: '1px solid #e5e7eb',
+                                        resize: 'vertical',
+                                        fontSize: 14,
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                                <button
+                                    type="button"
+                                    className="btn-outline"
+                                    onClick={closeReportModal}
+                                    disabled={reportSubmitting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-approve-teal"
+                                    onClick={submitReport}
+                                    disabled={reportSubmitting}
+                                >
+                                    {reportSubmitting ? 'Submitting...' : 'Submit report'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
