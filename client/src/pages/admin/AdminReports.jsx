@@ -12,6 +12,9 @@ const AdminReports = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selected, setSelected] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [respondModal, setRespondModal] = useState({ open: false, report: null });
+  const [respondText, setRespondText] = useState('');
+  const [respondSaving, setRespondSaving] = useState(false);
   const [toast, setToast] = useState({ type: '', message: '' });
 
   const showToast = (type, message) => {
@@ -59,8 +62,49 @@ const AdminReports = () => {
     }
   };
 
+  const openRespondModal = (report) => {
+    setRespondModal({ open: true, report });
+    setRespondText(String(report?.adminNote || ''));
+  };
+
+  const closeRespondModal = () => {
+    if (respondSaving) return;
+    setRespondModal({ open: false, report: null });
+    setRespondText('');
+  };
+
+  const handleRespondSave = async () => {
+    try {
+      const reportId = respondModal?.report?._id;
+      if (!reportId) return;
+
+      const note = String(respondText || '').trim();
+      if (!note) {
+        showToast('error', 'Response message is required');
+        return;
+      }
+
+      setRespondSaving(true);
+      await axiosClient.patch(`/api/reports/${reportId}`, { adminNote: note });
+
+      setReports((prev) => prev.map((r) => (r._id === reportId ? { ...r, adminNote: note } : r)));
+      setSelected((prev) => (prev && prev._id === reportId ? { ...prev, adminNote: note } : prev));
+
+      showToast('success', 'Response saved');
+      closeRespondModal();
+    } catch (error) {
+      console.error('[ADMIN REPORTS] respond error', error);
+      showToast('error', error.response?.data?.message || 'Failed to save response');
+    } finally {
+      setRespondSaving(false);
+    }
+  };
+
   const formatDate = (d) =>
     d ? new Date(d).toLocaleString('vi-VN') : '-';
+
+  const getReporter = (r) => r?.createdBy || r?.userId || null;
+  const getTarget = (r) => r?.targetUserId || (r?.type === 'SALON_COMPLAINT' ? r?.salonId : null);
 
   return (
     <div className="admin-wrapper">
@@ -117,7 +161,7 @@ const AdminReports = () => {
                   >
                     {STATUS_OPTIONS.map((s) => (
                       <option key={s} value={s}>
-                        {s === 'ALL' ? 'All status' : s}
+                        {s === 'ALL' ? 'All status' : s === 'PENDING' ? 'Pending' : 'Resolved'}
                       </option>
                     ))}
                   </select>
@@ -129,18 +173,18 @@ const AdminReports = () => {
                   <div className="table-responsive">
                     <table className="admin-table users-table">
                  <colgroup>
-  <col style={{ width: '14%' }} />   {/* ID - giảm từ 15% */}
-  <col style={{ width: '19%' }} />   {/* Salon - giảm từ 20% */}
-  <col style={{ width: '19%' }} />   {/* User - giảm từ 20% */}
-  <col style={{ width: '20%' }} />   {/* Description - giảm từ 25% */}
-  <col style={{ width: '15%' }} />   {/* Status - tăng nhẹ */}
-  <col style={{ width: '13%' }} />   {/* Actions - tăng nhẹ */}
+  <col style={{ width: '14%' }} />
+  <col style={{ width: '18%' }} />
+  <col style={{ width: '18%' }} />
+  <col style={{ width: '22%' }} />
+  <col style={{ width: '16%' }} />
+  <col style={{ width: '12%' }} />
 </colgroup>
                       <thead>
                         <tr>
                           <th>ID</th>
-                          <th>Salon</th>
-                          <th>User</th>
+                          <th>Reporter</th>
+                          <th>Target</th>
                           <th>Description</th>
                           <th>Status</th>
                           <th style={{ textAlign: 'right' }}>Actions</th>
@@ -155,19 +199,34 @@ const AdminReports = () => {
                           </tr>
                         ) : (
                           reports.map((r) => (
+                            (() => {
+                              const reporter = getReporter(r);
+                              const target = getTarget(r);
+                              const isResponded = Boolean(String(r?.adminNote || '').trim());
+                              return (
                             <tr key={r._id}>
                               <td style={{ fontSize: 12, color: '#6b7280' }}>
                                 {r._id.slice(-8)}
                                 <br />
                                 <span>{formatDate(r.createdAt)}</span>
                               </td>
-                              <td>{r.salonId?.name || '-'}</td>
                               <td>
-                                {r.userId?.fullName || '-'}
+                                {reporter?.fullName || '-'}
                                 <br />
                                 <span style={{ fontSize: 12, color: '#6b7280' }}>
-                                  {r.userId?.email}
+                                  {reporter?.email}
                                 </span>
+                              </td>
+                              <td>
+                                {target?.fullName || target?.name || '-'}
+                                {(target?.email || r.appointmentId?.serviceSnapshot?.name) && (
+                                  <>
+                                    <br />
+                                    <span style={{ fontSize: 12, color: '#6b7280' }}>
+                                      {target?.email || r.appointmentId?.serviceSnapshot?.name}
+                                    </span>
+                                  </>
+                                )}
                               </td>
                               <td>
                                 <span
@@ -183,25 +242,26 @@ const AdminReports = () => {
                                 </span>
                               </td>
                               <td>
-                                <span className="status-active-pill" style={{ textTransform: 'capitalize' }}>
-                                  {r.status.toLowerCase()}
-                                </span>
+                                <label className={`status-toggle ${updatingId === r._id ? 'disabled' : ''}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={r.status === 'RESOLVED'}
+                                    disabled={updatingId === r._id || r.status === 'RESOLVED'}
+                                    onChange={(e) =>
+                                      handleChangeStatus(r._id, e.target.checked ? 'RESOLVED' : 'PENDING')
+                                    }
+                                  />
+                                  <span className="track" aria-hidden="true" />
+                                  <span className="status-text">
+                                    {r.status === 'RESOLVED' ? 'Resolved' : 'Pending'}
+                                  </span>
+                                </label>
                               </td>
                               <td>
                                 <div
                                   className="action-group"
                                   style={{ justifyContent: 'flex-end', gap: 8 }}
                                 >
-                                  {r.status !== 'RESOLVED' && (
-                                    <button
-                                      type="button"
-                                      className="btn-approve-teal"
-                                      disabled={updatingId === r._id}
-                                      onClick={() => handleChangeStatus(r._id, 'RESOLVED')}
-                                    >
-                                      {updatingId === r._id ? 'Updating...' : 'Resolved'}
-                                    </button>
-                                  )}
                                   <button
                                     type="button"
                                     className="btn-outline"
@@ -209,9 +269,20 @@ const AdminReports = () => {
                                   >
                                     View
                                   </button>
+                                  <button
+                                    type="button"
+                                    className={`btn-approve-teal ${isResponded ? 'btn-responded' : ''}`}
+                                    onClick={() => openRespondModal(r)}
+                                    disabled={isResponded}
+                                    title={isResponded ? 'Already responded' : 'Respond to this report'}
+                                  >
+                                    {isResponded ? 'Responded' : 'Respond'}
+                                  </button>
                                 </div>
                               </td>
                             </tr>
+                              );
+                            })()
                           ))
                         )}
                       </tbody>
@@ -242,13 +313,20 @@ const AdminReports = () => {
                   </div>
                   <div className="detail-grid">
                     <div className="detail-row">
-                      <span className="label">Salon</span>
-                      <span className="value">{selected.salonId?.name || '-'}</span>
+                      <span className="label">Reporter</span>
+                      <span className="value">
+                        {(getReporter(selected)?.fullName || '-')}{' '}
+                        {getReporter(selected)?.email ? `(${getReporter(selected)?.email})` : ''}
+                      </span>
                     </div>
                     <div className="detail-row">
-                      <span className="label">User</span>
+                      <span className="label">Target</span>
                       <span className="value">
-                        {selected.userId?.fullName} ({selected.userId?.email})
+                        {selected.targetUserId?.fullName
+                          ? `${selected.targetUserId.fullName}${selected.targetUserId.email ? ` (${selected.targetUserId.email})` : ''}`
+                          : selected.type === 'SALON_COMPLAINT'
+                            ? (selected.salonId?.name || '-')
+                            : '-'}
                       </span>
                     </div>
                     <div className="detail-row">
@@ -257,6 +335,21 @@ const AdminReports = () => {
                         {selected.status.toLowerCase()}
                       </span>
                     </div>
+                    {selected.reason && (
+                      <div className="detail-row">
+                        <span className="label">Reason</span>
+                        <span className="value">{selected.reason}</span>
+                      </div>
+                    )}
+                    {selected.appointmentId && (
+                      <div className="detail-row">
+                        <span className="label">Booking</span>
+                        <span className="value">
+                          {selected.appointmentId?.serviceSnapshot?.name || 'Appointment'}{' '}
+                          {selected.appointmentId?.startAt ? `- ${formatDate(selected.appointmentId.startAt)}` : ''}
+                        </span>
+                      </div>
+                    )}
                     <div className="detail-row">
                       <span className="label">Created at</span>
                       <span className="value">{formatDate(selected.createdAt)}</span>
@@ -264,6 +357,10 @@ const AdminReports = () => {
                     <div className="detail-row">
                       <span className="label">Description</span>
                       <span className="value">{selected.description || '-'}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="label">Admin response</span>
+                      <span className="value">{selected.adminNote || '-'}</span>
                     </div>
                     {selected.evidenceUrls && selected.evidenceUrls.length > 0 && (
                       <div className="detail-row">
@@ -279,6 +376,70 @@ const AdminReports = () => {
                         </span>
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {respondModal.open && (
+              <div className="admin-modal-backdrop" onClick={closeRespondModal}>
+                <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="admin-modal-header">
+                    <h3>Respond to report</h3>
+                    <button
+                      type="button"
+                      className="admin-modal-close"
+                      onClick={closeRespondModal}
+                      disabled={respondSaving}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    <div style={{ fontSize: 13, color: '#6b7280' }}>
+                      Reporter: <b>{getReporter(respondModal.report)?.fullName || '-'}</b>{' '}
+                      {getReporter(respondModal.report)?.email ? `(${getReporter(respondModal.report)?.email})` : ''}
+                      <br />
+                      Target: <b>{getTarget(respondModal.report)?.fullName || getTarget(respondModal.report)?.name || '-'}</b>
+                    </div>
+
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      <label style={{ fontSize: 13, fontWeight: 600 }}>Message *</label>
+                      <textarea
+                        value={respondText}
+                        onChange={(e) => setRespondText(e.target.value)}
+                        rows={5}
+                        placeholder="Type your response..."
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          border: '1px solid #e5e7eb',
+                          resize: 'vertical',
+                          fontSize: 14,
+                        }}
+                        disabled={respondSaving}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                      <button
+                        type="button"
+                        className="btn-outline"
+                        onClick={closeRespondModal}
+                        disabled={respondSaving}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-approve-teal"
+                        onClick={handleRespondSave}
+                        disabled={respondSaving}
+                      >
+                        {respondSaving ? 'Saving...' : 'OK'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
