@@ -839,6 +839,7 @@ const SalonDetail = () => {
               <div className="map-card-container">
                 {salon.location?.coordinates && (
                   <MapContainer
+                    key={`salon-map-${salon.location.coordinates[1]}-${salon.location.coordinates[0]}`}
                     center={[salon.location.coordinates[1], salon.location.coordinates[0]]}
                     zoom={15}
                     style={{ height: '100%', width: '100%' }}
@@ -850,7 +851,7 @@ const SalonDetail = () => {
                     <Marker position={[salon.location.coordinates[1], salon.location.coordinates[0]]}>
                       <Popup>
                         <strong>{salon.name}</strong><br />
-                        {salon.address?.street}, {salon.address?.district}
+                        {salon.address}
                       </Popup>
                     </Marker>
                   </MapContainer>
@@ -870,8 +871,7 @@ const SalonDetail = () => {
                     <div>
                       <div className="location-label">Address</div>
                       <div className="location-value">
-                        {salon.address?.street}<br />
-                        {salon.address?.district}, {salon.address?.city}
+                        {salon.address}
                       </div>
                     </div>
                   </div>

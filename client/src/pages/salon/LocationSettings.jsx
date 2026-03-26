@@ -32,24 +32,18 @@ const LocationSettings = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [salon, setSalon] = useState(null);
-    const [address, setAddress] = useState({
-        street: '',
-        district: '',
-        city: 'TP. Hồ Chí Minh'
-    });
+    const [address, setAddress] = useState('');
     const [position, setPosition] = useState({ lat: 10.8231, lng: 106.6297 });
+    const [mapType, setMapType] = useState('street'); // 'street' or 'satellite'
 
     useEffect(() => {
         const fetchSalonData = async () => {
             try {
-                const user = JSON.parse(localStorage.getItem('user'));
-                if (!user?.salonId) return;
-
-                const res = await axiosClient.get(`/api/salons/${user.salonId}/details`);
+                const res = await axiosClient.get('/api/salons/my-salon');
                 if (res.data.success) {
-                    const s = res.data.data.salon;
+                    const s = res.data.data;
                     setSalon(s);
-                    setAddress(s.address || address);
+                    setAddress(s.address || '');
                     if (s.location?.coordinates) {
                         setPosition({ lat: s.location.coordinates[1], lng: s.location.coordinates[0] });
                     }
@@ -63,6 +57,66 @@ const LocationSettings = () => {
         };
         fetchSalonData();
     }, []);
+
+    const handleFindOnMap = async () => {
+        if (!address.trim()) {
+            toast.warn("Please enter an address first.");
+            return;
+        }
+
+        const parts = address.split(',').map(p => p.trim());
+        const queries = [];
+
+        // 1. Full address
+        queries.push(`${address}, Vietnam`);
+
+        // 2. Street name (No house number)
+        if (parts.length >= 1) {
+            const streetName = parts[0].replace(/^\d+[\s\w]*\.\s*/, '').replace(/^\d+\s+/, '');
+            if (streetName !== parts[0]) {
+                queries.push(`${streetName}, ${parts.slice(1).join(', ')}, Vietnam`);
+            }
+        }
+
+        // 3. Street + City
+        if (parts.length >= 2) {
+            queries.push(`${parts[0]}, ${parts[parts.length - 1]}, Vietnam`);
+        }
+
+        // 4. District + City
+        if (parts.length >= 2) {
+            queries.push(`${parts.slice(-2).join(', ')}, Vietnam`);
+        }
+
+        try {
+            setSaving(true);
+            let found = false;
+
+            for (const q of queries) {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`, {
+                    headers: { 'User-Agent': 'SalonManagementApp/1.0' }
+                });
+                const data = await res.json();
+
+                if (data && data.length > 0) {
+                    const { lat, lon } = data[0];
+                    setPosition({ lat: parseFloat(lat), lng: parseFloat(lon) });
+                    toast.success("Location found!");
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                toast.warn("Could not find this precise address. Please drag the marker manually.");
+            }
+        } catch (err) {
+            console.error("Geocoding error:", err);
+            toast.error("Error searching for location.");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleSave = async () => {
         try {
@@ -91,54 +145,70 @@ const LocationSettings = () => {
     return (
         <div className="location-settings-page">
             <div className="location-card">
-                <div className="location-header">
-                    <div className="location-title">
-                        <h2>
-                            <MapPin className="text-teal-600" size={32} /> Salon Location
-                        </h2>
-                        <p>Pin your precise location on the map for clients to find you</p>
-                    </div>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="btn-save-location"
-                    >
-                        {saving ? "Saving..." : <><Save size={20} /> Save Changes</>}
-                    </button>
-                </div>
+                {/* Removed header as per user request for compactness */}
 
                 <div className="location-grid">
                     {/* Address Form */}
                     <div className="space-y-6">
                         <div className="settings-group">
-                            <label>Street Address</label>
+                            <label>Full Address</label>
                             <input
                                 type="text"
-                                value={address.street}
-                                onChange={(e) => setAddress({ ...address, street: e.target.value })}
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
                                 className="settings-input"
-                                placeholder="e.g., 123 Nguyen Hue St"
+                                placeholder="Ví dụ: 133 Đ. Trần Hưng Đạo, An Phú, Ninh Kiều, Cần Thơ"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="settings-group">
-                                <label>District</label>
-                                <input
-                                    type="text"
-                                    value={address.district}
-                                    onChange={(e) => setAddress({ ...address, district: e.target.value })}
-                                    className="settings-input"
-                                    placeholder="e.g., District 1"
-                                />
-                            </div>
-                            <div className="settings-group">
-                                <label>City</label>
-                                <input
-                                    type="text"
-                                    value={address.city}
-                                    onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                                    className="settings-input"
-                                />
+
+                        <button
+                            type="button"
+                            onClick={handleFindOnMap}
+                            className="btn-find-map"
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                background: '#f0f9ff',
+                                border: '1px dashed #3b82f6',
+                                borderRadius: '8px',
+                                color: '#3b82f6',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <Navigation size={18} /> Find Address on Map
+                        </button>
+
+                        <div style={{ margin: '15px 0' }}>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Map Mode</label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    onClick={() => setMapType('street')}
+                                    style={{
+                                        flex: 1, padding: '8px', borderRadius: '6px', fontSize: '14px', fontWeight: '500', cursor: 'pointer',
+                                        background: mapType === 'street' ? '#3b82f6' : '#f8fafc',
+                                        color: mapType === 'street' ? '#fff' : '#64748b',
+                                        border: '1px solid',
+                                        borderColor: mapType === 'street' ? '#3b82f6' : '#e2e8f0',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >Street</button>
+                                <button
+                                    onClick={() => setMapType('satellite')}
+                                    style={{
+                                        flex: 1, padding: '8px', borderRadius: '6px', fontSize: '14px', fontWeight: '500', cursor: 'pointer',
+                                        background: mapType === 'satellite' ? '#3b82f6' : '#f8fafc',
+                                        color: mapType === 'satellite' ? '#fff' : '#64748b',
+                                        border: '1px solid',
+                                        borderColor: mapType === 'satellite' ? '#3b82f6' : '#e2e8f0',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >Satellite</button>
                             </div>
                         </div>
 
@@ -157,19 +227,40 @@ const LocationSettings = () => {
                                 </div>
                             </div>
                         </div>
-                        <p className="text-xs text-gray-400 italic mt-4">
-                            * Coordinates are updated automatically when you move the marker on the map.
-                        </p>
+
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="btn-save-location"
+                            style={{ width: '100%', marginTop: '20px' }}
+                        >
+                            {saving ? "Saving..." : <><Save size={20} /> Save Changes</>}
+                        </button>
+
                     </div>
 
                     {/* Map Picker */}
                     <div className="map-picker-section">
                         <div className="map-card">
-                            <MapContainer center={[position.lat, position.lng]} zoom={15} style={{ height: '100%', width: '100%' }}>
-                                <TileLayer
-                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                />
+                            <MapContainer
+                                key={`${position.lat}-${position.lng}-${mapType}`}
+                                center={[position.lat, position.lng]}
+                                zoom={18}
+                                maxZoom={18}
+                                style={{ height: '100%', width: '100%' }}
+                            >
+                                {mapType === 'street' ? (
+                                    <TileLayer
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                    />
+                                ) : (
+                                    <TileLayer
+                                        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                                        attribution='&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
+                                        maxNativeZoom={18}
+                                    />
+                                )}
                                 <LocationPicker position={position} setPosition={setPosition} />
                             </MapContainer>
                         </div>

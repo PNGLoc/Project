@@ -43,8 +43,6 @@ export const registerSalon = async (req, res) => {
                 message: "You have already registered a salon."
             });
         }
-
-        let parsedAddress = typeof address === 'string' ? JSON.parse(address) : address;
         
         // --- NEW: Parse location coordinates ---
         let locationData = { type: 'Point', coordinates: [106.6297, 10.8231] }; // Mặc định TP.HCM
@@ -60,7 +58,7 @@ export const registerSalon = async (req, res) => {
         const newSalon = new Salon({
             name,
             phone,
-            address: parsedAddress,
+            address,
             location: locationData,
             // Lưu path tương đối để Frontend dễ gọi
             images: req.file ? [`/assets/salon/temp/${req.file.filename}`] : [],
@@ -201,9 +199,30 @@ export const getPendingSalons = async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
-// --- 6. Get My Salon ---
-export const getMySalon = async (userId) => {
-    return await Salon.findOne({ ownerId: userId }).sort({ createdAt: -1 });
+// Core logic helper to be used internally by other controllers
+export const getMySalonLogic = async (userId) => {
+    return await Salon.findOne({ ownerId: userId });
+};
+
+// @desc    Lấy salon của user hiện tại (SALON_OWNER)
+// @route   GET /api/salons/my-salon
+// @access  Private/SALON_OWNER
+export const getMySalon = async (req, res) => {
+    try {
+        const salon = await getMySalonLogic(req.user._id);
+        if (!salon) {
+            return res.status(404).json({
+                success: false,
+                message: "Salon not found"
+            });
+        }
+        res.json({
+            success: true,
+            data: salon
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
 // @desc    Lấy FULL chi tiết salon public (dùng cho View Details)
@@ -249,6 +268,7 @@ export const getSalonDetails = async (req, res) => {
                     rating: salon.rating,
                     reviews: salon.reviews,
                     isApproved: salon.isApproved,
+                    location: salon.location,
                     // thêm amenities nếu bạn có field sau này
                 },
                 services,
@@ -452,7 +472,7 @@ export const updateSalonLocation = async (req, res) => {
         }
 
         if (address) {
-            salon.address = typeof address === 'string' ? JSON.parse(address) : address;
+            salon.address = address;
         }
 
         if (location) {
