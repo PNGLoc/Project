@@ -1,11 +1,11 @@
 import Flashsale from '../models/Flashsale.js';
-import { getMySalon } from './salonController.js';
+import { getMySalonLogic } from './salonController.js';
 
 // @desc    Get all flashsales for the logged in owner's salon
 // @route   GET /api/flashsales/owner
 export const getMyFlashsales = async (req, res) => {
     try {
-        const mySalon = await getMySalon(req.user._id);
+        const mySalon = await getMySalonLogic(req.user._id);
         if (!mySalon) {
             return res.status(404).json({ success: false, message: "You must configure your Salon information first!" });
         }
@@ -45,7 +45,7 @@ export const getMyFlashsales = async (req, res) => {
 export const createFlashsale = async (req, res) => {
     try {
         const { name, description, startTime, endTime, services } = req.body;
-        const mySalon = await getMySalon(req.user._id);
+        const mySalon = await getMySalonLogic(req.user._id);
 
         if (!mySalon) {
             return res.status(404).json({ success: false, message: "You must configure your Salon information first!" });
@@ -108,7 +108,7 @@ export const createFlashsale = async (req, res) => {
 // @route   PUT /api/flashsales/:id
 export const updateFlashsale = async (req, res) => {
     try {
-        const mySalon = await getMySalon(req.user._id);
+        const mySalon = await getMySalonLogic(req.user._id);
         if (!mySalon) return res.status(404).json({ success: false, message: "Salon not found." });
 
         const flashsale = await Flashsale.findOne({ _id: req.params.id, salonId: mySalon._id });
@@ -167,7 +167,7 @@ export const updateFlashsale = async (req, res) => {
 // @route   DELETE /api/flashsales/:id
 export const deleteFlashsale = async (req, res) => {
     try {
-        const mySalon = await getMySalon(req.user._id);
+        const mySalon = await getMySalonLogic(req.user._id);
         if (!mySalon) return res.status(404).json({ success: false, message: "Salon not found." });
 
         const flashsale = await Flashsale.findOneAndDelete({ _id: req.params.id, salonId: mySalon._id });

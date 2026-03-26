@@ -14,11 +14,7 @@ const salonSchema = new mongoose.Schema({
     phone: { type: String, required: true }, // Salon Hotline Phone
 
     // 3. Detailed Address
-    address: {
-        street: String,
-        district: String,
-        city: { type: String, default: 'TP. Hồ Chí Minh' }
-    },
+    address: { type: String, required: true },
 
     // 4. Map Location (GeoJSON for radius search)
     location: {
