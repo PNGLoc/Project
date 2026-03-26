@@ -245,14 +245,14 @@ const AdminUsers = () => {
                 <div className="loading-state">Loading users...</div>
               ) : (
                 <div className="table-responsive">
-                  <table className="admin-table users-table">
+                  <table className="admin-table users-table admin-users-table">
                     <colgroup>
-                      <col style={{ width: '24%' }} />
-                      <col style={{ width: '30%' }} />
+                      <col style={{ width: '22%' }} />
+                      <col style={{ width: '28%' }} />
                       <col style={{ width: '12%' }} />
-                      <col style={{ width: '13%' }} />
-                      <col style={{ width: '13%' }} />
-                      <col style={{ width: '8%' }} />
+                      <col style={{ width: '12%' }} />
+                      <col style={{ width: '14%' }} />
+                      <col style={{ width: '12%' }} />
                     </colgroup>
                     <thead>
                       <tr>
