@@ -9,6 +9,16 @@ export function useFollow(targetType, targetId, onToggle) {
   useEffect(() => {
     let isMounted = true;
     const fetchStatus = async () => {
+      // 1. Kiểm tra lẹ: Nếu không có user/token trong local, coi như chưa follow
+      const token = localStorage.getItem('token');
+      if (!token) {
+        if (isMounted) {
+          setIsFollowing(false);
+          setInitialised(true);
+        }
+        return;
+      }
+
       try {
         setLoading(true);
         const data = await followApi.getStatus(targetType, targetId);
@@ -18,6 +28,11 @@ export function useFollow(targetType, targetId, onToggle) {
         }
       } catch (error) {
         console.error('[useFollow] status error', error);
+        // Nếu lỗi 401 thì thường lib/axios đã xử lý logout, ta set mặc định false
+        if (isMounted) {
+          setIsFollowing(false);
+          setInitialised(true);
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
