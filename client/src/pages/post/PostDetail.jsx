@@ -45,7 +45,7 @@ const PostDetail = () => {
     }
 
     const formatDate = (dateStr) => {
-        return new Date(dateStr).toLocaleDateString('vi-VN', {
+        return new Date(dateStr).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -88,7 +88,7 @@ const PostDetail = () => {
                             onClick={() => navigate(`/post/${post._id}/edit`)}
                             style={{
                                 padding: '8px 14px',
-                                background: '#667eea',
+                                background: '#0d9488',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '6px',
@@ -106,18 +106,7 @@ const PostDetail = () => {
                         <h1>{post.content.substring(0, 100)}</h1>
                         <div className="blog-detail-meta">
                             <span>📅 {formatDate(post.createdAt)}</span>
-                            <span>
-                                👤{' '}
-                                <a
-                                    href="#"
-                                    className="blog-link"
-                                    onClick={(e) => e.preventDefault()}
-                                    title="Profile coming soon"
-                                >
-                                    {post.author?.fullName || post.author?.name || 'Unknown'}
-                                </a>
-                            </span>
-                            <span>📝 {post.authorType}</span>
+                           
                         </div>
                     </div>
 
@@ -147,18 +136,16 @@ const PostDetail = () => {
                         <div className="blog-service-link">
                             <h3>🏷️ Tagged salons:</h3>
                             <div className="service-card-inline">
-                                {post.taggedSalonIds.map((s) => (
-                                    <div key={s._id || s} style={{ marginBottom: 8 }}>
-                                        <a
-                                            href="#"
-                                            className="blog-link"
-                                            onClick={(e) => e.preventDefault()}
-                                            title="Profile coming soon"
-                                        >
-                                            <strong>{s.name || s}</strong>
-                                        </a>
-                                    </div>
-                                ))}
+                                {post.taggedSalonIds.map((s) => {
+                                    const salonId = s?._id || s?.id || s;
+                                    return (
+                                        <div key={salonId} style={{ marginBottom: 8 }}>
+                                            <a>
+                                                <strong>{s?.name || s}</strong>
+                                            </a>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -170,10 +157,7 @@ const PostDetail = () => {
                                 {post.taggedStaffIds.map((s) => (
                                     <div key={s._id || s} style={{ marginBottom: 8 }}>
                                         <a
-                                            href="#"
-                                            className="blog-link"
-                                            onClick={(e) => e.preventDefault()}
-                                            title="Profile coming soon"
+                                           
                                         >
                                             <strong>{s?.userId?.fullName || s?.fullName || s}</strong>
                                         </a>
@@ -193,20 +177,7 @@ const PostDetail = () => {
                                         <strong>{service.name}</strong>
                                         <p>💰 Price: ${service.price}</p>
                                         <p>⏱️ Duration: {service.duration} minutes</p>
-                                        <button
-                                            style={{
-                                                padding: '8px 16px',
-                                                background: '#667eea',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer',
-                                                marginTop: '10px',
-                                            }}
-                                            onClick={() => navigate(`/service/${service._id}`)}
-                                        >
-                                            Book Now
-                                        </button>
+                                        
                                     </div>
                                 ))}
                             </div>

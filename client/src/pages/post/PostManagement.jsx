@@ -111,13 +111,6 @@ const PostManagement = () => {
                         >
                             + Create
                         </button>
-                        <button
-                            className="btn-create-blog"
-                            onClick={() => navigate('/')}
-                            style={{ background: '#fff', color: '#1f2937', border: '1px solid #e5e7eb' }}
-                        >
-                            ← Back to Home
-                        </button>
                     </div>
                 </div>
 
