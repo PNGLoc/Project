@@ -767,3 +767,31 @@
 .users-table td {
   vertical-align: middle;
 }
+
+/* Admin Users specific: prevent action column layout shift */
+.admin-users-table td:last-child {
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.admin-users-table .action-group {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  justify-content: flex-end;
+  gap: 12px;
+  /* Keep View button from shifting when Ban/Unban label changes */
+  min-width: 0;
+}
+
+.admin-users-table .action-group button {
+  white-space: nowrap;
+}
+
+.admin-users-table .action-group .btn-outline {
+  min-width: 60px;
+}
+
+.admin-users-table .action-group .btn-reject-rose,
+.admin-users-table .action-group .btn-approve-teal {
+  min-width: 82px;
+}
