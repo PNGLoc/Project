@@ -1,14 +1,15 @@
 //LocPNG
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { usePostsByAuthor, useDeletePost } from '../../features/posts/hooks/usePosts.js';
-//import HeaderHome from '../../components/layout/HeaderHome.jsx';
 import { FiSearch, FiX } from 'react-icons/fi';
 import '../../assets/css/PostManagement.css';
 
 const PostManagement = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const returnTo = location.pathname;
     const { getPostsByAuthor, loading, error } = usePostsByAuthor();
     const { deletePost } = useDeletePost();
 
@@ -95,8 +96,6 @@ const PostManagement = () => {
 
     return (
         <>
-            {/* Header and home-container moved to MainLayout */}
-
             <div className="blog-management-container">
                 <div className="blog-management-header">
                     <div className="blog-management-title">
@@ -107,7 +106,7 @@ const PostManagement = () => {
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                         <button
                             className="btn-create-blog"
-                            onClick={() => navigate('/post/create')}
+                            onClick={() => navigate('/post/create', { state: { returnTo } })}
                         >
                             + Create
                         </button>
@@ -184,7 +183,7 @@ const PostManagement = () => {
                             </button>
                             <button
                                 className="btn-edit"
-                                onClick={() => navigate(`/post/${post._id}/edit`)}
+                                onClick={() => navigate(`/post/${post._id}/edit`, { state: { returnTo } })}
                             >
                                 ✏️ Edit
                             </button>

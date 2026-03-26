@@ -1,17 +1,24 @@
 import { Link, useLocation } from 'react-router-dom';
 import { HiSparkles } from 'react-icons/hi';
 import { useLogout } from '../../features/auth/hooks/useLogout';
+import '../../assets/css/AdminDashboard.css';
 
 const AdminHeader = () => {
     const { logout } = useLogout();
     const user = JSON.parse(localStorage.getItem('user'));
     const location = useLocation();
+    const pathname = location.pathname;
 
-    const isOverview = location.pathname === '/admin/dashboard';
-    const isMyPosts = location.pathname === '/admin/my-posts';
-    const isUsers = location.pathname === '/admin/users';
-    const isReports = location.pathname === '/admin/reports';
-    const isCommission = location.pathname === '/admin/commission';
+    const isOverview = pathname === '/admin/dashboard';
+    const isMyPosts =
+        pathname === '/admin/my-posts' ||
+        pathname === '/post/my-posts' ||
+        pathname === '/post/create' ||
+        /^\/post\/[^/]+$/.test(pathname) ||
+        /^\/post\/[^/]+\/edit$/.test(pathname);
+    const isUsers = pathname === '/admin/users';
+    const isReports = pathname === '/admin/reports';
+    const isCommission = pathname === '/admin/commission';
 
     return (
         <header className="admin-header">

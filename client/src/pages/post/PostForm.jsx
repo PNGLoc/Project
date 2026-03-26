@@ -1,13 +1,13 @@
 //LocPNG
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useCreatePost, useUpdatePost, usePostById } from '../../features/posts/hooks/usePosts.js';
 import axiosClient from '../../lib/axios.js';
-//import HeaderHome from '../../components/layout/HeaderHome.jsx';
 import '../../assets/css/PostForm.css';
 
 const PostForm = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { id: postId } = useParams();
 
     const { createPost, loading: createLoading, error: createError } = useCreatePost();
@@ -19,6 +19,8 @@ const PostForm = () => {
     const isAdmin = userRole === 'ADMIN';
     const isSalon = userRole === 'SALON_OWNER';
     const isCustomer = userRole === 'CUSTOMER' || userRole === 'STAFF';
+    const fallbackReturnPath = isAdmin ? '/admin/my-posts' : '/post/my-posts';
+    const returnToPath = location.state?.returnTo || fallbackReturnPath;
 
     const [formData, setFormData] = useState({
         content: '',
@@ -264,7 +266,7 @@ const PostForm = () => {
             }
 
             setTimeout(() => {
-                navigate('/post/my-posts');
+                navigate(returnToPath);
             }, 1500);
         } catch (err) {
             setMessage({
@@ -276,8 +278,6 @@ const PostForm = () => {
 
     return (
         <>
-            {/* Header and home-container moved to MainLayout */}
-
             <div className="post-form-container">
                 <div className="post-form-card">
                     <h2 className="post-form-title">
@@ -709,7 +709,7 @@ const PostForm = () => {
                             <button
                                 type="button"
                                 className="btn-cancel"
-                                onClick={() => navigate('/post/my-posts')}
+                                onClick={() => navigate(returnToPath)}
                                 disabled={loading}
                             >
                                 Cancel
