@@ -139,58 +139,98 @@ const PendingApplications = () => {
                 <table className="admin-table">
                     <thead>
                         <tr>
+                            <th className="text-center">Image</th>
                             <th>Salon Name</th>
-                            <th>Owner</th>
+                            <th>Owner / ID</th>
                             <th>Email</th>
+                            <th className="text-center">License</th>
                             <th>Location</th>
-                            <th>Category</th>
-                            <th>Submitted</th>
-                            <th>Status</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
+                            <th className="text-center">Submitted</th>
+                            <th className="text-center">Status</th>
+                            <th className="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {salons.length === 0 ? (
                             <tr>
-                                <td colSpan="7" className="no-data-cell">No pending applications found.</td>
+                                <td colSpan="9" className="no-data-cell">No pending applications found.</td>
                             </tr>
                         ) : (
                             salons.map(salon => (
                                 <tr key={salon._id}>
+                                    <td className="text-center">
+                                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                            {salon.images?.[0] ? (
+                                                <img 
+                                                    src={`http://127.0.0.1:5000${salon.images[0]}`} 
+                                                    alt="Salon" 
+                                                    className="admin-table-img"
+                                                    onClick={() => window.open(`http://127.0.0.1:5000${salon.images[0]}`, '_blank')}
+                                                />
+                                            ) : (
+                                                <div className="no-image-placeholder">No Image</div>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="font-semibold">{salon.name}</td>
-                                    <td>{salon.ownerId?.fullName || 'N/A'}</td>
-                                    <td style={{ color: '#0d9488', fontSize: 13 }}>{salon.ownerId?.email || 'N/A'}</td>
-                                    <td>{formatAddress(salon.address)}</td>
-                                    <td><span className="category-pill">{salon.categories?.[0] || 'General'}</span></td>
-                                    <td className="text-gray">{timeAgo(salon.createdAt)}</td>
-                                    <td><span className="status-pending-pill">Pending</span></td>
                                     <td>
-                                        <div className="action-group" style={{ justifyContent: 'flex-end' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span>{salon.ownerId?.fullName || 'N/A'}</span>
+                                            <span style={{ fontSize: '11px', color: '#6b7280' }}>ID: {salon.ownerIdNumber || 'N/A'}</span>
+                                        </div>
+                                    </td>
+                                    <td style={{ color: '#0d9488', fontSize: 13 }}>{salon.ownerId?.email || 'N/A'}</td>
+                                    <td className="text-center">
+                                        {salon.businessLicenseImage ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                                                <img 
+                                                    src={`http://127.0.0.1:5000${salon.businessLicenseImage}`} 
+                                                    alt="License" 
+                                                    className="admin-table-img"
+                                                    onClick={() => window.open(`http://127.0.0.1:5000${salon.businessLicenseImage}`, '_blank')}
+                                                />
+                                                <span 
+                                                    className="license-pill"
+                                                    onClick={() => window.open(`http://127.0.0.1:5000${salon.businessLicenseImage}`, '_blank')}
+                                                >
+                                                    View License
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <span style={{ color: '#9ca3af', fontSize: '12px' }}>No License</span>
+                                        )}
+                                    </td>
+                                    <td>{formatAddress(salon.address)}</td>
+                                    <td className="text-center text-gray">{timeAgo(salon.createdAt)}</td>
+                                    <td className="text-center">
+                                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                            <span className="status-pending-pill">Pending</span>
+                                        </div>
+                                    </td>
+                                    <td className="text-center">
+                                        <div className="action-group" style={{ justifyContent: 'center' }}>
                                             <button
                                                 className="btn-approve-teal"
                                                 onClick={() => handleApprove(salon._id)}
                                                 disabled={processingId === salon._id}
+                                                title="Approve"
                                             >
                                                 {processingId === salon._id ? (
                                                     <span className="loader-spinner"></span>
                                                 ) : (
-                                                    <>
-                                                        <TfiCheck
-                                                            size={18} /> Approve
-                                                    </>
+                                                    <TfiCheck size={22} strokeWidth={0.5} />
                                                 )}
                                             </button>
                                             <button
                                                 className="btn-reject-rose"
                                                 onClick={() => handleReject(salon._id)}
                                                 disabled={processingId === salon._id}
+                                                title="Reject"
                                             >
                                                 {processingId === salon._id ? (
                                                     <span className="loader-spinner"></span>
                                                 ) : (
-                                                    <>
-                                                        <TfiClose size={18} /> Reject
-                                                    </>
+                                                    <TfiClose size={22} strokeWidth={0.5} />
                                                 )}
                                             </button>
                                         </div>

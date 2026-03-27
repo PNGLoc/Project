@@ -43,7 +43,10 @@ router.get('/:id/details', getSalonDetails);
 router.get('/:id/coupons', getSalonCoupons);
 // private dashboard stats for salon owner
 router.get('/dashboard/stats', protect, getDashboardStats);
-router.post('/register', protect, upload.single('image'), registerSalon); // 'image' field must match frontend FormData
+router.post('/register', protect, upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'businessLicenseImage', maxCount: 1 }
+]), registerSalon);
 router.get('/my-salon', protect, getMySalon); // Added GET route for salon owner
 router.patch('/my-salon', protect, updateSalonLocation);
 router.get('/pending', protect, getPendingSalons);

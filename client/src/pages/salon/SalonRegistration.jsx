@@ -38,8 +38,20 @@ const SalonRegistration = () => {
         name: '',
         phone: '',
         address: '',
-        image: null
+        image: null,
+        ownerIdNumber: '',
+        businessLicenseImage: null
     });
+
+    const [workingHours, setWorkingHours] = useState([
+        { day: 1, open: '08:00', close: '20:00', isOpen: true },
+        { day: 2, open: '08:00', close: '20:00', isOpen: true },
+        { day: 3, open: '08:00', close: '20:00', isOpen: true },
+        { day: 4, open: '08:00', close: '20:00', isOpen: true },
+        { day: 5, open: '08:00', close: '20:00', isOpen: true },
+        { day: 6, open: '08:00', close: '20:00', isOpen: true },
+        { day: 0, open: '08:00', close: '20:00', isOpen: true },
+    ]);
 
     const [position, setPosition] = useState({ lat: 10.8231, lng: 106.6297 });
     const [mapType, setMapType] = useState('street'); // 'street' or 'satellite'
@@ -47,19 +59,25 @@ const SalonRegistration = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        if (name === 'phone') {
-            const cleanPhone = value.replace(/\D/g, '');
-            setFormData({ ...formData, [name]: cleanPhone });
+        if (name === 'phone' || name === 'ownerIdNumber') {
+            const cleanVal = value.replace(/\D/g, '');
+            setFormData({ ...formData, [name]: cleanVal });
         } else {
             setFormData({ ...formData, [name]: value });
         }
     };
 
     const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setFormData({ ...formData, image: file });
+        const { name, files } = e.target;
+        if (files && files[0]) {
+            setFormData({ ...formData, [name]: files[0] });
         }
+    };
+
+    const handleWorkingHoursChange = (index, field, value) => {
+        const updated = [...workingHours];
+        updated[index][field] = value;
+        setWorkingHours(updated);
     };
 
     const handleSubmit = async (e) => {
@@ -75,6 +93,12 @@ const SalonRegistration = () => {
             toast.warning("Please enter the salon address.");
             return;
         }
+
+        if (!formData.ownerIdNumber.trim()) {
+            toast.warning("Please enter your ID/Passport number.");
+            return;
+        }
+
         setIsLoading(true); // Start loading
 
         try {
@@ -94,11 +118,20 @@ const SalonRegistration = () => {
             data.append('name', formData.name);
             data.append('phone', formData.phone);
             data.append('address', formData.address);
+            data.append('ownerIdNumber', formData.ownerIdNumber);
             data.append('location', JSON.stringify({
                 lat: position.lat,
                 lng: position.lng
             }));
+            
+            // Lọc ra các ngày mở cửa
+            const activeHours = workingHours
+                .filter(h => h.isOpen)
+                .map(({ day, open, close }) => ({ day, open, close }));
+            data.append('workingHours', JSON.stringify(activeHours));
+
             if (formData.image) data.append('image', formData.image);
+            if (formData.businessLicenseImage) data.append('businessLicenseImage', formData.businessLicenseImage);
 
             // 3. Gọi API
             const response = await axios.post('http://localhost:5000/api/salons/register', data, {
@@ -214,7 +247,7 @@ const SalonRegistration = () => {
                     <form onSubmit={handleSubmit} className="registration-form">
                         <div className="form-group">
                             <label>Salon Name</label>
-                            <input type="text" name="name" placeholder="EX: Luxury Hair Spa" onChange={handleChange} required />
+                            <input type="text" name="name" onChange={handleChange} placeholder="EX: Luxury Hair Spa" required />
                         </div>
 
                         <div className="form-group">
@@ -224,11 +257,7 @@ const SalonRegistration = () => {
                                 name="phone"
                                 placeholder="EX: 0909123456"
                                 value={formData.phone}
-                                onChange={(e) => {
-                                    // Chỉ cho phép nhập số
-                                    const val = e.target.value.replace(/\D/g, '');
-                                    setFormData({ ...formData, phone: val });
-                                }}
+                                onChange={handleChange}
                                 required
                             />
                         </div>
@@ -270,7 +299,101 @@ const SalonRegistration = () => {
                         </button>
 
                         <div className="form-group">
-                            <label>Salon Image</label>
+                            <label>ID Card / Passport Number</label>
+                            <input
+                                type="text"
+                                name="ownerIdNumber"
+                                placeholder="Enter your ID or Passport number"
+                                value={formData.ownerIdNumber}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Business License (Image)</label>
+                            <div className="file-upload-wrapper">
+                                {formData.businessLicenseImage ? (
+                                    <div className="image-preview-container">
+                                        <div className="image-frame-box" onClick={() => document.getElementById('license-image-input').click()}>
+                                            <img src={URL.createObjectURL(formData.businessLicenseImage)} alt="License Preview" />
+                                        </div>
+                                        <div className="file-meta-data">
+                                            <span className="file-name-text">{formData.businessLicenseImage.name}</span>
+                                            <span className="change-link" onClick={() => document.getElementById('license-image-input').click()}>
+                                                Change Image
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="file-upload-dropzone" onClick={() => document.getElementById('license-image-input').click()}>
+                                        <div className="upload-placeholder">
+                                            <div className="upload-icon">
+                                                <FiUpload size={32} />
+                                            </div>
+                                            <p className="upload-text"><b>Upload License Image</b></p>
+                                        </div>
+                                    </div>
+                                )}
+                                <input
+                                    id="license-image-input"
+                                    name="businessLicenseImage"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    style={{ display: 'none' }}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Working Hours</label>
+                            <div className="working-hours-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((dayName, idx) => {
+                                    const index = (idx + 1) % 7; // Map 0-6 to Sun-Sat correctly for the state
+                                    const stateIdx = workingHours.findIndex(h => h.day === index);
+                                    const dayData = workingHours[stateIdx];
+
+                                    return (
+                                        <div key={dayName} style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '100px' }}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={dayData.isOpen} 
+                                                    onChange={(e) => handleWorkingHoursChange(stateIdx, 'isOpen', e.target.checked)}
+                                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                />
+                                                <span style={{ fontSize: '14px', fontWeight: '500' }}>{dayName}</span>
+                                            </div>
+                                            
+                                            {dayData.isOpen ? (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                    <input 
+                                                        type="time" 
+                                                        value={dayData.open} 
+                                                        onChange={(e) => handleWorkingHoursChange(stateIdx, 'open', e.target.value)}
+                                                        style={{ padding: '5px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                                                    />
+                                                    <span style={{ color: '#64748b' }}>-</span>
+                                                    <input 
+                                                        type="time" 
+                                                        value={dayData.close} 
+                                                        onChange={(e) => handleWorkingHoursChange(stateIdx, 'close', e.target.value)}
+                                                        style={{ padding: '5px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <span style={{ color: '#94a3b8', fontSize: '13px', fontStyle: 'italic' }}>Closed</span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Salon Image (Avatar/Main)</label>
                             <div className="file-upload-wrapper">
                                 {formData.image ? (
                                     <div className="image-preview-container">
@@ -290,17 +413,18 @@ const SalonRegistration = () => {
                                             <div className="upload-icon">
                                                 <FiUpload size={32} />
                                             </div>
-                                            <p className="upload-text"><b>Click to upload</b> or drag and drop</p>
-                                            <p className="upload-subtext">PNG, JPG, JPEG (MAX. 5MB)</p>
+                                            <p className="upload-text"><b>Click to upload salon photo</b></p>
                                         </div>
                                     </div>
                                 )}
                                 <input
                                     id="salon-image-input"
+                                    name="image"
                                     type="file"
                                     accept="image/*"
                                     onChange={handleFileChange}
                                     style={{ display: 'none' }}
+                                    required
                                 />
                             </div>
                         </div>
