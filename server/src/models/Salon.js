@@ -25,7 +25,11 @@ const salonSchema = new mongoose.Schema({
     // 5. Images (Array of image paths)
     images: [String],
 
-    // 6. Operation Status
+    // 6. Identification
+    businessLicenseImage: String,
+    ownerIdNumber: String,
+
+    // 7. Operation Status
     isApproved: { type: Boolean, default: false }, // Requires Admin approval
     isActive: { type: Boolean, default: false },   // Owner can toggle open/closed
     rejectionReason: String,                       // Rejection reason if any

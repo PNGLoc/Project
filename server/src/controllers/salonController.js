@@ -34,11 +34,14 @@ const ensureExists = (dir) => {
 export const registerSalon = async (req, res) => {
     try {
         ensureExists(TEMP_DIR);
-        const { name, phone, address } = req.body;
+        const { name, phone, address, ownerIdNumber, workingHours } = req.body;
 
         const existingSalon = await Salon.findOne({ ownerId: req.user._id });
         if (existingSalon) {
-            if (req.file) fs.unlinkSync(req.file.path);
+            // Clean up both possible file fields
+            if (req.files) {
+                Object.values(req.files).flat().forEach(file => fs.unlinkSync(file.path));
+            }
             return res.status(400).json({
                 message: "You have already registered a salon."
             });
@@ -55,13 +58,22 @@ export const registerSalon = async (req, res) => {
             }
         }
 
+        // --- NEW: Parse working hours ---
+        let parsedWorkingHours = [];
+        if (workingHours) {
+            parsedWorkingHours = typeof workingHours === 'string' ? JSON.parse(workingHours) : workingHours;
+        }
+
         const newSalon = new Salon({
             name,
             phone,
             address,
+            ownerIdNumber,
+            workingHours: parsedWorkingHours,
             location: locationData,
-            // Lưu path tương đối để Frontend dễ gọi
-            images: req.file ? [`/assets/salon/temp/${req.file.filename}`] : [],
+            // Images from req.files (Multer .fields)
+            images: req.files?.image ? [`/assets/salon/temp/${req.files.image[0].filename}`] : [],
+            businessLicenseImage: req.files?.businessLicenseImage ? `/assets/salon/temp/${req.files.businessLicenseImage[0].filename}` : null,
             ownerId: req.user._id,
             isApproved: false
         });
@@ -69,8 +81,10 @@ export const registerSalon = async (req, res) => {
         await newSalon.save();
         res.status(201).json(newSalon);
     } catch (error) {
-        if (req.file && fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
+        if (req.files) {
+            Object.values(req.files).flat().forEach(file => {
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+            });
         }
         res.status(400).json({ message: error.message });
     }
@@ -83,8 +97,8 @@ export const approveSalon = async (req, res) => {
         const oldSalon = await Salon.findById(req.params.id);
         if (!oldSalon) return res.status(404).json({ message: "Không tìm thấy" });
 
-        let finalImages = oldSalon.images.map(imagePath => {
-            if (imagePath.includes('/temp/')) {
+        const moveFile = (imagePath) => {
+            if (imagePath && imagePath.includes('/temp/')) {
                 const fileName = path.basename(imagePath);
                 const oldPath = path.join(TEMP_DIR, fileName);
                 const newPath = path.join(FINAL_DIR, fileName);
@@ -92,22 +106,26 @@ export const approveSalon = async (req, res) => {
                 if (fs.existsSync(oldPath)) {
                     try {
                         fs.renameSync(oldPath, newPath);
-                        console.log(`-> Đã chuyển ảnh: ${fileName} sang salons`);
                         return `/assets/salon/salons/${fileName}`;
                     } catch (err) {
                         console.error(`Lỗi khi dời file ${fileName}:`, err);
-                        return imagePath; // Lỗi thì giữ nguyên path cũ tránh mất data
+                        return imagePath;
                     }
-                } else {
-                    console.warn(`! Không tìm thấy file tại: ${oldPath}`);
                 }
             }
             return imagePath;
-        });
+        };
+
+        const finalImages = oldSalon.images.map(moveFile);
+        const finalLicenseImage = moveFile(oldSalon.businessLicenseImage);
 
         const updatedSalon = await Salon.findByIdAndUpdate(
             req.params.id,
-            { isApproved: true, images: finalImages },
+            { 
+                isApproved: true, 
+                images: finalImages,
+                businessLicenseImage: finalLicenseImage
+            },
             { new: true }
         );
         if (updatedSalon) {
@@ -140,12 +158,15 @@ export const rejectSalon = async (req, res) => {
         
         if (!salon) return res.status(404).json({ message: "Salon not found" });
 
-        if (salon.images) {
-            salon.images.forEach(img => {
+        const deleteFile = (img) => {
+            if (img) {
                 const p = path.join(TEMP_DIR, path.basename(img));
                 if (fs.existsSync(p)) fs.unlinkSync(p);
-            });
-        }
+            }
+        };
+
+        if (salon.images) salon.images.forEach(deleteFile);
+        deleteFile(salon.businessLicenseImage);
 
         const ownerId = salon.ownerId;
         const salonName = salon.name;
