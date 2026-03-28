@@ -205,14 +205,13 @@ const AppointmentModal = ({ isOpen, onClose, appointmentId, onUpdateSuccess }) =
 
                         {/* Actions */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
-                            {!isStaff ? (
+                             {!isStaff ? (
                                 <button
                                     type="button"
                                     className="btn-reject-rose"
                                     onClick={handleDelete}
                                     disabled={updating}
                                 >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                                     Delete Schedule
                                 </button>
                             ) : (

@@ -115,17 +115,22 @@
 }
 
 .btn-approve-teal {
-    background: #008080;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: opacity 0.2s;
+    background: #008080 !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 24px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 140px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    transition: all 0.2s;
 }
 
 .btn-approve-teal:hover {
@@ -133,16 +138,21 @@
 }
 
 .btn-reject-rose {
-    background: #fff;
-    color: #e11d48;
-    border: 1px solid #e11d48;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    background: #fff !important;
+    color: #e11d48 !important;
+    border: 1px solid #e11d48 !important;
+    padding: 10px 24px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 140px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
     transition: all 0.2s;
 }
 
@@ -151,13 +161,22 @@
 }
 
 .btn-outline {
-    background: white;
-    border: 1px solid #d1d5db;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-    color: #374151;
-    cursor: pointer;
+    background: white !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+    padding: 10px 24px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 100px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    transition: all 0.2s;
 }
 
 .btn-outline:hover {
